@@ -1,0 +1,115 @@
+// Schéma Prisma — API adhérents.
+// Chiffrement applicatif au niveau champ via prisma-field-encryption (§6 du CLAUDE.md) :
+//   - /// @encrypted           → chiffré AES-GCM (clé PRISMA_FIELD_ENCRYPTION_KEY)
+//   - /// @encryption:hash(x)  → blind index (sel PRISMA_FIELD_ENCRYPTION_HASH_SALT, DISTINCT de la clé)
+//   - /// @pii                 → marqueur d'audit des champs à données personnelles
+// ⚠️ $queryRaw bypasse l'extension : interdit sur les tables contenant des champs chiffrés.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EmailStatus {
+  OK
+  BOUNCED
+  COMPLAINED
+}
+
+model Member {
+  id String @id @default(cuid())
+
+  /// @pii — en clair : tri alphabétique et recherche « commence par » du back-office (§6)
+  firstName String
+  /// @pii — en clair : idem
+  lastName  String
+
+  /// @pii @encrypted?mode=strict
+  email     String
+  /// Blind index de `email` — seul moyen de lookup exact. Rempli automatiquement par l'extension.
+  /// @encryption:hash(email)?normalize=lowercase&normalize=trim
+  emailHash String? @unique
+
+  /// @pii @encrypted — pas de blind index : HMAC sur numéro FR brute-forçable (§6)
+  phone   String?
+  /// @pii @encrypted
+  address String?
+  /// @pii @encrypted — date ISO (YYYY-MM-DD) : l'extension ne chiffre que des String
+  birthDate String?
+
+  /// Marqué par les webhooks Resend (bounces / complaints, §8)
+  emailStatus EmailStatus @default(OK)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions   Session[]
+  magicLinks MagicLinkToken[]
+}
+
+model Session {
+  id String @id @default(cuid())
+
+  /// SHA-256 du token de session — jamais le token brut (§9)
+  tokenHash String @unique
+
+  memberId String
+  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  /// Expiration glissante : 90 jours d'inactivité (§9)
+  expiresAt DateTime
+  /// Plafond absolu : 6 mois après création, jamais repoussé (§9)
+  absoluteExpiresAt DateTime
+  /// Rafraîchie au plus une fois par 24 h pour éviter une écriture par requête (§9)
+  lastRefreshedAt DateTime @default(now())
+
+  @@index([memberId])
+  @@index([expiresAt])
+}
+
+model MagicLinkToken {
+  id String @id @default(cuid())
+
+  /// SHA-256 du token — jamais le token brut (§9)
+  tokenHash String @unique
+
+  memberId String
+  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime  @default(now())
+  /// TTL 10 minutes (§9)
+  expiresAt DateTime
+  /// Token multi-usage plafonné (décision assumée §9) — absorbe scanners d'email et doubles-clics
+  usedCount Int       @default(0)
+  maxUses   Int       @default(5)
+  /// Posé quand un nouveau lien est demandé pour le même email (§9)
+  invalidatedAt DateTime?
+
+  usages MagicLinkUsage[]
+
+  @@index([memberId])
+  @@index([expiresAt])
+}
+
+/// Journal d'utilisation des magic links (§9) : deux IP distinctes sur un même
+/// token = signal anormal. Ne contient JAMAIS le token. Purgé par le job de rétention.
+model MagicLinkUsage {
+  id String @id @default(cuid())
+
+  tokenId String
+  token   MagicLinkToken @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+
+  /// @pii — adresse IP, soumise à la politique de rétention
+  ip String
+  /// @pii
+  userAgent String
+
+  createdAt DateTime @default(now())
+
+  @@index([tokenId])
+}

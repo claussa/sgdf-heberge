@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4 # lit packageManager du package.json racine
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint (Biome)
+        run: pnpm lint
+
+      - name: Génération du client Prisma
+        run: pnpm db:generate
+
+      - name: Typecheck
+        run: pnpm check-types
+
+      - name: Tests unitaires
+        run: pnpm test
+
+      - name: Tests d'intégration (Testcontainers)
+        run: pnpm test:integration
+
+      - name: Build (API bundle + SPA)
+        run: pnpm build
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build de l'image API
+        run: docker build -f apps/api/Dockerfile -t adherents-api:ci .
+      # Le push vers le Container Registry Scaleway se fait sur tag/release,
+      # avec SCW_SECRET_KEY en secret GitHub Actions.
