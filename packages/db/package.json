@@ -1,0 +1,31 @@
+{
+  "name": "@repo/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "prisma generate",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:seed": "tsx --env-file=.env prisma/seed.ts",
+    "check-types": "tsc --noEmit",
+    "test:integration": "vitest run"
+  },
+  "dependencies": {
+    "@prisma/client": "6.19.3",
+    "prisma-field-encryption": "^1.6.0"
+  },
+  "devDependencies": {
+    "@repo/config": "workspace:*",
+    "@testcontainers/postgresql": "^12.1.0",
+    "@types/node": "^22.10.0",
+    "prisma": "6.19.3",
+    "tsx": "^4.23.11",
+    "typescript": "~5.9.3",
+    "vitest": "^4.1.10"
+  }
+}

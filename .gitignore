@@ -1,0 +1,27 @@
+# dependencies
+node_modules/
+
+# builds
+dist/
+.turbo/
+*.tsbuildinfo
+
+# env & secrets — jamais committés (§9)
+.env
+.env.*
+!.env.example
+
+# emails de dev (contiennent des magic links)
+.local/
+
+# prisma
+packages/db/src/generated/
+
+# terraform (le .terraform.lock.hcl, lui, est committé)
+infra/.terraform/
+infra/*.tfstate*
+infra/*.tfvars
+
+# misc
+.DS_Store
+coverage/
