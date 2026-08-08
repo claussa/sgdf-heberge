@@ -117,6 +117,9 @@ importers:
 
   packages/contracts:
     dependencies:
+      '@repo/event-config':
+        specifier: workspace:*
+        version: link:../event-config
       zod:
         specifier: ^4.4.3
         version: 4.4.3
