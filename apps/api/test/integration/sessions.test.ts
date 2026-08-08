@@ -1,6 +1,6 @@
 /**
  * Sessions (§9, §10) : expiration glissante, plafond absolu, refresh ≤ 1/24 h,
- * révocation effective à la suppression du compte.
+ * révocation effective à la suppression du compte (DELETE /me).
  */
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SESSION_ABSOLUTE_MS, SESSION_SLIDING_MS } from '../../src/services/auth-service'
@@ -30,13 +30,16 @@ afterAll(async () => {
 })
 
 let counter = 0
-async function login(): Promise<{ cookie: string; memberId: string; sessionId: string }> {
+async function login(): Promise<{ cookie: string; userId: string; sessionId: string }> {
   counter += 1
-  const member = await t.db.member.create({
+  const user = await t.db.user.create({
     data: {
+      accountType: 'INDIVIDUAL',
       firstName: `Membre${counter}`,
       lastName: `Test${counter}`,
       email: `membre${counter}@example.org`,
+      phone: '+33600000000',
+      onboardedAt: new Date(),
     },
   })
   const outboxBefore = t.outbox.length
@@ -50,10 +53,10 @@ async function login(): Promise<{ cookie: string; memberId: string; sessionId: s
   if (!email) throw new Error('outbox vide')
   const cb = await t.app.request(`/api/auth/callback?token=${extractToken(email)}`)
   const session = await t.db.session.findFirstOrThrow({
-    where: { memberId: member.id },
+    where: { userId: user.id },
     orderBy: { createdAt: 'desc' },
   })
-  return { cookie: sessionCookieOf(cb), memberId: member.id, sessionId: session.id }
+  return { cookie: sessionCookieOf(cb), userId: user.id, sessionId: session.id }
 }
 
 describe('cycle de vie de la session', () => {
@@ -133,18 +136,15 @@ describe('cycle de vie de la session', () => {
     expect(res.status).toBe(401)
   })
 
-  it('la suppression du compte (art. 17) révoque immédiatement la session (cascade)', async () => {
-    const admin = await login()
-    const victim = await login()
+  it('la suppression du compte (DELETE /me, art. 17) révoque immédiatement la session', async () => {
+    const { cookie, userId } = await login()
 
-    const del = await t.app.request(`/api/members/${victim.memberId}`, {
-      method: 'DELETE',
-      headers: { cookie: admin.cookie },
-    })
+    const del = await t.app.request('/api/me', { method: 'DELETE', headers: { cookie } })
     expect(del.status).toBe(200)
 
-    const res = await t.app.request('/api/me', { headers: { cookie: victim.cookie } })
+    const res = await t.app.request('/api/me', { headers: { cookie } })
     expect(res.status).toBe(401)
-    expect(await t.db.session.count({ where: { memberId: victim.memberId } })).toBe(0)
+    expect(await t.db.session.count({ where: { userId } })).toBe(0)
+    expect(await t.db.user.count({ where: { id: userId } })).toBe(0)
   })
 })

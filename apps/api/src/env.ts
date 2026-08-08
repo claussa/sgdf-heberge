@@ -2,7 +2,8 @@ import { z } from 'zod'
 
 const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  PORT: z.coerce.number().int().default(3000),
+  // 3001 partout : .env, Dockerfile, containers.tf, proxy Vite — le défaut du code doit suivre
+  PORT: z.coerce.number().int().default(3001),
   DATABASE_URL: z.string().min(1),
   PRISMA_FIELD_ENCRYPTION_KEY: z.string().startsWith('k1.aesgcm256.'),
   /** Sel du blind index — DISTINCT de la clé de chiffrement (§6) */
@@ -14,6 +15,8 @@ const EnvSchema = z.object({
   RESEND_WEBHOOK_SECRET: z.string().optional(),
   /** Origine de la SPA — CORS restreint (§9) et base des magic links */
   APP_ORIGIN: z.url().default('http://localhost:5173'),
+  /** Secret d'appel de POST /internal/jobs/daily (cron Scaleway) */
+  JOB_SECRET: z.string().min(10).optional(),
 })
 
 export type Env = z.infer<typeof EnvSchema>
@@ -27,6 +30,9 @@ export function getEnv(): Env {
     // §8 — en prod, pas d'échappatoire : les emails partent par Resend, point.
     if (env.EMAIL_DRIVER !== 'resend' || !env.RESEND_API_KEY) {
       throw new Error('En production, EMAIL_DRIVER=resend et RESEND_API_KEY sont obligatoires')
+    }
+    if (!env.JOB_SECRET) {
+      throw new Error('En production, JOB_SECRET est obligatoire (cron du job quotidien)')
     }
   }
   cached = env

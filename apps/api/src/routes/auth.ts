@@ -3,17 +3,15 @@ import {
   ErrorResponseSchema,
   MagicLinkRequestResponseSchema,
   MagicLinkRequestSchema,
-  MemberSchema,
   OkResponseSchema,
 } from '@repo/contracts'
 import { normalizeEmail } from '@repo/db'
 import { renderMagicLinkEmail } from '@repo/emails'
 import { deleteCookie, setCookie } from 'hono/cookie'
 import { getEnv } from '../env'
-import { getEmailDriver } from '../lib/email'
 import { logger } from '../lib/logger'
 import { getDb } from '../lib/prisma'
-import { requireAuth, SESSION_COOKIE } from '../middleware/auth'
+import { type AuthVariables, requireAuth, SESSION_COOKIE } from '../middleware/auth'
 import { assertWithinLimit, clientIp, RateLimiter } from '../middleware/rate-limit'
 import {
   consumeMagicLink,
@@ -23,10 +21,12 @@ import {
   revokeSession,
   SESSION_ABSOLUTE_MS,
 } from '../services/auth-service'
-import { toMemberDTO } from '../services/member-service'
+import { sendToRecipient } from '../services/notify'
 
 // §9 — rate limiting à deux niveaux : par IP et par email. Sans ça, l'endpoint est
 // un moyen gratuit d'envoyer des mails à des tiers depuis notre domaine.
+// (S'y ajoute le throttle d'émission par email ADOSSÉ À LA BASE dans requestMagicLink,
+// partagé entre instances.)
 export const ipLimiter = new RateLimiter({ windowMs: 15 * 60 * 1000, max: 10 })
 export const emailLimiter = new RateLimiter({ windowMs: 15 * 60 * 1000, max: 3 })
 
@@ -36,8 +36,9 @@ const requestMagicLinkRoute = createRoute({
   tags: ['auth'],
   summary: 'Demander un lien de connexion',
   description:
-    "Réponse strictement identique que l'email existe ou non (anti-énumération). " +
-    'Le lien est valable 10 minutes.',
+    "Le lien crée le compte s'il n'existe pas (« coquille » : le type est choisi à la " +
+    "première connexion). Réponse strictement identique que l'email existe ou non " +
+    '(anti-énumération). Le lien est valable 10 minutes.',
   request: {
     body: {
       content: { 'application/json': { schema: MagicLinkRequestSchema } },
@@ -90,47 +91,31 @@ const logoutRoute = createRoute({
   },
 })
 
-const meRoute = createRoute({
-  method: 'get',
-  path: '/me',
-  tags: ['auth'],
-  summary: "Profil de l'adhérent connecté",
-  middleware: [requireAuth] as const,
-  responses: {
-    200: {
-      description: 'Profil',
-      content: { 'application/json': { schema: MemberSchema } },
-    },
-    401: {
-      description: 'Non authentifié',
-      content: { 'application/json': { schema: ErrorResponseSchema } },
-    },
-  },
-})
-
 /**
  * Émission et envoi du lien, déclenchés APRÈS la réponse HTTP (fire-and-forget) :
- * le temps de réponse ne dépend ainsi pas de l'existence du compte (anti-énumération §9).
- * L'envoi est synchrone vis-à-vis de Resend (pas de file de masse, §8).
+ * le temps de réponse ne dépend ainsi ni de l'existence du compte ni du throttle
+ * (anti-énumération §9). L'envoi est synchrone vis-à-vis de Resend (pas de file, §8).
  */
 async function issueAndSendMagicLink(emailInput: string): Promise<void> {
   const env = getEnv()
   const issued = await requestMagicLink(getDb(), emailInput)
-  if (!issued) return // email inconnu : on ne fait rien, on ne dit rien
+  if (!issued) return // bounce, plainte ou throttle : on ne fait rien, on ne dit rien
 
   const url = `${env.APP_ORIGIN}/api/auth/callback?token=${issued.token}`
-  const rendered = await renderMagicLinkEmail({ firstName: issued.member.firstName, url })
-  await getEmailDriver().send({
-    to: issued.member.email,
-    subject: rendered.subject,
-    html: rendered.html,
-    text: rendered.text,
-    // Un retry du même token ne renvoie pas un doublon (§8)
-    idempotencyKey: `magic-link/${hashToken(issued.token)}`,
-  })
+  const rendered = await renderMagicLinkEmail({ firstName: issued.user.firstName, url })
+  await sendToRecipient(
+    { email: issued.user.email, emailStatus: 'OK' },
+    {
+      subject: rendered.subject,
+      html: rendered.html,
+      text: rendered.text,
+      // Un retry du même token ne renvoie pas un doublon (§8)
+      idempotencyKey: `magic-link/${hashToken(issued.token)}`,
+    },
+  )
 }
 
-export const authRouter = new OpenAPIHono()
+export const authRouter = new OpenAPIHono<{ Variables: AuthVariables }>()
   .openapi(requestMagicLinkRoute, (c) => {
     const { email } = c.req.valid('json')
     assertWithinLimit(ipLimiter, `ml:ip:${clientIp(c)}`)
@@ -145,7 +130,7 @@ export const authRouter = new OpenAPIHono()
     return c.json(
       MagicLinkRequestResponseSchema.parse({
         ok: true,
-        message: 'Si un compte existe pour cette adresse, un lien de connexion a été envoyé.',
+        message: 'Le lien est parti ! Vérifie ta boîte mail : il est valable 10 minutes.',
       }),
       202,
     )
@@ -162,10 +147,10 @@ export const authRouter = new OpenAPIHono()
       userAgent: c.req.header('user-agent') ?? 'unknown',
     })
     if (!consumed) {
-      return c.redirect(`${env.APP_ORIGIN}/login?error=lien-invalide`, 302)
+      return c.redirect(`${env.APP_ORIGIN}/connexion?error=lien-invalide`, 302)
     }
 
-    const sessionToken = await createSession(getDb(), consumed.memberId)
+    const sessionToken = await createSession(getDb(), consumed.userId)
     setCookie(c, SESSION_COOKIE, sessionToken, {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
@@ -176,14 +161,11 @@ export const authRouter = new OpenAPIHono()
     })
 
     // 302 immédiat vers une URL propre : le token sort de l'historique (§9).
+    // La SPA route ensuite selon /me (accountType null → /inscription).
     return c.redirect(`${env.APP_ORIGIN}/`, 302)
   })
   .openapi(logoutRoute, async (c) => {
     await revokeSession(getDb(), c.get('sessionToken'))
     deleteCookie(c, SESSION_COOKIE, { path: '/' })
     return c.json(OkResponseSchema.parse({ ok: true }), 200)
-  })
-  .openapi(meRoute, (c) => {
-    // Schema.parse systématique avant c.json (§5) — filtre réel au runtime.
-    return c.json(MemberSchema.parse(toMemberDTO(c.get('member'))), 200)
   })

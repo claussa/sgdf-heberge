@@ -1,7 +1,7 @@
 variable "project_name" {
   description = "Préfixe des ressources"
   type        = string
-  default     = "adherents"
+  default     = "sgdf-heberge"
 }
 
 variable "app_domain" {

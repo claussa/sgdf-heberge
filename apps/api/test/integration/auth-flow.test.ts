@@ -2,10 +2,15 @@
  * Tests critiques du magic link (§10) :
  * expiration 10 min, plafond d'utilisations, invalidation des tokens précédents,
  * 302 vers une URL sans token, réponse identique pour un email inexistant,
- * rate limiting par email.
+ * rate limiting par email, comptes coquilles (« le lien crée ton compte »),
+ * garde bounce et throttle d'émission en base, onboarding.
  */
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { MAGIC_LINK_MAX_USES } from '../../src/services/auth-service'
+import {
+  MAGIC_LINK_EMAIL_MAX_PER_WINDOW,
+  MAGIC_LINK_MAX_USES,
+  requestMagicLink,
+} from '../../src/services/auth-service'
 import {
   extractToken,
   resetRateLimiters,
@@ -18,18 +23,23 @@ let t: TestEnv
 
 beforeAll(async () => {
   t = await startTestEnv()
-  await t.db.member.create({
+  await t.db.user.create({
     data: {
+      accountType: 'INDIVIDUAL',
       firstName: 'Alice',
       lastName: 'Martin',
       email: 'alice@example.org',
       phone: '+33600000001',
+      onboardedAt: new Date(),
     },
   })
 })
 
 beforeEach(async () => {
   await resetRateLimiters()
+  // Le throttle d'émission par email est ADOSSÉ À LA BASE (voulu, cross-instance) :
+  // on repart d'une table de tokens vide pour isoler chaque cas de test.
+  await t.db.magicLinkToken.deleteMany({})
   t.outbox.length = 0
 })
 
@@ -64,13 +74,23 @@ describe('demande de lien', () => {
     expect(t.outbox.at(-1)?.text).toContain('Ne transférez pas ce message')
   })
 
-  it('anti-énumération : réponse STRICTEMENT identique pour un email inconnu (§9)', async () => {
+  it('« le lien crée ton compte » : email inconnu → coquille (accountType null) + envoi', async () => {
+    const res = await requestLink('nouvelle@example.org')
+    expect(res.status).toBe(202)
+    await vi.waitFor(() => expect(t.outbox.length).toBe(1))
+
+    const shell = await t.db.user.findFirst({
+      where: { email: 'nouvelle@example.org' },
+      select: { accountType: true, onboardedAt: true },
+    })
+    expect(shell).toMatchObject({ accountType: null, onboardedAt: null })
+  })
+
+  it('anti-énumération : réponse STRICTEMENT identique connu/inconnu (§9)', async () => {
     const known = await requestLink('alice@example.org')
-    const unknown = await requestLink('inconnu@example.org')
+    const unknown = await requestLink('inconnue2@example.org')
     expect(unknown.status).toBe(known.status)
     expect(await unknown.text()).toBe(await known.text())
-    // …et aucun email n'est parti pour l'inconnu
-    await vi.waitFor(() => expect(t.outbox.length).toBe(1))
   })
 
   it('rate limiting par email : 4e demande refusée (§9)', async () => {
@@ -81,6 +101,25 @@ describe('demande de lien', () => {
     expect(res.status).toBe(429)
     const body = (await res.json()) as { error: { code: string } }
     expect(body.error.code).toBe('RATE_LIMITED')
+  })
+
+  it("throttle d'émission en base : ≥ 3 tokens en 15 min → émission sautée (§8)", async () => {
+    // Appel direct du service : le limiteur HTTP mémoire est par instance,
+    // ce throttle-ci est le plafond PARTAGÉ entre instances.
+    for (let i = 0; i < MAGIC_LINK_EMAIL_MAX_PER_WINDOW; i++) {
+      expect(await requestMagicLink(t.db, 'throttle@example.org')).not.toBeNull()
+    }
+    expect(await requestMagicLink(t.db, 'throttle@example.org')).toBeNull()
+  })
+
+  it('adresse en bounce : plus AUCUN envoi (réputation, §8)', async () => {
+    await t.db.user.create({
+      data: { email: 'bounce@example.org', emailStatus: 'BOUNCED' },
+    })
+    const res = await requestLink('bounce@example.org')
+    expect(res.status).toBe(202) // réponse toujours identique…
+    await new Promise((r) => setTimeout(r, 150))
+    expect(t.outbox.length).toBe(0) // …mais rien ne part
   })
 
   it('le token n’apparaît jamais en clair en base (SHA-256 stocké, §9)', async () => {
@@ -109,6 +148,7 @@ describe('callback', () => {
     expect(res.headers.get('referrer-policy')).toBe('no-referrer')
 
     const setCookie = res.headers.get('set-cookie') ?? ''
+    expect(setCookie).toContain('heberge_session=')
     expect(setCookie).toContain('HttpOnly')
     expect(setCookie).toContain('SameSite=Lax')
     expect(setCookie).toMatch(/Max-Age=\d+/)
@@ -173,17 +213,24 @@ describe('callback', () => {
   })
 })
 
-describe('session issue du callback', () => {
-  it('donne accès à /me puis la déconnexion révoque la session en base', async () => {
-    await requestLink('alice@example.org')
+describe('session, /me et onboarding', () => {
+  async function loginAs(email: string): Promise<string> {
+    t.outbox.length = 0
+    await resetRateLimiters()
+    await requestLink(email)
     const token = await lastEmailToken()
     const cb = await t.app.request(`/api/auth/callback?token=${token}`)
-    const cookie = sessionCookieOf(cb)
+    return sessionCookieOf(cb)
+  }
+
+  it('donne accès à /me puis la déconnexion révoque la session en base', async () => {
+    const cookie = await loginAs('alice@example.org')
 
     const me = await t.app.request('/api/me', { headers: { cookie } })
     expect(me.status).toBe(200)
-    const body = (await me.json()) as { email: string }
+    const body = (await me.json()) as { email: string; accountType: string }
     expect(body.email).toBe('alice@example.org')
+    expect(body.accountType).toBe('INDIVIDUAL')
 
     const logout = await t.app.request('/api/auth/logout', {
       method: 'POST',
@@ -194,5 +241,66 @@ describe('session issue du callback', () => {
     // Révocation effective : le cookie ne vaut plus rien (session supprimée en base)
     const after = await t.app.request('/api/me', { headers: { cookie } })
     expect(after.status).toBe(401)
+  })
+
+  it('coquille → onboarding INDIVIDUAL → type définitif (SCOUT_UNIT refusé ensuite)', async () => {
+    const cookie = await loginAs('onboard@example.org')
+
+    const before = await t.app.request('/api/me', { headers: { cookie } })
+    expect(((await before.json()) as { accountType: null }).accountType).toBeNull()
+
+    const onboard = await t.app.request('/api/me/onboarding', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({
+        accountType: 'INDIVIDUAL',
+        firstName: 'Nadia',
+        lastName: 'Test',
+        phone: '06 00 11 22 33',
+        groupSize: 2,
+        accessibilityNeeds: ['pmr', 'quiet'],
+      }),
+    })
+    expect(onboard.status).toBe(200)
+    const me = (await onboard.json()) as {
+      accountType: string
+      accessibilityNeeds: string[]
+      onboardedAt: string | null
+    }
+    expect(me.accountType).toBe('INDIVIDUAL')
+    expect(me.accessibilityNeeds).toEqual(['pmr', 'quiet'])
+    expect(me.onboardedAt).not.toBeNull()
+
+    const switchType = await t.app.request('/api/me/onboarding', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({
+        accountType: 'SCOUT_UNIT',
+        unitName: '1re Test',
+        unitBranch: 'Scouts-Guides',
+        firstName: 'Nadia',
+        lastName: 'Test',
+        phone: '06 00 11 22 33',
+      }),
+    })
+    expect(switchType.status).toBe(409)
+  })
+
+  it("les routes d'un autre type de compte sont interdites (cloisonnement)", async () => {
+    const cookie = await loginAs('unite@example.org')
+    await t.app.request('/api/me/onboarding', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({
+        accountType: 'SCOUT_UNIT',
+        unitName: '1re Nancy',
+        unitBranch: 'Pionniers-Caravelles',
+        firstName: 'Nina',
+        lastName: 'Colin',
+        phone: '06 77 88 99 00',
+      }),
+    })
+    const me = await t.app.request('/api/me', { headers: { cookie } })
+    expect(((await me.json()) as { accountType: string }).accountType).toBe('SCOUT_UNIT')
   })
 })

@@ -6,9 +6,14 @@ import { secureHeaders } from 'hono/secure-headers'
 import { getEnv } from './env'
 import { handleError } from './errors'
 import { requestLogger } from './middleware/request-logger'
+import { adminRouter } from './routes/admin'
 import { authRouter } from './routes/auth'
 import { healthRouter } from './routes/health'
-import { membersRouter } from './routes/members'
+import { internalRouter } from './routes/internal'
+import { jumelageRouter } from './routes/jumelage'
+import { listingsRouter } from './routes/listings'
+import { meRouter } from './routes/me'
+import { requestsRouter } from './routes/requests'
 import { webhooksRouter } from './routes/webhooks'
 
 /**
@@ -38,19 +43,28 @@ api.use(
 api.onError(handleError)
 
 // Chaîne unique : le type accumulé est la source du RPC Hono côté SPA (§5).
+// ⚠️ Les routers sont branchés ICI et uniquement ici — un router non chaîné
+// n'existe ni pour le RPC ni pour l'OpenAPI.
 const routes = api
   .route('/', healthRouter)
   .route('/', authRouter)
-  .route('/', membersRouter)
+  .route('/', meRouter)
+  .route('/', listingsRouter)
+  .route('/', requestsRouter)
+  .route('/', jumelageRouter)
+  .route('/', adminRouter)
+  .route('/', internalRouter)
   .route('/', webhooksRouter)
 
 api.doc31('/openapi.json', {
   openapi: '3.1.0',
   info: {
-    title: 'API adhérents',
+    title: 'API plateforme hébergement',
     version: '1.0.0',
     description:
-      "API de gestion d'adhérents. Authentification par magic link, session en cookie httpOnly.",
+      "API de mise en relation pour l'hébergement des bénévoles (logements de particuliers, " +
+      'institutionnels, jumelage entre unités). Authentification par magic link, session en ' +
+      'cookie httpOnly.',
   },
 })
 

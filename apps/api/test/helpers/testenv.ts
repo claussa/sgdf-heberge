@@ -75,7 +75,7 @@ export function extractToken(email: OutgoingEmail): string {
 
 export function sessionCookieOf(res: Response): string {
   const setCookie = res.headers.get('set-cookie')
-  const match = setCookie?.match(/adherents_session=([^;]+)/)
+  const match = setCookie?.match(/heberge_session=([^;]+)/)
   if (!match?.[1]) throw new Error('cookie de session absent')
-  return `adherents_session=${match[1]}`
+  return `heberge_session=${match[1]}`
 }
