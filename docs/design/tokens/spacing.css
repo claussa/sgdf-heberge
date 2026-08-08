@@ -1,0 +1,31 @@
+/* Espacements — base 4px. La charte est un système d'impression : les valeurs web
+   ci-dessous respectent ses proportions (marges généreuses, blocs alignés à gauche). */
+:root{
+  --space-0:0;
+  --space-1:4px;
+  --space-2:8px;
+  --space-3:12px;
+  --space-4:16px;
+  --space-5:20px;
+  --space-6:24px;
+  --space-8:32px;
+  --space-10:40px;
+  --space-12:48px;
+  --space-16:64px;
+  --space-20:80px;
+  --space-24:96px;
+  --space-32:128px;
+
+  /* Mise en page */
+  --page-margin:var(--space-12);
+  --page-margin-lg:var(--space-24);
+  --gutter:var(--space-6);
+  --measure:64ch; /* longueur de ligne max du texte courant */
+  --content-max:1200px;
+
+  /* Zone de respiration du logo (charte p.8) : aucun élément dans cette zone.
+     Exprimée en proportion de la largeur du cartouche. */
+  --logo-respiration:0.5em;
+  --logo-min-vertical:1.5cm;  /* taille minimale logo vertical et symbole */
+  --logo-min-horizontal:3.2cm; /* taille minimale logo horizontal */
+}

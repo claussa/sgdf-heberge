@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics="">
+<link rel="stylesheet" href="_ds/charte-sgdf-pape-2026-e0ae73d8-c7b4-4d67-8a68-3fef4065839d/tokens/fonts.css">
+<style>
+body{margin:0;background:#e0e7ec;font-family:Sarabun,system-ui,sans-serif}
+a{color:#0077b3}a:hover{color:#003a5d}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+</style>
+</helmet>
+
+<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 20px;background:#003a5d">
+<span style="font:400 21px 'Caveat Brush',cursive;color:#ffffff">Plateforme hébergement — haute fidélité,</span>
+<div style="display:flex;gap:6px;flex-wrap:wrap">
+<sc-for list="{{ personas }}" as="p" hint-placeholder-count="4">
+<div onClick="{{ go }}" data-go="{{ p.go }}" style="{{ p.style }}" style-hover="opacity:.85">{{ p.label }}</div>
+</sc-for>
+</div>
+<div style="margin-left:auto;display:flex;gap:6px">
+<div onClick="{{ dev }}" data-dev="ordi" style="{{ devD }}" style-hover="opacity:.85">Ordi</div>
+<div onClick="{{ dev }}" data-dev="mobile" style="{{ devM }}" style-hover="opacity:.85">Mobile</div>
+</div>
+</div>
+
+<div style="display:flex;justify-content:center;padding:28px 16px 64px">
+<div style="width:{{ frameW }};max-width:100%;background:#ffffff;border:1px solid rgba(0,58,93,.16);min-height:780px;display:flex;flex-direction:column">
+
+<sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;align-items:center;gap:28px;padding:0 40px;border-bottom:1px solid rgba(0,58,93,.16)">
+<img src="assets/sgdf-horizontal-blue.png" alt="Scouts et Guides de France" style="height:38px;margin:12px 0">
+<div style="display:flex;flex-direction:column">
+<span style="font:400 22px/1 'Caveat Brush',cursive;color:#003a5d">Hébergement</span>
+<span style="font:700 9.5px Sarabun,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#66899e">Léon XIV · France 2026 · 25-28 septembre</span>
+</div>
+<sc-if value="{{ hasRole }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;gap:24px;margin-left:24px">
+<sc-for list="{{ navItems }}" as="n" hint-placeholder-count="3">
+<div onClick="{{ go }}" data-go="{{ n.go }}" style="{{ n.style }}" style-hover="color:#003a5d">{{ n.label }}</div>
+</sc-for>
+</div>
+<div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+<div style="width:34px;height:34px;background:#ebeff2;display:flex;align-items:center;justify-content:center;font:800 12px Sarabun,sans-serif;color:#003a5d">{{ personaInit }}</div>
+<span style="font:700 13px Sarabun,sans-serif;color:#003a5d">{{ personaName }}</span>
+</div>
+</sc-if>
+<sc-if value="{{ noRole }}" hint-placeholder-val="{{ true }}">
+<div onClick="{{ go }}" data-go="connexion" style="margin-left:auto;font:700 13px Sarabun,sans-serif;color:#003a5d;cursor:pointer;border-bottom:2px solid #ff8300;padding-bottom:2px">Se connecter</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(0,58,93,.16)">
+<img src="assets/sgdf-symbole-blue.png" alt="SGDF" style="height:28px">
+<span style="font:400 24px/1 'Caveat Brush',cursive;color:#003a5d">{{ screenTitle }}</span>
+<sc-if value="{{ hasRole }}" hint-placeholder-val="{{ false }}">
+<div style="margin-left:auto;width:32px;height:32px;background:#ebeff2;display:flex;align-items:center;justify-content:center;font:800 11px Sarabun,sans-serif;color:#003a5d">{{ personaInit }}</div>
+</sc-if>
+</div>
+</sc-if>
+
+<div style="flex:1;padding:{{ padContent }}">
+
+<sc-if value="{{ vConnexion }}" hint-placeholder-val="{{ true }}">
+<div data-screen-label="Connexion" style="display:grid;grid-template-columns:{{ colsLogin }};min-height:100%;animation:fade .22s cubic-bezier(.2,.6,.2,1) both">
+<div style="position:relative;background:#003a5d;padding:36px 56px 36px 36px;display:flex;flex-direction:column;gap:24px;min-height:360px">
+<img src="assets/sgdf-vertical-white.png" alt="Scouts et Guides de France" style="width:96px;align-self:flex-start">
+<div style="flex:1"></div>
+<p style="margin:0;font:400 46px/1.05 'Caveat Brush',cursive;color:#ffffff;max-width:360px">Un toit pour chaque bénévole,</p>
+<p style="margin:0;font:400 15px/1.6 Sarabun,sans-serif;color:#ffffff;max-width:340px">Trouver où dormir — ou accueillir ceux qui viennent — pour la venue du pape Léon XIV, du 25 au 28 septembre 2026.</p>
+<sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
+<img src="assets/papier-dechire-vertical.png" alt="" style="position:absolute;top:0;left:100%;margin-left:-14px;height:100%;width:32px;object-fit:fill">
+</sc-if>
+</div>
+<div style="display:flex;flex-direction:column;justify-content:center;padding:48px 36px;gap:16px">
+<div style="max-width:400px;display:flex;flex-direction:column;gap:16px;width:100%;margin:0 auto">
+<img src="assets/pape-leon-xiv-france-2026.png" alt="Léon XIV France 2026" style="width:88px">
+<p style="margin:0;font:400 36px/1.1 'Caveat Brush',cursive;color:#003a5d">Connecte-toi en un clic,</p>
+<p style="margin:0;font:400 14px/1.55 Sarabun,sans-serif;color:#003a5d">On t’envoie un lien de connexion. Pas de mot de passe à retenir, pas de compte à créer avant.</p>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">E-mail</div>
+<div style="border:1px solid rgba(0,58,93,.35);border-radius:3px;min-height:44px;display:flex;align-items:center;padding:0 12px;font:400 14px Sarabun,sans-serif;color:#003a5d;background:#ffffff">marie.lefevre@exemple.fr</div>
+</div>
+<sc-if value="{{ notSent }}" hint-placeholder-val="{{ true }}">
+<div onClick="{{ send }}" style="background:#003a5d;color:#ffffff;min-height:46px;display:flex;align-items:center;justify-content:center;font:700 14px Sarabun,sans-serif;padding:0 24px;cursor:pointer" style-hover="background:#00263d">Recevoir mon lien</div>
+</sc-if>
+<sc-if value="{{ sent }}" hint-placeholder-val="{{ false }}">
+<div style="background:#ffffff;border:1px solid rgba(0,58,93,.16);border-top:6px solid #007254;padding:16px;display:flex;flex-direction:column;gap:10px;animation:fade .22s both">
+<p style="margin:0;font:400 14px/1.5 Sarabun,sans-serif;color:#003a5d"><b>Le lien est parti !</b> Vérifie ta boîte mail : il est valable 30 minutes, un seul usage.</p>
+<div onClick="{{ go }}" data-go="inscription" style="border:1.5px solid #003a5d;color:#003a5d;background:#ffffff;min-height:40px;display:flex;align-items:center;justify-content:center;font:700 13px Sarabun,sans-serif;padding:0 18px;cursor:pointer;align-self:flex-start" style-hover="background:#ebeff2">J’ai cliqué sur le lien — démo</div>
+</div>
+</sc-if>
+<p style="margin:0;font:400 13px/1.5 Sarabun,sans-serif;color:#66899e">Première visite ? Le lien crée ton compte, tout simplement.</p>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ vInscription }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Inscription" style="max-width:640px;display:flex;flex-direction:column;gap:20px;animation:fade .22s both">
+<p style="margin:0;font:400 36px/1.1 'Caveat Brush',cursive;color:#003a5d">Je m’inscris comme…</p>
+<div style="display:grid;grid-template-columns:{{ cols2 }};gap:14px">
+<div onClick="{{ pick }}" data-pick="benevole" style="{{ cardIndiv }}" style-hover="border-color:#003a5d">
+<div style="width:18px;height:18px;border:1.5px solid #003a5d;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;margin-top:2px"><div style="width:9px;height:9px;border-radius:50%;background:#003a5d;display:{{ dotIndiv }}"></div></div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<span style="font:700 15px Sarabun,sans-serif;color:#003a5d">Bénévole individuel</span>
+<span style="font:400 13px/1.5 Sarabun,sans-serif;color:#66899e">Seul ou en petit groupe : je cherche où dormir, ou je propose un logement.</span>
+</div>
+</div>
+<div onClick="{{ pick }}" data-pick="unite" style="{{ cardUnite }}" style-hover="border-color:#003a5d">
+<div style="width:18px;height:18px;border:1.5px solid #003a5d;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;margin-top:2px"><div style="width:9px;height:9px;border-radius:50%;background:#003a5d;display:{{ dotUnite }}"></div></div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<span style="font:700 15px Sarabun,sans-serif;color:#003a5d">Unité scoute</span>
+<span style="font:400 13px/1.5 Sarabun,sans-serif;color:#66899e">Jumelage : nous cherchons une unité sur place, ou nous pouvons en accueillir une.</span>
+</div>
+</div>
+</div>
+<sc-if value="{{ inscB }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;gap:12px;flex-wrap:wrap;animation:fade .22s both">
+<div onClick="{{ go }}" data-go="b-profil" style="background:#003a5d;color:#ffffff;min-height:46px;display:flex;align-items:center;justify-content:center;font:700 14px Sarabun,sans-serif;padding:0 24px;cursor:pointer" style-hover="background:#00263d">Je cherche un logement</div>
+<div onClick="{{ go }}" data-go="h-profil" style="background:#003a5d;color:#ffffff;min-height:46px;display:flex;align-items:center;justify-content:center;font:700 14px Sarabun,sans-serif;padding:0 24px;cursor:pointer" style-hover="background:#00263d">Je propose un logement</div>
+</div>
+</sc-if>
+<sc-if value="{{ inscU }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ go }}" data-go="u-profil" style="background:#003a5d;color:#ffffff;min-height:46px;display:flex;align-items:center;justify-content:center;font:700 14px Sarabun,sans-serif;padding:0 24px;cursor:pointer;align-self:flex-start;min-width:200px;animation:fade .22s both" style-hover="background:#00263d">Continuer</div>
+</sc-if>
+<p style="margin:0;font:400 13px/1.5 Sarabun,sans-serif;color:#66899e">Tu pourras ajouter un autre rôle plus tard, depuis ton profil, sans refaire de compte.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{ vBProfil }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Bénévole · profil" style="max-width:560px;display:flex;flex-direction:column;gap:16px;animation:fade .22s both">
+<p style="margin:0;font:400 36px/1.1 'Caveat Brush',cursive;color:#003a5d">Bénévole individuel,</p>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">E-mail — déjà connu par la connexion</div>
+<div style="border:1px solid rgba(0,58,93,.2);border-radius:3px;min-height:42px;display:flex;align-items:center;padding:0 12px;font:400 14px Sarabun,sans-serif;color:#66899e;background:#ebeff2">marie.lefevre@exemple.fr</div>
+</div>
+<div style="display:grid;grid-template-columns:{{ cols2 }};gap:14px">
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">Prénom et nom</div>
+<div style="border:1px solid rgba(0,58,93,.35);border-radius:3px;min-height:42px;display:flex;align-items:center;padding:0 12px;font:400 14px Sarabun,sans-serif;color:#003a5d;background:#ffffff">Marie Lefèvre</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">Nous serons</div>
+<div style="border:1px solid rgba(0,58,93,.35);border-radius:3px;min-height:42px;display:flex;align-items:center;padding:0 12px;font:400 14px Sarabun,sans-serif;color:#003a5d;background:#ffffff">3 personnes</div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">Téléphone — transmis avec la demande</div>
+<div style="border:1px solid rgba(0,58,93,.35);border-radius:3px;min-height:42px;display:flex;align-items:center;padding:0 12px;font:400 14px Sarabun,sans-serif;color:#003a5d;background:#ffffff">06 98 76 54 32</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">Mes besoins d’accessibilité</div>
+<div style="display:flex;gap:10px;align-items:flex-start"><div style="width:18px;height:18px;border:1.5px solid #003a5d;flex:none;display:flex;align-items:center;justify-content:center;margin-top:1px"><div style="width:10px;height:10px;background:#003a5d"></div></div><span style="font:400 14px/1.4 Sarabun,sans-serif;color:#003a5d">Accessible en fauteuil roulant</span></div>
+<div style="display:flex;gap:10px;align-items:flex-start"><div style="width:18px;height:18px;border:1.5px solid #003a5d;flex:none;margin-top:1px"></div><span style="font:400 14px/1.4 Sarabun,sans-serif;color:#003a5d">Peu d’obstacles, peu de marches</span></div>
+<div style="display:flex;gap:10px;align-items:flex-start"><div style="width:18px;height:18px;border:1.5px solid #003a5d;flex:none;margin-top:1px"></div><span style="font:400 14px/1.4 Sarabun,sans-serif;color:#003a5d">Environnement calme</span></div>
+</div>
+<div onClick="{{ go }}" data-go="b-recherche" style="background:#003a5d;color:#ffffff;min-height:46px;display:flex;align-items:center;justify-content:center;font:700 14px Sarabun,sans-serif;padding:0 24px;cursor:pointer;align-self:flex-start;min-width:220px" style-hover="background:#00263d">Enregistrer et rechercher</div>
+<div style="height:1px;background:rgba(0,58,93,.16);margin:8px 0"></div>
+<div style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">Et si besoin</div>
+<div onClick="{{ go }}" data-go="h-profil" style="border:1.5px solid #003a5d;color:#003a5d;background:#ffffff;min-height:42px;display:flex;align-items:center;justify-content:center;font:700 13px Sarabun,sans-serif;padding:0 18px;cursor:pointer;align-self:flex-start" style-hover="background:#ebeff2">Proposer aussi un logement</div>
+<p style="margin:0;font:400 13px/1.5 Sarabun,sans-serif;color:#66899e">Ça ouvre ton espace hébergeur, en plus de celui-ci — même compte, même connexion.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{ vBRecherche }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Bénévole · recherche" style="display:flex;flex-direction:column;gap:20px;animation:fade .22s both">
+<p style="margin:0;font:400 36px/1.1 'Caveat Brush',cursive;color:#003a5d">Où dormiras-tu ?</p>
+<div style="background:#f5f7f8;border:1px solid rgba(0,58,93,.16);padding:16px;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+<span style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d;margin-right:4px">Site</span>
+<div style="cursor:pointer;padding:6px 12px;font:400 13px Sarabun,sans-serif;border:1px solid #003a5d;background:#003a5d;color:#ffffff">Paris</div>
+<div style="cursor:pointer;padding:6px 12px;font:400 13px Sarabun,sans-serif;border:1px solid rgba(0,58,93,.35);background:#ffffff;color:#003a5d" style-hover="border-color:#003a5d">Lourdes</div>
+<div style="cursor:pointer;padding:6px 12px;font:400 13px Sarabun,sans-serif;border:1px solid rgba(0,58,93,.35);background:#ffffff;color:#003a5d" style-hover="border-color:#003a5d">Metz</div>
+<div style="border:1px solid rgba(0,58,93,.35);border-radius:3px;min-height:34px;display:flex;align-items:center;padding:0 12px;font:400 13px Sarabun,sans-serif;color:#003a5d;background:#ffffff;margin-left:8px">25 → 28 sept. · 3 personnes</div>
+</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+<span style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d;margin-right:4px">Type</span>
+<sc-for list="{{ typeChips }}" as="c" hint-placeholder-count="6">
+<div onClick="{{ toggleType }}" data-t="{{ c.label }}" style="{{ c.style }}" style-hover="border-color:#003a5d">{{ c.label }}</div>
+</sc-for>
+</div>
+</div>
+<p style="margin:0;font:400 14px Sarabun,sans-serif;color:#003a5d"><b>{{ nbRes }} logements</b></p>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:20px">
+<sc-for list="{{ logements }}" as="l" hint-placeholder-count="6">
+<div onClick="{{ go }}" data-go="b-fiche" style="background:#ffffff;border:1px solid rgba(0,58,93,.16);cursor:pointer;display:flex;flex-direction:column" style-hover="border-color:#003a5d">
+<div style="height:148px;background:#ebeff2"><div style="height:100%;background:no-repeat center/auto 44px;background-image:{{ l.icBg }};opacity:.45"></div></div>
+<div style="padding:14px;display:flex;flex-direction:column;gap:6px">
+<span style="font:700 15px Sarabun,sans-serif;color:#003a5d">{{ l.t }}</span>
+<span style="font:400 13px Sarabun,sans-serif;color:#66899e">{{ l.m }}</span>
+<sc-if value="{{ l.hasTag }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-wrap:wrap;gap:6px"><span style="border:1px solid rgba(0,58,93,.3);padding:3px 10px;font:400 12px Sarabun,sans-serif;color:#003a5d">{{ l.tag }}</span></div>
+</sc-if>
+</div>
+</div>
+</sc-for>
+</div>
+<p style="margin:0;font:400 13px/1.5 Sarabun,sans-serif;color:#66899e">Seul le quartier de chaque logement est affiché. L’adresse complète t’est transmise quand l’hébergeur accepte ta demande.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{ vBFiche }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Bénévole · fiche logement" style="display:flex;flex-direction:column;gap:20px;animation:fade .22s both">
+<div onClick="{{ go }}" data-go="b-recherche" style="font:700 13px Sarabun,sans-serif;color:#0077b3;cursor:pointer;align-self:flex-start" style-hover="color:#003a5d">← Retour à la recherche</div>
+<div style="display:grid;grid-template-columns:{{ colsFiche }};gap:32px;align-items:start">
+<div style="display:flex;flex-direction:column;gap:16px">
+<div style="height:280px;background:#ebeff2;display:flex;align-items:center;justify-content:center"><img src="assets/signes/tente.png" alt="" style="height:64px;opacity:.45"></div>
+<p style="margin:0;font:400 36px/1.1 'Caveat Brush',cursive;color:#003a5d">Chambre privée · 2 places,</p>
+<p style="margin:0;font:400 14px/1.55 Sarabun,sans-serif;color:#66899e">Paris 12e — quartier seulement · disponible du 24 au 29 septembre · chez Claire M.</p>
+<div style="display:flex;flex-wrap:wrap;gap:6px">
+<span style="border:1px solid rgba(0,58,93,.3);padding:3px 10px;font:400 12px Sarabun,sans-serif;color:#003a5d">Accessible fauteuil roulant</span>
+<span style="border:1px solid rgba(0,58,93,.3);padding:3px 10px;font:400 12px Sarabun,sans-serif;color:#003a5d">Facile d’accès en transports</span>
+<span style="border:1px solid rgba(0,58,93,.3);padding:3px 10px;font:400 12px Sarabun,sans-serif;color:#003a5d">Environnement calme</span>
+</div>
+<p style="margin:0;font:400 14px/1.6 Sarabun,sans-serif;color:#003a5d">« Chambre au 1er étage avec ascenseur, lit double. Arrivée possible à partir de 18 h, petit-déjeuner partagé. Trois marches dans le hall, puis ascenseur de 70 cm. »</p>
+</div>
+<div style="background:#ffffff;border:1px solid rgba(0,58,93,.16);border-top:6px solid #003a5d;padding:20px;display:flex;flex-direction:column;gap:14px">
+<p style="margin:0;font:400 26px/1 'Caveat Brush',cursive;color:#003a5d">Ma demande,</p>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">Dates et personnes</div>
+<div style="border:1px solid rgba(0,58,93,.35);border-radius:3px;min-height:42px;display:flex;align-items:center;padding:0 12px;font:400 14px Sarabun,sans-serif;color:#003a5d;background:#ffffff">25 → 28 sept. · 3 personnes</div>
+</div>
+<p style="margin:0;font:400 13px/1.5 Sarabun,sans-serif;color:#d03f15"><b>Attention :</b> vous êtes 3 pour 2 places. Claire pourra accepter ou refuser.</p>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">Un message pour Claire</div>
+<div style="border:1px solid rgba(0,58,93,.35);border-radius:3px;min-height:88px;display:flex;align-items:flex-start;padding:10px 12px;font:400 13px/1.5 Sarabun,sans-serif;color:#99b0be;background:#ffffff">Qui vous êtes, sur quel service vous êtes bénévoles…</div>
+</div>
+<sc-if value="{{ notDemSent }}" hint-placeholder-val="{{ true }}">
+<div onClick="{{ envoyerDemande }}" style="background:#003a5d;color:#ffffff;min-height:46px;display:flex;align-items:center;justify-content:center;font:700 14px Sarabun,sans-serif;padding:0 24px;cursor:pointer" style-hover="background:#00263d">Envoyer ma demande</div>
+</sc-if>
+<sc-if value="{{ demSent }}" hint-placeholder-val="{{ false }}">
+<div style="border:1px solid rgba(0,58,93,.16);border-top:6px solid #007254;padding:14px;display:flex;flex-direction:column;gap:10px;animation:fade .22s both">
+<p style="margin:0;font:400 14px/1.5 Sarabun,sans-serif;color:#003a5d"><b>Demande envoyée !</b> Claire a 7 jours pour répondre. Tu seras prévenue par e-mail.</p>
+<div onClick="{{ go }}" data-go="b-demandes" style="border:1.5px solid #003a5d;color:#003a5d;background:#ffffff;min-height:40px;display:flex;align-items:center;justify-content:center;font:700 13px Sarabun,sans-serif;padding:0 18px;cursor:pointer;align-self:flex-start" style-hover="background:#ebeff2">Suivre mes demandes</div>
+</div>
+</sc-if>
+<p style="margin:0;font:400 13px/1.5 Sarabun,sans-serif;color:#66899e">Ton numéro est transmis avec la demande. Tu ne peux pas écrire à Claire en dehors de cette demande : c’est elle qui te contacte.</p>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ vBDemandes }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Bénévole · mes demandes" style="max-width:760px;display:flex;flex-direction:column;gap:18px;animation:fade .22s both">
+<p style="margin:0;font:400 36px/1.1 'Caveat Brush',cursive;color:#003a5d">Mes demandes,</p>
+<div style="background:#ffffff;border:1px solid rgba(0,58,93,.16);border-top:6px solid #ff8300;padding:14px 16px">
+<p style="margin:0;font:400 14px/1.5 Sarabun,sans-serif;color:#003a5d"><b>3 sollicitations en attente sur 3.</b> Pour en envoyer une autre, annule ou attends une réponse.</p>
+</div>
+<div style="display:flex;border-bottom:1px solid rgba(0,58,93,.16);overflow-x:auto">
+<sc-for list="{{ tabsB }}" as="t" hint-placeholder-count="4">
+<div onClick="{{ tab }}" data-grp="tabB" data-i="{{ t.i }}" style="{{ t.style }}">{{ t.l }}</div>
+</sc-for>
+</div>
+<sc-if value="{{ tabB0 }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="background:#ffffff;border:1px solid rgba(0,58,93,.16);padding:16px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;flex-wrap:wrap;gap:6px">
+<span style="border:1px solid rgba(0,58,93,.3);padding:3px 10px;font:400 12px Sarabun,sans-serif;color:#003a5d">Envoyée il y a 2 jours</span>
+<span style="border:1px solid rgba(0,58,93,.3);padding:3px 10px;font:400 12px Sarabun,sans-serif;color:#003a5d">Expire dans 5 jours</span>
+</div>
+<p style="margin:0;font:400 14px Sarabun,sans-serif;color:#003a5d"><b>Chambre chez Claire</b> · Paris 12e · 25-28 sept. · 3 personnes</p>
+<div style="border:1.5px solid #003a5d;color:#003a5d;background:#ffffff;min-height:38px;display:flex;align-items:center;justify-content:center;font:700 13px Sarabun,sans-serif;padding:0 16px;cursor:pointer;align-self:flex-start" style-hover="background:#ebeff2">Annuler ma demande</div>
+</div>
+<div style="background:#ffffff;border:1px solid rgba(0,58,93,.16);border-top:6px solid #ff8300;padding:16px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;flex-wrap:wrap;gap:6px">
+<span style="border:1px solid #ff8300;padding:3px 10px;font:700 12px Sarabun,sans-serif;color:#003a5d">Question posée</span>
+<span style="border:1px solid rgba(0,58,93,.3);padding:3px 10px;font:400 12px Sarabun,sans-serif;color:#003a5d">Délai remis à 7 jours</span>
+</div>
+<p style="margin:0;font:400 14px Sarabun,sans-serif;color:#003a5d"><b>Couchage sommaire · Montreuil</b></p>
+<p style="margin:0;font:400 14px/1.5 Sarabun,sans-serif;color:#003a5d">« Vous arrivez avant 20 h ? » — à toi de répondre.</p>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<div style="background:#003a5d;color:#ffffff;min-height:38px;display:flex;align-items:center;justify-content:center;font:700 13px Sarabun,sans-serif;padding:0 18px;cursor:pointer" style-hover="background:#00263d">Répondre</div>
+<div style="border:1.5px solid #003a5d;color:#003a5d;background:#ffffff;min-height:38px;display:flex;align-items:center;justify-content:center;font:700 13px Sarabun,sans-serif;padding:0 16px;cursor:pointer" style-hover="background:#ebeff2">Annuler ma demande</div>
+</div>
+</div>
+<div style="background:#ffffff;border:1px solid rgba(0,58,93,.16);padding:16px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;flex-wrap:wrap;gap:6px"><span style="border:1px solid rgba(0,58,93,.3);padding:3px 10px;font:400 12px Sarabun,sans-serif;color:#003a5d">Expire demain</span></div>
+<p style="margin:0;font:400 14px Sarabun,sans-serif;color:#003a5d"><b>Emplacement tente · Vincennes</b> — relance envoyée à l’hébergeur chaque jour.</p>
+<div style="border:1.5px solid #003a5d;color:#003a5d;background:#ffffff;min-height:38px;display:flex;align-items:center;justify-content:center;font:700 13px Sarabun,sans-serif;padding:0 16px;cursor:pointer;align-self:flex-start" style-hover="background:#ebeff2">Annuler ma demande</div>
+</div>
+<p style="margin:0;font:400 13px/1.5 Sarabun,sans-serif;color:#66899e">Dès qu’un hébergeur accepte, tes autres demandes en attente sont annulées automatiquement et les hébergeurs concernés sont prévenus.</p>
+</div>
+</sc-if>
+<sc-if value="{{ tabB1 }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="background:#ffffff;border:1px solid rgba(0,58,93,.16);border-top:6px solid #007254;padding:16px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;flex-wrap:wrap;gap:6px"><span style="border:1px solid #007254;padding:3px 10px;font:700 12px Sarabun,sans-serif;color:#007254">Acceptée</span></div>
+<p style="margin:0;font:400 14px Sarabun,sans-serif;color:#003a5d"><b>Chambre chez Claire</b> · 25-28 sept. · 3 personnes</p>
+<p style="margin:0;font:400 14px/1.6 Sarabun,sans-serif;color:#003a5d"><b>Claire Martin</b><br>06 12 34 56 78 · claire@exemple.fr<br>12 rue des Boulets, 75012 Paris</p>
+<div style="border:1.5px solid #003a5d;color:#003a5d;background:#ffffff;min-height:38px;display:flex;align-items:center;justify-content:center;font:700 13px Sarabun,sans-serif;padding:0 16px;cursor:pointer;align-self:flex-start" style-hover="background:#ebeff2">Annuler ma réservation</div>
+</div>
+<p style="margin:0;font:400 13px/1.5 Sarabun,sans-serif;color:#66899e">L’adresse complète et les coordonnées n’apparaissent qu’ici, après acceptation. L’annulation reste possible des deux côtés ; chacun est prévenu par e-mail.</p>
+</div>
+</sc-if>
+<sc-if value="{{ tabB2 }}" hint-placeholder-val="{{ false }}">
+<p style="margin:0;font:400 14px Sarabun,sans-serif;color:#66899e">Aucune demande refusée.</p>
+</sc-if>
+<sc-if value="{{ tabB3 }}" hint-placeholder-val="{{ false }}">
+<p style="margin:0;font:400 14px Sarabun,sans-serif;color:#66899e">Aucune demande expirée. Sans réponse au bout de 7 jours, une demande expire et libère une de tes 3 sollicitations.</p>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ vHProfil }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Hébergeur · profil" style="max-width:560px;display:flex;flex-direction:column;gap:16px;animation:fade .22s both">
+<p style="margin:0;font:400 36px/1.1 'Caveat Brush',cursive;color:#003a5d">J’accueille des bénévoles,</p>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">E-mail — déjà connu par la connexion</div>
+<div style="border:1px solid rgba(0,58,93,.2);border-radius:3px;min-height:42px;display:flex;align-items:center;padding:0 12px;font:400 14px Sarabun,sans-serif;color:#66899e;background:#ebeff2">claire@exemple.fr</div>
+</div>
+<div style="display:grid;grid-template-columns:{{ cols2 }};gap:14px">
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">Prénom et nom</div>
+<div style="border:1px solid rgba(0,58,93,.35);border-radius:3px;min-height:42px;display:flex;align-items:center;padding:0 12px;font:400 14px Sarabun,sans-serif;color:#003a5d;background:#ffffff">Claire Martin</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">Téléphone</div>
+<div style="border:1px solid rgba(0,58,93,.35);border-radius:3px;min-height:42px;display:flex;align-items:center;padding:0 12px;font:400 14px Sarabun,sans-serif;color:#003a5d;background:#ffffff">06 12 34 56 78</div>
+</div>
+</div>
+<p style="margin:0;font:400 13px/1.5 Sarabun,sans-serif;color:#66899e">Ton numéro n’est transmis au bénévole qu’après ton acceptation.</p>
+<div onClick="{{ go }}" data-go="h-nouveau1" style="background:#003a5d;color:#ffffff;min-height:46px;display:flex;align-items:center;justify-content:center;font:700 14px Sarabun,sans-serif;padding:0 24px;cursor:pointer;align-self:flex-start;min-width:240px" style-hover="background:#00263d">Créer mon premier logement</div>
+<div style="height:1px;background:rgba(0,58,93,.16);margin:8px 0"></div>
+<div style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">Et si besoin</div>
+<div onClick="{{ go }}" data-go="b-profil" style="border:1.5px solid #003a5d;color:#003a5d;background:#ffffff;min-height:42px;display:flex;align-items:center;justify-content:center;font:700 13px Sarabun,sans-serif;padding:0 18px;cursor:pointer;align-self:flex-start" style-hover="background:#ebeff2">Chercher aussi un logement, ailleurs</div>
+<p style="margin:0;font:400 13px/1.5 Sarabun,sans-serif;color:#66899e">Ça ouvre ton espace bénévole, en plus de celui-ci — même compte, même connexion.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{ vHDemandes }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Hébergeur · demandes reçues" style="max-width:760px;display:flex;flex-direction:column;gap:18px;animation:fade .22s both">
+<p style="margin:0;font:400 36px/1.1 'Caveat Brush',cursive;color:#003a5d">Demandes reçues,</p>
+<div style="display:flex;border-bottom:1px solid rgba(0,58,93,.16);overflow-x:auto">
+<sc-for list="{{ tabsH }}" as="t" hint-placeholder-count="4">
+<div onClick="{{ tab }}" data-grp="tabH" data-i="{{ t.i }}" style="{{ t.style }}">{{ t.l }}</div>
+</sc-for>
+</div>
+<sc-if value="{{ tabH0 }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:12px">
+<sc-if value="{{ notAccM }}" hint-placeholder-val="{{ true }}">
+<div style="background:#ffffff;border:1px solid rgba(0,58,93,.16);padding:16px;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;gap:12px;align-items:flex-start">
+<div style="width:44px;height:44px;background:#ebeff2;display:flex;align-items:center;justify-content:center;font:800 13px Sarabun,sans-serif;color:#003a5d;flex:none">ML</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<p style="margin:0;font:400 14px Sarabun,sans-serif;color:#003a5d"><b>Marie Lefèvre · 3 personnes</b> — 25 au 28 septembre</p>
+<p style="margin:0;font:400 14px/1.55 Sarabun,sans-serif;color:#003a5d">« Bonjour Claire, nous sommes trois bénévoles au service accueil, deux femmes et un homme, calmes et autonomes. »</p>
+<p style="margin:0;font:400 13px/1.5 Sarabun,sans-serif;color:#003a5d"><b>06 98 76 54 32</b> — c’est à toi de la contacter : elle ne peut pas t’écrire en dehors de sa demande.</p>
+<div style="display:flex;flex-wrap:wrap;gap:6px">
+<span style="border:1px solid rgba(0,58,93,.3);padding:3px 10px;font:400 12px Sarabun,sans-serif;color:#003a5d">Besoin : fauteuil roulant</span>
+<span style="border:1px solid #d03f15;padding:3px 10px;font:700 12px Sarabun,sans-serif;color:#d03f15">3 pers. pour 2 places</span>
+<span style="border:1px solid rgba(0,58,93,.3);padding:3px 10px;font:400 12px Sarabun,sans-serif;color:#003a5d">Expire dans 6 jours</span>
+</div>
+</div>
+</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<div onClick="{{ accepterM }}" style="background:#003a5d;color:#ffffff;min-height:40px;display:flex;align-items:center;justify-content:center;font:700 13px Sarabun,sans-serif;padding:0 20px;cursor:pointer" style-hover="background:#00263d">Accepter</div>
+<div style="border:1.5px solid #003a5d;color:#003a5d;background:#ffffff;min-height:40px;display:flex;align-items:center;justify-content:center;font:700 13px Sarabun,sans-serif;padding:0 16px;cursor:pointer" style-hover="background:#ebeff2">Poser une question</div>
+<div style="border:1.5px solid #003a5d;color:#003a5d;background:#ffffff;min-height:40px;display:flex;align-items:center;justify-content:center;font:700 13px Sarabun,sans-serif;padding:0 16px;cursor:pointer" style-hover="background:#ebeff2">Refuser</div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ accM }}" hint-placeholder-val="{{ false }}">
+<div style="background:#ffffff;border:1px solid rgba(0,58,93,.16);border-top:6px solid #007254;padding:16px;display:flex;flex-direction:column;gap:8px;animation:fade .22s both">
+<div style="display:flex;flex-wrap:wrap;gap:6px"><span style="border:1px solid #007254;padding:3px 10px;font:700 12px Sarabun,sans-serif;color:#007254">Acceptée</span></div>
+<p style="margin:0;font:400 14px Sarabun,sans-serif;color:#003a5d"><b>Marie Lefèvre · 3 personnes</b> — 25 au 28 septembre</p>
+<p style="margin:0;font:400 13px/1.5 Sarabun,sans-serif;color:#003a5d">Coordonnées échangées : Marie reçoit ton adresse complète et ton téléphone, ses deux autres demandes sont annulées automatiquement.</p>
+</div>
+</sc-if>
+<div style="background:#ffffff;border:1px solid rgba(0,58,93,.16);padding:16px">
+<p style="margin:0;font:400 14px Sarabun,sans-serif;color:#003a5d"><b>Thomas Renard · seul</b> — question posée hier, délai remis à 7 jours.</p>
+</div>
+<div style="height:1px;background:rgba(0,58,93,.16)"></div>
+<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+<span style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">Disponibilité de mon logement</span>
+<div onClick="{{ setDispo }}" data-d="libre" style="{{ dispoL }}" style-hover="border-color:#003a5d">Libre</div>
+<div onClick="{{ setDispo }}" data-d="complet" style="{{ dispoC }}" style-hover="border-color:#003a5d">Complet</div>
+</div>
+<p style="margin:0;font:400 13px/1.5 Sarabun,sans-serif;color:#66899e">Passer en « complet » sort le logement des recherches sans rien annuler. Sans action pendant 7 jours, la demande expire et le logement est masqué automatiquement.</p>
+</div>
+</sc-if>
+<sc-if value="{{ tabH1 }}" hint-placeholder-val="{{ false }}">
+<p style="margin:0;font:400 14px Sarabun,sans-serif;color:#66899e">Aucune demande acceptée pour l’instant.</p>
+</sc-if>
+<sc-if value="{{ tabH2 }}" hint-placeholder-val="{{ false }}">
+<p style="margin:0;font:400 14px Sarabun,sans-serif;color:#66899e">Aucune demande refusée.</p>
+</sc-if>
+<sc-if value="{{ tabH3 }}" hint-placeholder-val="{{ false }}">
+<p style="margin:0;font:400 14px Sarabun,sans-serif;color:#66899e">Aucune demande expirée.</p>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ vHLogements }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Hébergeur · mes logements" style="max-width:760px;display:flex;flex-direction:column;gap:18px;animation:fade .22s both">
+<p style="margin:0;font:400 36px/1.1 'Caveat Brush',cursive;color:#003a5d">Mes logements,</p>
+<div style="background:#ffffff;border:1px solid rgba(0,58,93,.16);padding:16px;display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
+<div style="width:96px;height:72px;background:#ebeff2;display:flex;align-items:center;justify-content:center;flex:none"><img src="assets/signes/tente.png" alt="" style="height:30px;opacity:.45"></div>
+<div style="flex:1;min-width:200px;display:flex;flex-direction:column;gap:6px">
+<span style="font:700 15px Sarabun,sans-serif;color:#003a5d">Chez Claire — 2 chambres, 1 canapé, 2 couchages</span>
+<span style="font:400 13px Sarabun,sans-serif;color:#66899e">Paris 12e · 8 personnes · disponible du 24 au 29 septembre</span>
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+<div onClick="{{ setDispo }}" data-d="libre" style="{{ dispoL }}" style-hover="border-color:#003a5d">Libre</div>
+<div onClick="{{ setDispo }}" data-d="complet" style="{{ dispoC }}" style-hover="border-color:#003a5d">Complet</div>
+</div>
+</div>
+<div onClick="{{ go }}" data-go="h-nouveau1" style="border:1.5px solid #003a5d;color:#003a5d;background:#ffffff;min-height:40px;display:flex;align-items:center;justify-content:center;font:700 13px Sarabun,sans-serif;padding:0 16px;cursor:pointer" style-hover="background:#ebeff2">Modifier</div>
+</div>
+<div onClick="{{ go }}" data-go="h-nouveau1" style="border:1.5px solid #003a5d;color:#003a5d;background:#ffffff;min-height:44px;display:flex;align-items:center;justify-content:center;font:700 14px Sarabun,sans-serif;padding:0 20px;cursor:pointer;align-self:flex-start" style-hover="background:#ebeff2">+ Ajouter un logement</div>
+<p style="margin:0;font:400 13px/1.5 Sarabun,sans-serif;color:#66899e">Tu peux avoir plusieurs logements, et passer chacun en « complet » à tout moment.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{ vHN1 }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Hébergeur · nouveau logement 1/2" style="max-width:760px;display:flex;flex-direction:column;gap:18px;animation:fade .22s both">
+<div style="display:flex;gap:8px;align-items:center">
+<div style="width:10px;height:10px;background:#ff8300"></div><div style="width:10px;height:10px;background:#ccd7df"></div>
+<span style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">Étape 1 sur 2</span>
+</div>
+<p style="margin:0;font:400 36px/1.1 'Caveat Brush',cursive;color:#003a5d">Décris ton logement,</p>
+<div style="display:grid;grid-template-columns:{{ cols3 }};gap:14px">
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">Site le plus proche</div>
+<div style="border:1px solid rgba(0,58,93,.35);border-radius:3px;min-height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font:400 14px Sarabun,sans-serif;color:#003a5d;background:#ffffff">Paris <span style="color:#66899e">▾</span></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">Capacité — calculée</div>
+<div style="border:1px solid rgba(0,58,93,.2);border-radius:3px;min-height:42px;display:flex;align-items:center;padding:0 12px;font:400 14px Sarabun,sans-serif;color:#66899e;background:#ebeff2">8 personnes</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">Disponible</div>
+<div style="border:1px solid rgba(0,58,93,.35);border-radius:3px;min-height:42px;display:flex;align-items:center;padding:0 12px;font:400 14px Sarabun,sans-serif;color:#003a5d;background:#ffffff">24 → 29 sept.</div>
+</div>
+</div>
+<p style="margin:0;font:400 24px/1 'Caveat Brush',cursive;color:#003a5d">Mes couchages,</p>
+<div style="overflow-x:auto">
+<div style="border:1px solid rgba(0,58,93,.16);min-width:560px">
+<div style="display:flex;gap:10px;padding:8px 12px;border-bottom:1px solid rgba(0,58,93,.16);font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d"><div style="flex:2">Type</div><div style="width:70px">Combien</div><div style="width:100px">Personnes</div><div style="flex:2">Précision</div></div>
+<sc-for list="{{ couchages }}" as="c" hint-placeholder-count="3">
+<div style="display:flex;gap:10px;padding:8px 12px;align-items:center;border-bottom:1px solid #ebeff2">
+<div style="flex:2;border:1px solid rgba(0,58,93,.35);border-radius:3px;min-height:36px;display:flex;align-items:center;justify-content:space-between;padding:0 10px;font:400 13px Sarabun,sans-serif;color:#003a5d">{{ c.type }} <span style="color:#66899e">▾</span></div>
+<div style="width:70px;border:1px solid rgba(0,58,93,.35);border-radius:3px;min-height:36px;display:flex;align-items:center;padding:0 10px;font:400 13px Sarabun,sans-serif;color:#003a5d">{{ c.n }}</div>
+<div style="width:100px;border:1px solid rgba(0,58,93,.35);border-radius:3px;min-height:36px;display:flex;align-items:center;padding:0 10px;font:400 13px Sarabun,sans-serif;color:#003a5d">{{ c.p }}</div>
+<div style="flex:2;border:1px solid rgba(0,58,93,.35);border-radius:3px;min-height:36px;display:flex;align-items:center;padding:0 10px;font:400 13px Sarabun,sans-serif;color:#003a5d">{{ c.x }}</div>
+</div>
+</sc-for>
+</div>
+</div>
+<div style="border:1.5px solid #003a5d;color:#003a5d;background:#ffffff;min-height:40px;display:flex;align-items:center;justify-content:center;font:700 13px Sarabun,sans-serif;padding:0 16px;cursor:pointer;align-self:flex-start" style-hover="background:#ebeff2">+ Ajouter un couchage</div>
+<p style="margin:0;font:400 13px/1.5 Sarabun,sans-serif;color:#66899e">La capacité affichée est la somme des couchages déclarés.</p>
+<div style="display:flex;flex-direction:column;gap:6px;max-width:520px">
+<div style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">Adresse — obligatoire</div>
+<div style="border:1px solid rgba(0,58,93,.35);border-radius:3px;min-height:42px;display:flex;align-items:center;padding:0 12px;font:400 14px Sarabun,sans-serif;color:#003a5d;background:#ffffff">12 rue des Boul<span style="color:#003a5d">|</span></div>
+<div style="border:1px solid rgba(0,58,93,.35);border-top:none;background:#ffffff">
+<div style="padding:9px 12px;border-bottom:1px solid #ebeff2;background:#ebeff2;font:700 13px Sarabun,sans-serif;color:#003a5d;cursor:pointer">12 rue des Boulets, 75012 Paris</div>
+<div style="padding:9px 12px;border-bottom:1px solid #ebeff2;font:400 13px Sarabun,sans-serif;color:#003a5d;cursor:pointer" style-hover="background:#f5f7f8">12 rue des Boulets, 93100 Montreuil</div>
+<div style="padding:9px 12px;font:400 13px Sarabun,sans-serif;color:#003a5d;cursor:pointer" style-hover="background:#f5f7f8">12 boulevard des Boulets, 75011 Paris</div>
+</div>
+<p style="margin:0;font:400 13px/1.5 Sarabun,sans-serif;color:#66899e">Adresse choisie dans une liste : ville, code postal et distance au site se remplissent seuls. Seul le quartier est affiché publiquement — l’adresse complète part au bénévole quand tu acceptes sa demande.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;max-width:520px">
+<div style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">Description libre</div>
+<div style="border:1px solid rgba(0,58,93,.35);border-radius:3px;min-height:80px;display:flex;align-items:flex-start;padding:10px 12px;font:400 13px/1.5 Sarabun,sans-serif;color:#99b0be;background:#ffffff">Horaires d’arrivée, animaux, petit-déjeuner, ce qu’il faut apporter…</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">Photos</div>
+<div style="display:flex;gap:10px">
+<div style="width:96px;height:72px;background:#ebeff2;display:flex;align-items:center;justify-content:center"><img src="assets/signes/soleil.png" alt="" style="height:26px;opacity:.45"></div>
+<div style="width:96px;height:72px;border:1.5px dashed rgba(0,58,93,.35);display:flex;align-items:center;justify-content:center;font:400 22px Sarabun,sans-serif;color:#66899e;cursor:pointer" style-hover="border-color:#003a5d">+</div>
+</div>
+</div>
+<div onClick="{{ go }}" data-go="h-nouveau2" style="background:#003a5d;color:#ffffff;min-height:46px;display:flex;align-items:center;justify-content:center;font:700 14px Sarabun,sans-serif;padding:0 24px;cursor:pointer;align-self:flex-start;min-width:200px" style-hover="background:#00263d">Continuer</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ vHN2 }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Hébergeur · nouveau logement 2/2" style="max-width:760px;display:flex;flex-direction:column;gap:18px;animation:fade .22s both">
+<div style="display:flex;gap:8px;align-items:center">
+<div style="width:10px;height:10px;background:#ccd7df"></div><div style="width:10px;height:10px;background:#ff8300"></div>
+<span style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">Étape 2 sur 2</span>
+</div>
+<p style="margin:0;font:400 36px/1.1 'Caveat Brush',cursive;color:#003a5d">Accessibilité de ton logement,</p>
+<p style="margin:0;font:400 14px/1.55 Sarabun,sans-serif;color:#003a5d">Coche seulement ce qui est vrai chez toi. Ce qui n’entre pas dans une case se dit dans le champ libre.</p>
+<div style="display:grid;grid-template-columns:{{ cols2 }};gap:12px">
+<sc-for list="{{ accessList }}" as="a" hint-placeholder-count="6">
+<div style="display:flex;gap:10px;align-items:flex-start">
+<div style="width:18px;height:18px;border:1.5px solid #003a5d;flex:none;display:flex;align-items:center;justify-content:center;margin-top:2px"><div style="width:10px;height:10px;background:#003a5d;display:{{ a.dot }}"></div></div>
+<span style="font:400 14px/1.45 Sarabun,sans-serif;color:#003a5d"><b>{{ a.b }}</b> {{ a.d }}</span>
+</div>
+</sc-for>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;max-width:520px">
+<div style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">Autres informations d’accessibilité</div>
+<div style="border:1px solid rgba(0,58,93,.35);border-radius:3px;min-height:64px;display:flex;align-items:flex-start;padding:10px 12px;font:400 13px/1.5 Sarabun,sans-serif;color:#003a5d;background:#ffffff">« Trois marches dans le hall, puis ascenseur de 70 cm. »</div>
+</div>
+<div onClick="{{ go }}" data-go="h-logements" style="background:#003a5d;color:#ffffff;min-height:46px;display:flex;align-items:center;justify-content:center;font:700 14px Sarabun,sans-serif;padding:0 24px;cursor:pointer;align-self:flex-start;min-width:220px" style-hover="background:#00263d">Publier mon logement</div>
+<p style="margin:0;font:400 13px/1.5 Sarabun,sans-serif;color:#66899e">Tu pourras ajouter d’autres logements depuis ton compte, et passer chacun en « complet » à tout moment.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{ vUProfil }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Unité · profil" style="max-width:560px;display:flex;flex-direction:column;gap:16px;animation:fade .22s both">
+<p style="margin:0;font:400 36px/1.1 'Caveat Brush',cursive;color:#003a5d">Unité scoute,</p>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">Unité</div>
+<div style="border:1px solid rgba(0,58,93,.35);border-radius:3px;min-height:42px;display:flex;align-items:center;padding:0 12px;font:400 14px Sarabun,sans-serif;color:#003a5d;background:#ffffff">1re Nancy · Pionniers-Caravelles</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">E-mail de l’unité — déjà connu par la connexion</div>
+<div style="border:1px solid rgba(0,58,93,.2);border-radius:3px;min-height:42px;display:flex;align-items:center;padding:0 12px;font:400 14px Sarabun,sans-serif;color:#66899e;background:#ebeff2">1nancy@exemple.fr</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">Téléphone du responsable</div>
+<div style="border:1px solid rgba(0,58,93,.35);border-radius:3px;min-height:42px;display:flex;align-items:center;padding:0 12px;font:400 14px Sarabun,sans-serif;color:#003a5d;background:#ffffff">06 77 88 99 00</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">Notre annonce</div>
+<div onClick="{{ setSens }}" data-sens="cherchons" style="display:flex;gap:10px;align-items:center;cursor:pointer">
+<div style="width:18px;height:18px;border:1.5px solid #003a5d;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center"><div style="width:9px;height:9px;border-radius:50%;background:#003a5d;display:{{ sensCDot }}"></div></div>
+<span style="font:400 14px Sarabun,sans-serif;color:#003a5d">Nous <b>cherchons</b> un jumelage sur place</span>
+</div>
+<div onClick="{{ setSens }}" data-sens="pouvons" style="display:flex;gap:10px;align-items:center;cursor:pointer">
+<div style="width:18px;height:18px;border:1.5px solid #003a5d;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center"><div style="width:9px;height:9px;border-radius:50%;background:#003a5d;display:{{ sensPDot }}"></div></div>
+<span style="font:400 14px Sarabun,sans-serif;color:#003a5d">Nous <b>pouvons jumeler</b> une unité qui vient chez nous</span>
+</div>
+</div>
+<div onClick="{{ go }}" data-go="u-annonce" style="background:#003a5d;color:#ffffff;min-height:46px;display:flex;align-items:center;justify-content:center;font:700 14px Sarabun,sans-serif;padding:0 24px;cursor:pointer;align-self:flex-start;min-width:200px" style-hover="background:#00263d">Continuer</div>
+<p style="margin:0;font:400 13px/1.5 Sarabun,sans-serif;color:#66899e">Pas de réservation dans ce parcours : uniquement une mise en relation. E-mail et téléphone sont échangés après acceptation.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{ vUAnnonce }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Unité · annonce" style="max-width:560px;display:flex;flex-direction:column;gap:16px;animation:fade .22s both">
+<p style="margin:0;font:400 36px/1.1 'Caveat Brush',cursive;color:#003a5d">{{ annonceTitre }}</p>
+<div style="display:grid;grid-template-columns:{{ cols2 }};gap:14px">
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">Site</div>
+<div style="border:1px solid rgba(0,58,93,.35);border-radius:3px;min-height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font:400 14px Sarabun,sans-serif;color:#003a5d;background:#ffffff">Metz <span style="color:#66899e">▾</span></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">Dates</div>
+<div style="border:1px solid rgba(0,58,93,.35);border-radius:3px;min-height:42px;display:flex;align-items:center;padding:0 12px;font:400 14px Sarabun,sans-serif;color:#003a5d;background:#ffffff">25 → 28 sept.</div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">{{ annonceNbLbl }}</div>
+<div style="border:1px solid rgba(0,58,93,.35);border-radius:3px;min-height:42px;display:flex;align-items:center;padding:0 12px;font:400 14px Sarabun,sans-serif;color:#003a5d;background:#ffffff">{{ annonceNb }}</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">Un mot sur notre projet</div>
+<div style="border:1px solid rgba(0,58,93,.35);border-radius:3px;min-height:80px;display:flex;align-items:flex-start;padding:10px 12px;font:400 13px/1.5 Sarabun,sans-serif;color:#99b0be;background:#ffffff">Quelques lignes libres : notre service, notre tranche d’âge, ce que nous cherchons…</div>
+</div>
+<div onClick="{{ go }}" data-go="u-jumelage" style="background:#003a5d;color:#ffffff;min-height:46px;display:flex;align-items:center;justify-content:center;font:700 14px Sarabun,sans-serif;padding:0 24px;cursor:pointer;align-self:flex-start;min-width:200px" style-hover="background:#00263d">Publier l’annonce</div>
+<p style="margin:0;font:400 13px/1.5 Sarabun,sans-serif;color:#66899e">Rien à décrire côté logement : c’est aux deux unités de s’entendre sur le lieu une fois en contact — local scout, hébergement chez les familles…</p>
+</div>
+</sc-if>
+
+<sc-if value="{{ vUJumelage }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Unité · jumelage" style="max-width:680px;display:flex;flex-direction:column;gap:18px;animation:fade .22s both">
+<p style="margin:0;font:400 36px/1.1 'Caveat Brush',cursive;color:#003a5d">Jumelage à Metz,</p>
+<div style="display:flex;border-bottom:1px solid rgba(0,58,93,.16);overflow-x:auto">
+<div style="cursor:pointer;padding:10px 14px;font:700 13px Sarabun,sans-serif;white-space:nowrap;color:#003a5d;border-bottom:3px solid #ff8300;margin-bottom:-1px">Unités à jumeler</div>
+<div style="cursor:pointer;padding:10px 14px;font:700 13px Sarabun,sans-serif;white-space:nowrap;color:#66899e;border-bottom:3px solid transparent;margin-bottom:-1px">Notre annonce</div>
+</div>
+<p style="margin:0;font:400 14px Sarabun,sans-serif;color:#003a5d"><b>7 unités</b> · Metz, 25-28 septembre</p>
+<div style="display:flex;flex-direction:column;gap:12px">
+<sc-for list="{{ unites }}" as="u" hint-placeholder-count="3">
+<div onClick="{{ go }}" data-go="u-fiche" style="background:#ffffff;border:1px solid rgba(0,58,93,.16);padding:16px;display:flex;gap:14px;align-items:center;cursor:pointer;flex-wrap:wrap" style-hover="border-color:#003a5d">
+<div style="width:44px;height:44px;background:#ebeff2;display:flex;align-items:center;justify-content:center;flex:none"><img src="assets/signes/paix.png" alt="" style="height:24px;opacity:.55"></div>
+<div style="flex:1;min-width:200px;display:flex;flex-direction:column;gap:4px">
+<span style="font:700 15px Sarabun,sans-serif;color:#003a5d">{{ u.n }} · {{ u.d }}</span>
+<span style="font:400 13px Sarabun,sans-serif;color:#66899e">{{ u.c }}</span>
+</div>
+<span style="font:700 13px Sarabun,sans-serif;color:#0077b3">Voir →</span>
+</div>
+</sc-for>
+</div>
+<p style="margin:0;font:400 13px/1.5 Sarabun,sans-serif;color:#66899e">La recherche marche dans les deux sens : une unité qui peut jumeler voit la liste des unités qui cherchent. Même écran, même bouton.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{ vUFiche }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Unité · fiche unité" style="max-width:560px;display:flex;flex-direction:column;gap:16px;animation:fade .22s both">
+<div onClick="{{ go }}" data-go="u-jumelage" style="font:700 13px Sarabun,sans-serif;color:#0077b3;cursor:pointer;align-self:flex-start" style-hover="color:#003a5d">← Retour au jumelage</div>
+<p style="margin:0;font:400 36px/1.1 'Caveat Brush',cursive;color:#003a5d">3e Metz Saint-Éloy,</p>
+<p style="margin:0;font:400 14px/1.55 Sarabun,sans-serif;color:#66899e">Scouts-Guides · Metz · peut jumeler jusqu’à 30 personnes du 24 au 29 septembre</p>
+<p style="margin:0;font:400 14px/1.6 Sarabun,sans-serif;color:#003a5d">« Nous connaissons bien le quartier et pouvons vous aider à trouver où dormir. »</p>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font:700 11px Sarabun,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#33627d">Demander une mise en relation</div>
+<div style="border:1px solid rgba(0,58,93,.35);border-radius:3px;min-height:88px;display:flex;align-items:flex-start;padding:10px 12px;font:400 13px/1.5 Sarabun,sans-serif;color:#99b0be;background:#ffffff">Qui nous sommes, ce que nous venons faire…</div>
+</div>
+<sc-if value="{{ notRelSent }}" hint-placeholder-val="{{ true }}">
+<div onClick="{{ demanderRel }}" style="background:#003a5d;color:#ffffff;min-height:46px;display:flex;align-items:center;justify-content:center;font:700 14px Sarabun,sans-serif;padding:0 24px;cursor:pointer;align-self:flex-start" style-hover="background:#00263d">Demander à être mis en relation</div>
+</sc-if>
+<sc-if value="{{ relSent }}" hint-placeholder-val="{{ false }}">
+<div style="background:#ffffff;border:1px solid rgba(0,58,93,.16);border-top:6px solid #007254;padding:16px;display:flex;flex-direction:column;gap:8px;animation:fade .22s both">
+<p style="margin:0;font:400 14px/1.5 Sarabun,sans-serif;color:#003a5d"><b>Demande envoyée !</b> Si Saint-Éloy accepte, vous recevez chacun l’e-mail et le téléphone de l’autre, et vous vous organisez entre unités.</p>
+</div>
+</sc-if>
+<p style="margin:0;font:400 13px/1.5 Sarabun,sans-serif;color:#66899e">Une demande non acceptée reste simplement sans suite : ni refus, ni expiration.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{ vURelations }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Unité · demandes reçues" style="max-width:680px;display:flex;flex-direction:column;gap:18px;animation:fade .22s both">
+<p style="margin:0;font:400 36px/1.1 'Caveat Brush',cursive;color:#003a5d">Demandes de mise en relation,</p>
+<div style="display:flex;border-bottom:1px solid rgba(0,58,93,.16);overflow-x:auto">
+<sc-for list="{{ tabsU }}" as="t" hint-placeholder-count="2">
+<div onClick="{{ tab }}" data-grp="tabU" data-i="{{ t.i }}" style="{{ t.style }}">{{ t.l }}</div>
+</sc-for>
+</div>
+<sc-if value="{{ tabU0 }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:12px">
+<sc-if value="{{ notAccU }}" hint-placeholder-val="{{ true }}">
+<div style="background:#ffffff;border:1px solid rgba(0,58,93,.16);padding:16px;display:flex;flex-direction:column;gap:10px">
+<p style="margin:0;font:400 14px Sarabun,sans-serif;color:#003a5d"><b>2e Épinal · Scouts-Guides</b> — 16 personnes, 24 au 29 septembre</p>
+<p style="margin:0;font:400 14px/1.55 Sarabun,sans-serif;color:#003a5d">« Nous venons pour le service liturgie, nous avons notre matériel de cuisine. »</p>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<div onClick="{{ accepterU }}" style="background:#003a5d;color:#ffffff;min-height:40px;display:flex;align-items:center;justify-content:center;font:700 13px Sarabun,sans-serif;padding:0 18px;cursor:pointer" style-hover="background:#00263d">Accepter et échanger nos contacts</div>
+<div style="border:1.5px solid #003a5d;color:#003a5d;background:#ffffff;min-height:40px;display:flex;align-items:center;justify-content:center;font:700 13px Sarabun,sans-serif;padding:0 16px;cursor:pointer" style-hover="background:#ebeff2">Ignorer</div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ accU }}" hint-placeholder-val="{{ false }}">
+<div style="background:#ffffff;border:1px solid rgba(0,58,93,.16);border-top:6px solid #007254;padding:16px;display:flex;flex-direction:column;gap:8px;animation:fade .22s both">
+<div style="display:flex;flex-wrap:wrap;gap:6px"><span style="border:1px solid #007254;padding:3px 10px;font:700 12px Sarabun,sans-serif;color:#007254">En relation</span></div>
+<p style="margin:0;font:400 14px/1.6 Sarabun,sans-serif;color:#003a5d"><b>2e Épinal</b> · Lucas Perrin<br>2epinal@exemple.fr · 06 44 55 66 77</p>
+<p style="margin:0;font:400 13px/1.5 Sarabun,sans-serif;color:#003a5d">La plateforme s’arrête là : le lieu, le planning et l’organisation se règlent entre les deux unités.</p>
+</div>
+</sc-if>
+<div style="background:#ffffff;border:1px solid rgba(0,58,93,.16);padding:16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+<p style="margin:0;flex:1;min-width:200px;font:400 14px Sarabun,sans-serif;color:#003a5d"><b>Notre annonce est toujours en ligne.</b></p>
+<div style="border:1.5px solid #003a5d;color:#003a5d;background:#ffffff;min-height:40px;display:flex;align-items:center;justify-content:center;font:700 13px Sarabun,sans-serif;padding:0 16px;cursor:pointer" style-hover="background:#ebeff2">Retirer notre annonce</div>
+</div>
+<p style="margin:0;font:400 13px/1.5 Sarabun,sans-serif;color:#66899e">Ni refus ni expiration : une demande non acceptée reste sans suite, et le seul bouton de sortie est « retirer l’annonce ». Une unité peut être jumelée plusieurs fois.</p>
+</div>
+</sc-if>
+<sc-if value="{{ tabU1 }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="background:#ffffff;border:1px solid rgba(0,58,93,.16);border-top:6px solid #007254;padding:16px;display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;flex-wrap:wrap;gap:6px"><span style="border:1px solid #007254;padding:3px 10px;font:700 12px Sarabun,sans-serif;color:#007254">En relation</span></div>
+<p style="margin:0;font:400 14px/1.6 Sarabun,sans-serif;color:#003a5d"><b>3e Metz Saint-Éloy</b> · Paul Girard<br>saint.eloy@exemple.fr · 06 22 33 44 55</p>
+</div>
+<div style="background:#ffffff;border:1px solid rgba(0,58,93,.16);border-top:6px solid #007254;padding:16px;display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;flex-wrap:wrap;gap:6px"><span style="border:1px solid #007254;padding:3px 10px;font:700 12px Sarabun,sans-serif;color:#007254">En relation</span></div>
+<p style="margin:0;font:400 14px/1.6 Sarabun,sans-serif;color:#003a5d"><b>1re Verdun</b> · Anne Petit<br>verdun@exemple.fr · 06 11 22 33 44</p>
+</div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+</div>
+
+<sc-if value="{{ mobileNav }}" hint-placeholder-val="{{ false }}">
+<div style="position:sticky;bottom:0;background:#ffffff;border-top:1px solid rgba(0,58,93,.16);display:flex">
+<sc-for list="{{ navItems }}" as="n" hint-placeholder-count="3">
+<div onClick="{{ go }}" data-go="{{ n.go }}" style="{{ n.mStyle }}">
+<div style="width:24px;height:22px;background:no-repeat center/auto 22px;background-image:{{ n.icBg }}"></div>
+<span style="font:700 10px Sarabun,sans-serif;letter-spacing:.04em;text-transform:uppercase;color:#003a5d">{{ n.short }}</span>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:960},&quot;ecranInitial&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;connexion&quot;,&quot;options&quot;:[&quot;connexion&quot;,&quot;inscription&quot;,&quot;b-recherche&quot;,&quot;b-demandes&quot;,&quot;h-demandes&quot;,&quot;h-nouveau1&quot;,&quot;u-jumelage&quot;,&quot;u-relations&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Prototype&quot;},&quot;appareilInitial&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;ordi&quot;,&quot;options&quot;:[&quot;ordi&quot;,&quot;mobile&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Prototype&quot;},&quot;afficherHotels&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Contenu&quot;}}">
+class Component extends DCLogic {
+  state = {
+    device: (this.props && this.props.appareilInitial) || 'ordi',
+    screen: (this.props && this.props.ecranInitial) || 'connexion',
+    sent: false, insc: null, cherche: false, propose: false, sens: 'cherchons',
+    tabB: 0, tabH: 0, tabU: 0, types: {}, dispo: 'libre',
+    accM: false, accU: false, demSent: false, relSent: false
+  };
+  go = e => this.setState({ screen: e.currentTarget.dataset.go, sent: false });
+  dev = e => this.setState({ device: e.currentTarget.dataset.dev });
+  tab = e => { const d = e.currentTarget.dataset; this.setState({ [d.grp]: +d.i }); };
+  pick = e => this.setState({ insc: e.currentTarget.dataset.pick });
+  setSens = e => this.setState({ sens: e.currentTarget.dataset.sens });
+  toggleType = e => { const t = e.currentTarget.dataset.t; this.setState(s => ({ types: { ...s.types, [t]: !s.types[t] } })); };
+  setDispo = e => this.setState({ dispo: e.currentTarget.dataset.d });
+  togglePropose = () => this.setState(s => ({ propose: !s.propose }));
+  toggleCherche = () => this.setState(s => ({ cherche: !s.cherche }));
+  send = () => this.setState({ sent: true });
+  contInsc = () => {
+    const s = this.state;
+    if (s.insc === 'unite') return this.setState({ screen: 'u-profil' });
+    if (s.insc === 'benevole' && (s.cherche || s.propose)) return this.setState({ screen: s.cherche ? 'b-profil' : 'h-profil' });
+  };
+  envoyerDemande = () => this.setState({ demSent: true });
+  demanderRel = () => this.setState({ relSent: true });
+  accepterM = () => this.setState({ accM: true });
+  accepterU = () => this.setState({ accU: true });
+
+  renderVals() {
+    const s = this.state, m = s.device === 'mobile', scr = s.screen;
+    const role = scr.startsWith('b-') ? 'benevole' : scr.startsWith('h-') ? 'hebergeur' : scr.startsWith('u-') ? 'unite' : null;
+    const pill = on => `cursor:pointer;padding:6px 12px;font:700 12px Sarabun,sans-serif;${on ? 'background:#ff8300;color:#003a5d' : 'background:rgba(255,255,255,.14);color:#ffffff'}`;
+    const chip = on => `cursor:pointer;padding:6px 12px;font:400 13px Sarabun,sans-serif;border:1px solid ${on ? '#003a5d' : 'rgba(0,58,93,.35)'};${on ? 'background:#003a5d;color:#ffffff' : 'background:#ffffff;color:#003a5d'}`;
+    const tabSt = on => `cursor:pointer;padding:10px 14px;font:700 13px Sarabun,sans-serif;white-space:nowrap;color:${on ? '#003a5d' : '#66899e'};border-bottom:3px solid ${on ? '#ff8300' : 'transparent'};margin-bottom:-1px`;
+    const navSt = on => `cursor:pointer;padding:22px 2px 19px;font:700 13px Sarabun,sans-serif;letter-spacing:.02em;color:${on ? '#003a5d' : '#66899e'};border-bottom:3px solid ${on ? '#ff8300' : 'transparent'};margin-bottom:-1px`;
+    const mNavSt = on => `flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0 10px;cursor:pointer;border-top:3px solid ${on ? '#ff8300' : 'transparent'};margin-top:-1px;opacity:${on ? 1 : .55}`;
+    const navs = {
+      benevole: [['Rechercher un logement', 'Rechercher', 'b-recherche', 'fleche'], ['Mes demandes', 'Demandes', 'b-demandes', 'tente'], ['Mon profil', 'Profil', 'b-profil', 'etoile']],
+      hebergeur: [['Demandes reçues', 'Demandes', 'h-demandes', 'tente'], ['Mes logements', 'Logements', 'h-logements', 'campement'], ['Mon profil', 'Profil', 'h-profil', 'etoile']],
+      unite: [['Jumelage', 'Jumelage', 'u-jumelage', 'paix'], ['Demandes reçues', 'Demandes', 'u-relations', 'tente'], ['Notre annonce', 'Annonce', 'u-annonce', 'campement'], ['Notre unité', 'Unité', 'u-profil', 'etoile']]
+    };
+    const navItems = (navs[role] || []).map(([label, short, go, ic]) => {
+      const on = scr === go || (go === 'b-recherche' && scr === 'b-fiche') || (go === 'u-jumelage' && scr === 'u-fiche') || (go === 'h-logements' && (scr === 'h-nouveau1' || scr === 'h-nouveau2'));
+      return { label, short, go, icBg: `url("assets/signes/${ic}.png")`, style: navSt(on), mStyle: mNavSt(on) };
+    });
+    const personas = [
+      { label: 'Connexion', go: 'connexion', on: !role },
+      { label: 'Marie · bénévole', go: 'b-recherche', on: role === 'benevole' },
+      { label: 'Claire · hébergeur', go: 'h-demandes', on: role === 'hebergeur' },
+      { label: '1re Nancy · unité', go: 'u-jumelage', on: role === 'unite' }
+    ].map(p => ({ ...p, style: pill(p.on) }));
+    const typesList = ['Canapé', 'Couchage sommaire', 'Chambre privée', 'Tente', 'Hôtel', 'Gymnase'];
+    const typeChips = typesList.map(t => ({ label: t, style: chip(!!s.types[t]) }));
+    const actifs = typesList.filter(t => s.types[t]);
+    const allLog = [
+      { t: 'Chambre privée · 2 places', m: 'Paris 12e', tag: 'Accessible fauteuil roulant', ic: 'tente', k: 'Chambre privée' },
+      { t: 'Couchage sommaire · 4 places', m: 'Montreuil', tag: '', ic: 'campement', k: 'Couchage sommaire' },
+      { t: 'Emplacement tente · 6 places', m: 'Vincennes', tag: 'Environnement calme', ic: 'soleil', k: 'Tente' },
+      { t: 'Canapé · 2 places', m: 'Paris 11e', tag: '', ic: 'etoile', k: 'Canapé' },
+      { t: 'Hôtel Ibis Nation · chambres', m: 'Paris 12e', tag: 'Payant · 45 € · code PAPE15', ic: 'promesse', k: 'Hôtel' },
+      { t: 'Gymnase Léo-Lagrange', m: 'Paris 12e', tag: 'Couchage collectif', ic: 'paix', k: 'Gymnase' }
+    ];
+    const showHotels = this.props.afficherHotels ?? true;
+    const logements = allLog
+      .filter(l => showHotels || (l.k !== 'Hôtel' && l.k !== 'Gymnase'))
+      .filter(l => !actifs.length || actifs.includes(l.k))
+      .map(l => ({ ...l, icBg: `url("assets/signes/${l.ic}.png")`, hasTag: !!l.tag }));
+    const mk = (labels, grp, cur) => labels.map((l, i) => ({ l, i, grp, style: tabSt(i === cur) }));
+    const titres = {
+      connexion: 'Connexion', inscription: 'Inscription', 'b-profil': 'Mon profil', 'b-recherche': 'Rechercher',
+      'b-fiche': 'Logement', 'b-demandes': 'Mes demandes', 'h-profil': 'Mon profil', 'h-demandes': 'Demandes reçues',
+      'h-logements': 'Mes logements', 'h-nouveau1': 'Nouveau logement', 'h-nouveau2': 'Nouveau logement',
+      'u-profil': 'Notre unité', 'u-annonce': 'Notre annonce', 'u-jumelage': 'Jumelage', 'u-fiche': 'Unité', 'u-relations': 'Demandes'
+    };
+    const cherche = s.sens === 'cherchons';
+    return {
+      go: this.go, dev: this.dev, tab: this.tab, pick: this.pick, setSens: this.setSens,
+      toggleType: this.toggleType, setDispo: this.setDispo, togglePropose: this.togglePropose,
+      send: this.send, contInsc: this.contInsc, envoyerDemande: this.envoyerDemande,
+      demanderRel: this.demanderRel, accepterM: this.accepterM, accepterU: this.accepterU,
+      personas, navItems, typeChips, logements, nbRes: logements.length,
+      tabsB: mk(['En attente (3)', 'Acceptées', 'Refusées', 'Expirées'], 'tabB', s.tabB),
+      tabsH: mk(['En attente (2)', 'Acceptées', 'Refusées', 'Expirées'], 'tabH', s.tabH),
+      tabsU: mk(['Reçues (1)', 'En relation (2)'], 'tabU', s.tabU),
+      couchages: [
+        { type: 'Chambre privée', n: '2', p: '2 chacune', x: '1er étage, ascenseur' },
+        { type: 'Canapé', n: '1', p: '2', x: 'salon' },
+        { type: 'Couchage sommaire', n: '2', p: '1 chacun', x: 'matelas au sol' }
+      ],
+      unites: [
+        { n: '1re Woippy', d: 'Pionniers-Caravelles', c: 'Peut jumeler jusqu’à 25 personnes · 24-29 sept.' },
+        { n: '3e Metz Saint-Éloy', d: 'Scouts-Guides', c: 'Peut jumeler jusqu’à 30 personnes · 25-28 sept.' },
+        { n: 'Groupe Sainte-Ségolène', d: 'Scouts-Guides', c: 'Peut jumeler jusqu’à 12 personnes · 25-28 sept.' }
+      ],
+      accessList: [
+        { on: 1, b: 'Accessible en fauteuil roulant', d: '— aucune marche, passages larges, sanitaires adaptés' },
+        { on: 1, b: 'Peu d’obstacles', d: '— quelques marches, pas de long escalier' },
+        { on: 1, b: 'Facile d’accès en transports', d: '' },
+        { on: 0, b: 'Stationnement à proximité', d: '' },
+        { on: 0, b: 'Chien d’assistance accepté', d: '' },
+        { on: 1, b: 'Environnement calme', d: '' }
+      ].map(a => ({ ...a, dot: a.on ? 'block' : 'none' })),
+      devD: pill(!m), devM: pill(m),
+      dispoL: chip(s.dispo === 'libre'), dispoC: chip(s.dispo === 'complet'),
+      cardIndiv: `cursor:pointer;padding:18px;background:#ffffff;display:flex;gap:12px;align-items:flex-start;border:${s.insc === 'benevole' ? '2px solid #003a5d' : '1px solid rgba(0,58,93,.3)'}`,
+      cardUnite: `cursor:pointer;padding:18px;background:#ffffff;display:flex;gap:12px;align-items:flex-start;border:${s.insc === 'unite' ? '2px solid #003a5d' : '1px solid rgba(0,58,93,.3)'}`,
+      dotIndiv: s.insc === 'benevole' ? 'block' : 'none',
+      dotUnite: s.insc === 'unite' ? 'block' : 'none',
+      inscB: s.insc === 'benevole', inscU: s.insc === 'unite',
+      proposeDot: s.propose ? 'block' : 'none',
+      sensCDot: cherche ? 'block' : 'none', sensPDot: cherche ? 'none' : 'block',
+      annonceTitre: cherche ? 'Notre annonce de jumelage,' : 'Nous pouvons jumeler,',
+      annonceNbLbl: cherche ? 'Nous serons' : 'Jusqu’à',
+      annonceNb: cherche ? '18 jeunes + 3 chefs' : '30 personnes',
+      isMobile: m, isDesktop: !m, hasRole: !!role, noRole: !role, mobileNav: m && !!role,
+      personaName: role === 'benevole' ? 'Marie Lefèvre' : role === 'hebergeur' ? 'Claire Martin' : role === 'unite' ? '1re Nancy' : '',
+      personaInit: role === 'benevole' ? 'ML' : role === 'hebergeur' ? 'CM' : role === 'unite' ? '1N' : '',
+      screenTitle: titres[scr] || 'Hébergement',
+      frameW: m ? '390px' : 'min(1280px,100%)',
+      padContent: scr === 'connexion' ? '0' : m ? '24px 16px 48px' : '40px 48px 72px',
+      colsLogin: m ? '1fr' : '420px 1fr',
+      cols2: m ? '1fr' : '1fr 1fr',
+      cols3: m ? '1fr' : '1fr 1fr 1fr',
+      colsFiche: m ? '1fr' : '1.6fr 1fr',
+      sent: s.sent, notSent: !s.sent,
+      demSent: s.demSent, notDemSent: !s.demSent,
+      relSent: s.relSent, notRelSent: !s.relSent,
+      accM: s.accM, notAccM: !s.accM, accU: s.accU, notAccU: !s.accU,
+      tabB0: s.tabB === 0, tabB1: s.tabB === 1, tabB2: s.tabB === 2, tabB3: s.tabB === 3,
+      tabH0: s.tabH === 0, tabH1: s.tabH === 1, tabH2: s.tabH === 2, tabH3: s.tabH === 3,
+      tabU0: s.tabU === 0, tabU1: s.tabU === 1,
+      vConnexion: scr === 'connexion', vInscription: scr === 'inscription',
+      vBProfil: scr === 'b-profil', vBRecherche: scr === 'b-recherche', vBFiche: scr === 'b-fiche', vBDemandes: scr === 'b-demandes',
+      vHProfil: scr === 'h-profil', vHDemandes: scr === 'h-demandes', vHLogements: scr === 'h-logements',
+      vHN1: scr === 'h-nouveau1', vHN2: scr === 'h-nouveau2',
+      vUProfil: scr === 'u-profil', vUAnnonce: scr === 'u-annonce', vUJumelage: scr === 'u-jumelage',
+      vUFiche: scr === 'u-fiche', vURelations: scr === 'u-relations'
+    };
+  }
+}
+</script>
+</body>
+</html>
+

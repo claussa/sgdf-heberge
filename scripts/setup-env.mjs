@@ -16,7 +16,10 @@ const encryptionKey = `k1.aesgcm256.${randomBytes(32).toString('base64url')}`
 const hashSalt = randomBytes(32).toString('hex')
 
 const DATABASE_URL =
-  'postgresql://app:app@localhost:5433/adherents?connection_limit=10&pool_timeout=20'
+  'postgresql://app:app@localhost:5433/heberge?connection_limit=10&pool_timeout=20'
+
+// Secret d'appel du job quotidien (POST /api/internal/jobs/daily, cron Scaleway en prod)
+const jobSecret = randomBytes(24).toString('base64url')
 
 const files = {
   'packages/db/.env': `# Généré par scripts/setup-env.mjs — NE PAS COMMITTER
@@ -36,6 +39,7 @@ EMAIL_FROM="Connexion <auth@example.org>"
 # RESEND_API_KEY=  (requis uniquement si EMAIL_DRIVER=resend)
 # RESEND_WEBHOOK_SECRET=  (signature svix des webhooks Resend)
 APP_ORIGIN=http://localhost:5173
+JOB_SECRET="${jobSecret}"
 `,
 }
 

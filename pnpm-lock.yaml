@@ -184,6 +184,19 @@ importers:
         specifier: ~5.9.3
         version: 5.9.3
 
+  packages/event-config:
+    dependencies:
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@repo/config':
+        specifier: workspace:*
+        version: link:../config
+      typescript:
+        specifier: ~5.9.3
+        version: 5.9.3
+
 packages:
 
   '@47ng/cloak@1.2.0':

@@ -1,0 +1,20 @@
+/* Mouvement — (web) extrapolation : la charte 2019 ne couvre que l'imprimé.
+   Esprit : vivant mais jamais tape-à-l'œil. Fondus courts, translations franches,
+   pas de rebond, pas de rotation. */
+:root{
+  --duration-instant:80ms;
+  --duration-fast:140ms;
+  --duration-base:220ms;
+  --duration-slow:360ms;
+  --ease-standard:cubic-bezier(.2,.6,.2,1);
+  --ease-out:cubic-bezier(0,.6,.3,1);
+  --ease-in:cubic-bezier(.5,0,1,.5);
+
+  /* États */
+  --hover-darken:rgba(0,0,0,.10);   /* survol : on assombrit l'aplat */
+  --press-darken:rgba(0,0,0,.18);   /* appui : plus foncé, + 1px vers le bas */
+  --press-translate:1px;
+  --disabled-opacity:.4;
+  --focus-ring-width:2px;
+  --focus-ring-offset:2px;
+}

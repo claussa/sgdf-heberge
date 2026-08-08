@@ -1,0 +1,36 @@
+/* Surfaces, bordures, angles, motifs.
+   La charte est franche et carrée : cartouche rectangulaire, signes inscrits dans un carré,
+   aplats de couleur délimités par le papier déchiré. Aucun angle arrondi, aucune ombre
+   dans les documents d'origine. Les valeurs marquées (web) sont des extrapolations
+   minimales pour l'interface, à utiliser avec parcimonie. */
+:root{
+  --radius-none:0;
+  --radius-input:3px;  /* (web) champs de formulaire uniquement */
+  --radius-pill:999px; /* (web) réservé aux étiquettes/filtres */
+
+  --border-width-hairline:1px;
+  --border-width-strong:2px;
+  --border-hairline-style:1px solid var(--border-hairline);
+
+  /* Épaisseur d'un signe = 1/6 de la largeur du carré qui le contient (charte p.27) */
+  --signe-stroke-ratio:0.1667;
+
+  /* Chemin (charte p.29) : traits épais posés les uns après les autres, forme libre. */
+  --chemin-stroke:8px;
+  --chemin-dash:26px;
+  --chemin-gap:14px;
+  --chemin-color:var(--sgdf-bleu-institutionnel);
+  --chemin-color-on-dark:var(--sgdf-blanc);
+
+  /* Papier déchiré (charte p.34-36) : masques prêts à l'emploi. */
+  --papier-dechire-h:url("../assets/motifs/papier-dechire-horizontal.png");
+  --papier-dechire-v:url("../assets/motifs/papier-dechire-vertical.png");
+
+  /* (web) ombres : uniquement pour détacher un panneau flottant d'un fond photo. */
+  --shadow-none:none;
+  --shadow-panel:0 2px 8px rgba(0,58,93,.12);
+  --shadow-raised:0 8px 28px rgba(0,58,93,.18);
+
+  /* Gradient de protection sous un logo blanc posé sur photo claire (charte p.9) */
+  --protection-gradient:linear-gradient(to bottom, rgba(0,58,93,.55), rgba(0,58,93,0));
+}
