@@ -22,6 +22,41 @@ resource "scaleway_secret" "resend_webhook_secret" {
   name = "${var.project_name}-resend-webhook-secret"
 }
 
+resource "scaleway_secret" "job_secret" {
+  name = "${var.project_name}-job-secret"
+  # Secret d'appel de POST /api/internal/jobs/daily (déclenchement manuel de secours ;
+  # le déclenchement nominal est le Serverless Job planifié, sans HTTP).
+}
+
+# Lecture des versions posées HORS Terraform (scw secret version create …).
+# ⚠️ Ces data sources font transiter les valeurs par l'état Terraform : le backend
+# d'état doit être un bucket à accès restreint (voir versions.tf). C'est le compromis
+# assumé pour que le container démarre avec ses secrets sans pipeline supplémentaire.
+data "scaleway_secret_version" "encryption_key" {
+  secret_id = scaleway_secret.encryption_key.id
+  revision  = "latest_enabled"
+}
+
+data "scaleway_secret_version" "hash_salt" {
+  secret_id = scaleway_secret.hash_salt.id
+  revision  = "latest_enabled"
+}
+
+data "scaleway_secret_version" "resend_api_key" {
+  secret_id = scaleway_secret.resend_api_key.id
+  revision  = "latest_enabled"
+}
+
+data "scaleway_secret_version" "resend_webhook_secret" {
+  secret_id = scaleway_secret.resend_webhook_secret.id
+  revision  = "latest_enabled"
+}
+
+data "scaleway_secret_version" "job_secret" {
+  secret_id = scaleway_secret.job_secret.id
+  revision  = "latest_enabled"
+}
+
 # L'URL de connexion est composée ici (mot de passe géré par Terraform) et stockée
 # comme secret. Pool explicite dans l'URL (§5).
 resource "scaleway_secret" "database_url" {

@@ -4,9 +4,10 @@ import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import { logger } from './lib/logger'
 
-const STATUS_BY_CODE: Record<ErrorCode, 400 | 401 | 404 | 409 | 429 | 500> = {
+const STATUS_BY_CODE: Record<ErrorCode, 400 | 401 | 403 | 404 | 409 | 429 | 500> = {
   VALIDATION_ERROR: 400,
   UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
   NOT_FOUND: 404,
   CONFLICT: 409,
   RATE_LIMITED: 429,

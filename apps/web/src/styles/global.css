@@ -1,0 +1,48 @@
+/* Reset minimal + styles de base — le corps du texte est TOUJOURS Sarabun sur bleu
+   institutionnel (charte). Le fond hors frame (#e0e7ec) vit sur le body ; la « frame »
+   blanche est stylée dans layout/layout.css. */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--fond-hors-frame);
+  font: 400 14px / 1.5 var(--font-courant);
+  color: var(--bleu);
+}
+
+a {
+  color: var(--lien);
+}
+
+a:hover {
+  color: var(--bleu);
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-courant);
+}
+
+::placeholder {
+  color: var(--placeholder);
+  opacity: 1;
+}
+
+:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+/* Entrée d'écran (C.8) — à poser sur la racine de chaque page */
+.fade {
+  animation: fade var(--duree) var(--ease) both;
+}

@@ -1,13 +1,14 @@
+import type { AccountType } from '@repo/db'
 import { deleteCookie, getCookie } from 'hono/cookie'
 import { createMiddleware } from 'hono/factory'
 import { AppError } from '../errors'
 import { getDb } from '../lib/prisma'
 import { type ValidatedSession, validateSession } from '../services/auth-service'
 
-export const SESSION_COOKIE = 'adherents_session'
+export const SESSION_COOKIE = 'heberge_session'
 
 export interface AuthVariables {
-  member: ValidatedSession['member']
+  user: ValidatedSession['user']
   sessionId: string
   sessionToken: string
 }
@@ -26,8 +27,34 @@ export const requireAuth = createMiddleware<{ Variables: AuthVariables }>(async 
     deleteCookie(c, SESSION_COOKIE, { path: '/' })
     throw new AppError('UNAUTHORIZED', 'Session expirée ou révoquée')
   }
-  c.set('member', validated.member)
+  c.set('user', validated.user)
   c.set('sessionId', validated.sessionId)
   c.set('sessionToken', raw)
+  await next()
+})
+
+/**
+ * À empiler APRÈS requireAuth. Exige un compte onboardé du bon type :
+ * les routes logement/demandes sont réservées aux INDIVIDUAL, le jumelage aux
+ * SCOUT_UNIT (cloisonnement des parcours — un particulier n'accueille pas d'unité).
+ */
+export function requireAccountType(type: AccountType) {
+  return createMiddleware<{ Variables: AuthVariables }>(async (c, next) => {
+    const user = c.get('user')
+    if (user.accountType === null) {
+      throw new AppError('FORBIDDEN', "Termine d'abord ton inscription")
+    }
+    if (user.accountType !== type) {
+      throw new AppError('FORBIDDEN', 'Ce parcours ne correspond pas à ton type de compte')
+    }
+    await next()
+  })
+}
+
+/** À empiler APRÈS requireAuth. role=ADMIN posé en seed/SQL uniquement (plan v1). */
+export const requireAdmin = createMiddleware<{ Variables: AuthVariables }>(async (c, next) => {
+  if (c.get('user').role !== 'ADMIN') {
+    throw new AppError('FORBIDDEN', 'Réservé aux administrateurs')
+  }
   await next()
 })

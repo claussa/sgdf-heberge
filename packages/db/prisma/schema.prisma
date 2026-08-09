@@ -1,9 +1,12 @@
-// Schéma Prisma — API adhérents.
+// Schéma Prisma — plateforme de mise en relation hébergement (bénévoles / hébergeurs / unités).
 // Chiffrement applicatif au niveau champ via prisma-field-encryption (§6 du CLAUDE.md) :
 //   - /// @encrypted           → chiffré AES-GCM (clé PRISMA_FIELD_ENCRYPTION_KEY)
 //   - /// @encryption:hash(x)  → blind index (sel PRISMA_FIELD_ENCRYPTION_HASH_SALT, DISTINCT de la clé)
 //   - /// @pii                 → marqueur d'audit des champs à données personnelles
 // ⚠️ $queryRaw bypasse l'extension : interdit sur les tables contenant des champs chiffrés.
+//    Seule exception admise : SELECT pg_advisory_xact_lock(...) qui ne touche aucune table (§9).
+// Le champ `site` est un String (slug de @repo/event-config), pas un enum :
+// changer la liste des sites ne demande aucune migration.
 
 generator client {
   provider = "prisma-client-js"
@@ -20,13 +23,82 @@ enum EmailStatus {
   COMPLAINED
 }
 
-model Member {
+enum AccountType {
+  INDIVIDUAL
+  SCOUT_UNIT
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum ListingCategory {
+  PRIVATE
+  HOTEL
+  COLLECTIVE
+}
+
+enum ListingStatus {
+  OPEN
+  FULL
+}
+
+enum BedType {
+  PRIVATE_ROOM
+  COUCH
+  FLOOR_BED
+  TENT_SPOT
+}
+
+enum RequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+  CANCELLED
+}
+
+enum AwaitingSide {
+  HOST
+  REQUESTER
+}
+
+enum CancelActor {
+  REQUESTER
+  HOST
+  SYSTEM
+}
+
+enum JumelageKind {
+  SEEKING
+  HOSTING
+}
+
+enum AdStatus {
+  ACTIVE
+  WITHDRAWN
+}
+
+enum ContactStatus {
+  PENDING
+  ACCEPTED
+}
+
+model User {
   id String @id @default(cuid())
 
+  /// null = compte « coquille » : créé automatiquement à la demande de magic link,
+  /// le type est choisi à la première connexion (écran Inscription). Purgé à 7 j
+  /// par le job quotidien s'il n'a ni type ni session.
+  accountType AccountType?
+  /// ADMIN posé en seed/SQL uniquement — aucune UI de promotion (décision plan v1)
+  role        Role         @default(USER)
+
   /// @pii — en clair : tri alphabétique et recherche « commence par » du back-office (§6)
-  firstName String
+  firstName String?
   /// @pii — en clair : idem
-  lastName  String
+  lastName  String?
 
   /// @pii @encrypted?mode=strict
   email     String
@@ -34,21 +106,246 @@ model Member {
   /// @encryption:hash(email)?normalize=lowercase&normalize=trim
   emailHash String? @unique
 
-  /// @pii @encrypted — pas de blind index : HMAC sur numéro FR brute-forçable (§6)
-  phone   String?
-  /// @pii @encrypted
-  address String?
-  /// @pii @encrypted — date ISO (YYYY-MM-DD) : l'extension ne chiffre que des String
-  birthDate String?
+  /// @pii @encrypted — obligatoire à l'onboarding : transmis à l'hébergeur avec chaque
+  /// demande (bénévole), échangé à la mise en relation (unité). Pas de blind index :
+  /// HMAC sur numéro FR brute-forçable (§6).
+  phone String?
 
-  /// Marqué par les webhooks Resend (bounces / complaints, §8)
+  /// Bénévole : « Nous serons N personnes » — simple pré-remplissage des demandes,
+  /// le peopleCount de chaque demande fait foi.
+  groupSize Int?
+
+  /// @pii @encrypted — JSON array de slugs de besoins d'accessibilité (donnée sensible,
+  /// jamais filtrée en SQL : le filtre recherche s'applique aux booléens du Listing)
+  accessibilityNeeds String?
+
+  /// Unités scoutes : nom public de l'unité (affiché sur les cartes jumelage, en clair)
+  unitName   String?
+  /// Branche SGDF (liste dans @repo/event-config)
+  unitBranch String?
+
+  /// Marqué par les webhooks Resend (bounces / complaints, §8).
+  /// BOUNCED/COMPLAINED = plus aucun envoi (protection de la réputation d'envoi).
   emailStatus EmailStatus @default(OK)
+
+  /// Posée quand l'onboarding (choix du type + profil) est terminé
+  onboardedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  sessions   Session[]
-  magicLinks MagicLinkToken[]
+  sessions         Session[]
+  magicLinks       MagicLinkToken[]
+  listings         Listing[]
+  lodgingRequests  LodgingRequest[]
+  requestMessages  RequestMessage[]
+  jumelageAds      JumelageAd[]
+  jumelageContacts JumelageContact[]
+}
+
+model Listing {
+  id String @id @default(cuid())
+
+  /// Logements institutionnels (HOTEL/COLLECTIVE) : owner = compte admin qui les gère
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  category ListingCategory @default(PRIVATE)
+  /// Slug de site (@repo/event-config) — String, pas enum : réutilisabilité
+  site     String
+
+  /// Institutionnels uniquement (« Hôtel Ibis Nation · chambres ») ;
+  /// côté PRIVATE le titre est dérivé à la lecture (« Chez Claire — 2 chambres, 1 canapé »)
+  title       String?
+  description String?
+
+  /// @pii @encrypted — adresse complète (libellé BAN). Révélée au demandeur
+  /// UNIQUEMENT à l'acceptation de sa demande.
+  addressFull String
+  /// Zone d'affichage publique dérivée du géocodage : « Paris 12e », « Montreuil »
+  displayArea String
+  /// Distance au site de l'événement (haversine vs coords event-config), calculée à la
+  /// création. null si le géocodage BAN a échoué (non bloquant) — tri nulls last.
+  distanceKm  Float?
+
+  availableFrom DateTime @db.Date
+  availableTo   DateTime @db.Date
+
+  /// Libre / complet — à la main de l'hébergeur, à tout moment
+  status   ListingStatus @default(OPEN)
+  /// Masquage automatique (hébergeur inactif 7 j). Ne filtre QUE la recherche :
+  /// une réservation acceptée reste visible. Réactivation = action explicite.
+  hiddenAt DateTime?
+  /// Touchée à chaque action de l'hébergeur (réponse, message, statut) —
+  /// anti-faux-positif du masquage automatique
+  lastHostActivityAt DateTime @default(now())
+
+  /// Dénormalisée = Σ beds (count × capacityEach), recalculée par syncListingCapacity
+  /// dans la même transaction que toute écriture de couchages (+ re-sync par le job).
+  /// Institutionnels : saisie directement (pas de lignes de couchages).
+  capacity Int @default(0)
+
+  // Grille d'accessibilité (8 critères du cadrage, relus par une ergothérapeute)
+  accessPmr                Boolean @default(false)
+  accessElectricWheelchair Boolean @default(false)
+  accessFewSteps           Boolean @default(false)
+  accessHumanHelp          Boolean @default(false)
+  accessTransport          Boolean @default(false)
+  accessParking            Boolean @default(false)
+  accessAssistanceDog      Boolean @default(false)
+  accessQuiet              Boolean @default(false)
+  /// Champ libre public « autres informations d'accessibilité »
+  accessibilityNotes String?
+
+  /// Institutionnels : prix/conditions saisis par l'admin (« 45 € · code PAPE15 »)
+  priceInfo  String?
+  /// Hôtels : URL de la plateforme de réservation (pas de demande in-app)
+  bookingUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  beds     ListingBed[]
+  requests LodgingRequest[]
+
+  @@index([site, category, status, hiddenAt])
+  @@index([ownerId])
+}
+
+model ListingBed {
+  id String @id @default(cuid())
+
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  type         BedType
+  /// « Combien » — nombre de couchages de ce type
+  count        Int
+  /// « Personnes » — capacité de chaque couchage (ligne = count × capacityEach)
+  capacityEach Int
+  /// « Précision » — texte libre (« 1er étage, ascenseur », « matelas au sol »)
+  note         String?
+
+  @@index([listingId])
+}
+
+model LodgingRequest {
+  id String @id @default(cuid())
+
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  requesterId String
+  requester   User   @relation(fields: [requesterId], references: [id], onDelete: Cascade)
+
+  dateFrom    DateTime @db.Date
+  dateTo      DateTime @db.Date
+  peopleCount Int
+
+  // Pas de colonne message : le message initial du demandeur = 1re ligne RequestMessage,
+  // créée dans la même transaction (un champ chiffré de moins, affichage uniforme).
+
+  status       RequestStatus @default(PENDING)
+  /// Qui doit agir — n'a de sémantique que lorsque status = PENDING (figé ensuite).
+  /// Pilote les relances, l'expiration et le masquage du logement.
+  awaitingSide AwaitingSide  @default(HOST)
+
+  /// Toute action (réponse, question, message) la remet à now → le délai de 7 j repart.
+  /// Prédicat d'expiration vérifié À L'ÉCRITURE dans chaque transition (CAS), le job
+  /// quotidien ne fait que matérialiser EXPIRED et déclencher les effets de bord.
+  lastActivityAt DateTime  @default(now())
+  /// ≤ 1 relance par 24 h (job quotidien)
+  lastReminderAt DateTime?
+
+  cancelledBy CancelActor?
+  respondedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages RequestMessage[]
+
+  @@index([requesterId, status])
+  @@index([listingId, status])
+  @@index([status, lastActivityAt])
+  // + index unique partiel anti-doublon/anti-harcèlement (SQL brut dans la migration,
+  //   Prisma ne sait pas le déclarer) — re-demande possible après refus/expiration/annulation :
+  // CREATE UNIQUE INDEX "LodgingRequest_active_uniq" ON "LodgingRequest"("listingId","requesterId")
+  //   WHERE status IN ('PENDING','ACCEPTED');   → P2002 mappé sur 409
+}
+
+model RequestMessage {
+  id String @id @default(cuid())
+
+  requestId String
+  request   LodgingRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  senderId String
+  sender   User   @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  /// @pii @encrypted — texte libre (contient régulièrement téléphones et adresses)
+  body String
+
+  createdAt DateTime @default(now())
+
+  @@index([requestId])
+}
+
+model JumelageAd {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// SEEKING = « nous cherchons un jumelage sur place » / HOSTING = « nous pouvons jumeler »
+  kind JumelageKind
+  site String
+
+  dateFrom DateTime @db.Date
+  dateTo   DateTime @db.Date
+
+  /// Texte libre : « 18 jeunes + 3 chefs » (SEEKING) / « 30 personnes » (HOSTING)
+  peopleLabel String
+  /// « Un mot sur notre projet »
+  description String?
+
+  /// Pas de refus ni d'expiration côté jumelage (décision maquette) :
+  /// la seule porte de sortie est le retrait de l'annonce.
+  status AdStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  contacts JumelageContact[]
+
+  @@index([site, kind, status])
+  @@index([userId])
+  // + une seule annonce ACTIVE par unité (SQL brut dans la migration) :
+  // CREATE UNIQUE INDEX "JumelageAd_one_active" ON "JumelageAd"("userId") WHERE status = 'ACTIVE';
+}
+
+model JumelageContact {
+  id String @id @default(cuid())
+
+  adId String
+  ad   JumelageAd @relation(fields: [adId], references: [id], onDelete: Cascade)
+
+  requesterId String
+  requester   User   @relation(fields: [requesterId], references: [id], onDelete: Cascade)
+
+  /// @pii @encrypted — « qui nous sommes, ce que nous venons faire… »
+  message String?
+
+  /// PENDING → ACCEPTED (révélation mutuelle email + téléphone + nom du responsable).
+  /// « Ignorer » ne refuse pas : dismissedAt masque la carte de l'onglet Reçues.
+  status      ContactStatus @default(PENDING)
+  dismissedAt DateTime?
+  acceptedAt  DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@unique([adId, requesterId])
+  @@index([requesterId])
 }
 
 model Session {
@@ -57,8 +354,8 @@ model Session {
   /// SHA-256 du token de session — jamais le token brut (§9)
   tokenHash String @unique
 
-  memberId String
-  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   /// Expiration glissante : 90 jours d'inactivité (§9)
@@ -68,7 +365,7 @@ model Session {
   /// Rafraîchie au plus une fois par 24 h pour éviter une écriture par requête (§9)
   lastRefreshedAt DateTime @default(now())
 
-  @@index([memberId])
+  @@index([userId])
   @@index([expiresAt])
 }
 
@@ -78,8 +375,8 @@ model MagicLinkToken {
   /// SHA-256 du token — jamais le token brut (§9)
   tokenHash String @unique
 
-  memberId String
-  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime  @default(now())
   /// TTL 10 minutes (§9)
@@ -92,8 +389,10 @@ model MagicLinkToken {
 
   usages MagicLinkUsage[]
 
-  @@index([memberId])
+  @@index([userId])
   @@index([expiresAt])
+  // (userId, createdAt) sert aussi au throttle d'envoi : ≥ 3 tokens créés en 15 min → skip
+  @@index([userId, createdAt])
 }
 
 /// Journal d'utilisation des magic links (§9) : deux IP distinctes sur un même

@@ -1,0 +1,208 @@
+/* Chrome global (A.0) : frame blanche sur fond #e0e7ec, header desktop, header
+   mobile, bottom nav mobile. Un seul breakpoint : 768px. */
+
+#root {
+  display: flex;
+  justify-content: center;
+  padding: 28px 16px 64px;
+}
+
+.frame {
+  width: min(1280px, 100%);
+  min-height: 780px;
+  background: var(--blanc);
+  border: 1px solid var(--bordure);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============ Header desktop ============ */
+.header-desktop {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 0 40px;
+  border-bottom: 1px solid var(--bordure);
+}
+
+.header-desktop__logo {
+  height: 38px;
+  margin: 12px 0;
+}
+
+.header-desktop__wordmark {
+  display: flex;
+  flex-direction: column;
+}
+
+.header-desktop__app {
+  font: 400 22px / 1 var(--font-titrage);
+  color: var(--bleu);
+}
+
+.header-desktop__eyebrow {
+  font: 700 9.5px var(--font-courant);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--texte-secondaire);
+}
+
+.header-desktop__nav {
+  display: flex;
+  gap: 24px;
+  margin-left: 24px;
+}
+
+.header-desktop__link {
+  font: 700 13px var(--font-courant);
+  letter-spacing: 0.02em;
+  color: var(--texte-secondaire);
+  text-decoration: none;
+  padding: 22px 2px 19px;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  white-space: nowrap;
+}
+
+.header-desktop__link:hover {
+  color: var(--bleu);
+}
+
+.header-desktop__link--active {
+  color: var(--bleu);
+  border-bottom-color: var(--orange);
+}
+
+.header-desktop__account {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-desktop__name {
+  font: 700 13px var(--font-courant);
+  color: var(--bleu);
+}
+
+.header-desktop__login {
+  margin-left: auto;
+  font: 700 13px var(--font-courant);
+  color: var(--bleu);
+  text-decoration: none;
+  border-bottom: 2px solid var(--orange);
+  padding-bottom: 2px;
+}
+
+.header-desktop__login:hover {
+  color: var(--bleu);
+}
+
+/* ============ Header mobile ============ */
+.header-mobile {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--bordure);
+}
+
+.header-mobile__logo {
+  height: 28px;
+}
+
+.header-mobile__title {
+  font: 400 24px / 1 var(--font-titrage);
+  color: var(--bleu);
+}
+
+.header-mobile__avatar {
+  margin-left: auto;
+}
+
+/* ============ Contenu ============ */
+.content {
+  flex: 1;
+  padding: 40px 48px 72px;
+}
+
+/* Connexion : la grille occupe toute la frame, sans padding */
+.content--flush {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============ Bottom nav mobile (connecté et onboardé uniquement) ============ */
+.bottom-nav {
+  display: none;
+  position: sticky;
+  bottom: 0;
+  background: var(--blanc);
+  border-top: 1px solid var(--bordure);
+}
+
+.bottom-nav__item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 0 10px;
+  text-decoration: none;
+  border-top: 3px solid transparent;
+  margin-top: -1px;
+  opacity: 0.55;
+}
+
+.bottom-nav__item--active {
+  border-top-color: var(--orange);
+  opacity: 1;
+}
+
+.bottom-nav__icon {
+  width: 24px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bottom-nav__label {
+  font: 700 10px var(--font-courant);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bleu);
+}
+
+/* ============ Mobile (< 768px) : la frame prend tout ============ */
+@media (max-width: 767.98px) {
+  #root {
+    padding: 0;
+  }
+
+  .frame {
+    border: none;
+    min-height: 100dvh;
+  }
+
+  .header-desktop {
+    display: none;
+  }
+
+  .header-mobile {
+    display: flex;
+  }
+
+  .content {
+    padding: 24px 16px 48px;
+  }
+
+  .content--flush {
+    padding: 0;
+  }
+
+  .bottom-nav {
+    display: flex;
+  }
+}

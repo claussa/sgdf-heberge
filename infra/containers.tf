@@ -1,9 +1,9 @@
 # Container Registry + Serverless Container pour l'API (§3).
 
 resource "scaleway_registry_namespace" "main" {
-  name       = "${var.project_name}-registry"
-  region     = "fr-par"
-  is_public  = false
+  name      = "${var.project_name}-registry"
+  region    = "fr-par"
+  is_public = false
 }
 
 resource "scaleway_container_namespace" "main" {
@@ -19,7 +19,7 @@ resource "scaleway_container" "api" {
   port           = 3001
   protocol       = "http1"
 
-  cpu_limit          = 1000                # mvCPU
+  cpu_limit          = 1000               # mvCPU
   memory_limit_bytes = 1024 * 1024 * 1024 # 1 Gio
 
   min_scale = var.container_min_scale
@@ -41,14 +41,17 @@ resource "scaleway_container" "api" {
     APP_ORIGIN   = "https://${var.app_domain}"
   }
 
-  # Secrets injectés chiffrés — jamais en clair dans le code ou l'état applicatif (§9).
-  # NOTE : renseigner les versions de secrets AVANT le premier déploiement (voir secrets.tf).
+  # Secrets injectés chiffrés — jamais en clair dans le code (§9).
+  # PRÉREQUIS : poser les versions AVANT le premier apply (scw secret version create …),
+  # sinon les data sources de secrets.tf échouent — c'est voulu (fail fast, pas de "" qui
+  # ferait planter EnvSchema au boot).
   secret_environment_variables = {
     DATABASE_URL                      = scaleway_secret_version.database_url.data
-    PRISMA_FIELD_ENCRYPTION_KEY       = "" # scw secret : ${scaleway_secret.encryption_key.id}
-    PRISMA_FIELD_ENCRYPTION_HASH_SALT = "" # scw secret : ${scaleway_secret.hash_salt.id}
-    RESEND_API_KEY                    = "" # scw secret : ${scaleway_secret.resend_api_key.id}
-    RESEND_WEBHOOK_SECRET             = "" # scw secret : ${scaleway_secret.resend_webhook_secret.id}
+    PRISMA_FIELD_ENCRYPTION_KEY       = data.scaleway_secret_version.encryption_key.data
+    PRISMA_FIELD_ENCRYPTION_HASH_SALT = data.scaleway_secret_version.hash_salt.data
+    RESEND_API_KEY                    = data.scaleway_secret_version.resend_api_key.data
+    RESEND_WEBHOOK_SECRET             = data.scaleway_secret_version.resend_webhook_secret.data
+    JOB_SECRET                        = data.scaleway_secret_version.job_secret.data
   }
 
   liveness_probe {
@@ -58,5 +61,41 @@ resource "scaleway_container" "api" {
     interval          = "10s"
     timeout           = "5s"
     failure_threshold = 3
+  }
+}
+
+# ---------------------------------------------------------------------------
+# Job quotidien (expiration des demandes, relances, masquage, purges) — §plan v1.
+# Serverless Job : même image que l'API, commande dédiée, AUCUN HTTP à exposer.
+# (POST /api/internal/jobs/daily reste disponible comme déclenchement manuel de secours,
+# protégé par JOB_SECRET.)
+# ---------------------------------------------------------------------------
+
+resource "scaleway_job_definition" "daily" {
+  name                   = "${var.project_name}-daily-job"
+  region                 = "fr-par"
+  cpu_limit              = 500
+  memory_limit           = 512
+  local_storage_capacity = 1000
+  image_uri              = "${scaleway_registry_namespace.main.endpoint}/api:${var.api_image_tag}"
+  startup_command        = ["node", "dist/jobs/daily.js"]
+  timeout                = "10m"
+
+  cron {
+    # 07:00 Europe/Paris, tous les jours — avant les heures d'activité.
+    schedule = "0 7 * * *"
+    timezone = "Europe/Paris"
+  }
+
+  env = {
+    NODE_ENV                          = "production"
+    EMAIL_DRIVER                      = "resend"
+    EMAIL_FROM                        = "Connexion <auth@${var.app_domain}>"
+    APP_ORIGIN                        = "https://${var.app_domain}"
+    DATABASE_URL                      = scaleway_secret_version.database_url.data
+    PRISMA_FIELD_ENCRYPTION_KEY       = data.scaleway_secret_version.encryption_key.data
+    PRISMA_FIELD_ENCRYPTION_HASH_SALT = data.scaleway_secret_version.hash_salt.data
+    RESEND_API_KEY                    = data.scaleway_secret_version.resend_api_key.data
+    JOB_SECRET                        = data.scaleway_secret_version.job_secret.data
   }
 }

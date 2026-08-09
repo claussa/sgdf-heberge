@@ -1,0 +1,52 @@
+/* Tokens — adaptés de la charte SGDF (docs/design/tokens/) pour la plateforme hébergement.
+   Palette exacte de la maquette hi-fi (rapport C.1). Règle absolue : aucun border-radius
+   sauf 3px sur les inputs, aucune ombre. */
+:root {
+  /* Palette C.1 */
+  --bleu: #003a5d; /* texte principal, boutons primaires, panneau hero */
+  --bleu-hover: #00263d; /* hover des boutons primaires */
+  --blanc: #ffffff; /* fonds, texte sur bleu */
+  --texte-secondaire: #66899e; /* texte secondaire, onglets inactifs */
+  --label: #33627d; /* labels uppercase 11px */
+  --placeholder: #99b0be;
+  --lien: #0077b3;
+  --orange: #ff8300; /* accent : onglet/nav actifs, quota, stepper, focus */
+  --vert: #007254; /* succès */
+  --rouge: #d03f15; /* alerte */
+  --fond-neutre: #ebeff2; /* fonds neutres, champs désactivés, avatars */
+  --fond-filtres: #f5f7f8;
+  --fond-hors-frame: #e0e7ec;
+  --stepper-inactif: #ccd7df;
+  --bordure: rgba(0, 58, 93, 0.16); /* cartes, séparateurs, header */
+  --bordure-badge: rgba(0, 58, 93, 0.3);
+  --bordure-input: rgba(0, 58, 93, 0.35);
+  --bordure-input-desactive: rgba(0, 58, 93, 0.2);
+
+  /* Typographie C.6 */
+  --font-titrage: "Caveat Brush", cursive;
+  --font-courant: "Sarabun", system-ui, sans-serif;
+  --font-titre: "Raleway", system-ui, sans-serif;
+
+  /* Géométrie : radius 0 partout, sauf inputs */
+  --radius-input: 3px;
+
+  /* Focus (orange, 2px, décalé de 2px) */
+  --focus-ring: 2px solid var(--orange);
+  --focus-offset: 2px;
+
+  /* Mouvement C.8 — un seul easing, une seule durée */
+  --duree: 0.22s;
+  --ease: cubic-bezier(0.2, 0.6, 0.2, 1);
+}
+
+/* Animation d'entrée des écrans (classe utilitaire .fade dans global.css) */
+@keyframes fade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

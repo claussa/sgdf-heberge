@@ -1,0 +1,57 @@
+/* Typographies — charte graphique SGDF, p.19-21.
+   Caveat Brush : titrage (manuscrite, joyeuse).
+   Raleway     : titres de documents « sérieux », sous-titres, exergues, petites annotations.
+   Sarabun     : texte courant — obligatoirement en bleu institutionnel sur fond clair
+                 ou en blanc sur fond foncé. Jamais en dessous de 6 pt. */
+:root{
+  --font-titrage:'Caveat Brush', 'Bradley Hand', cursive;
+  --font-titre:'Raleway', system-ui, sans-serif;
+  --font-courant:'Sarabun', system-ui, sans-serif;
+
+  /* Graisses disponibles */
+  --fw-extralight:200;
+  --fw-light:300;
+  --fw-regular:400;
+  --fw-medium:500;
+  --fw-bold:700;
+  --fw-extrabold:800;
+  --fw-black:900;
+
+  /* Échelle (base 16px) */
+  --text-2xs:.75rem;   /* 12px — annotations, mentions légales */
+  --text-xs:.875rem;   /* 14px */
+  --text-sm:1rem;      /* 16px */
+  --text-base:1.125rem;/* 18px — texte courant confortable */
+  --text-lg:1.3125rem; /* 21px */
+  --text-xl:1.625rem;  /* 26px */
+  --text-2xl:2rem;     /* 32px */
+  --text-3xl:2.625rem; /* 42px */
+  --text-4xl:3.5rem;   /* 56px */
+  --text-5xl:4.5rem;   /* 72px */
+  --text-6xl:6rem;     /* 96px — titrage Caveat Brush plein cadre */
+
+  --leading-tight:1.05;
+  --leading-titre:1.15;
+  --leading-snug:1.3;
+  --leading-body:1.5;
+  --leading-loose:1.7;
+
+  --tracking-tight:-.01em;
+  --tracking-normal:0;
+  --tracking-wide:.04em;
+  --tracking-caps:.08em; /* petites capitales type « SOMMAIRE » */
+
+  /* Rôles typographiques prêts à l'emploi */
+  --type-titrage-font:var(--font-titrage);
+  --type-titrage-weight:var(--fw-regular);
+  --type-titre-font:var(--font-titre);
+  --type-titre-weight:var(--fw-bold);
+  --type-soustitre-font:var(--font-titre);
+  --type-soustitre-weight:var(--fw-light);
+  --type-body-font:var(--font-courant);
+  --type-body-weight:var(--fw-regular);
+  --type-body-size:var(--text-base);
+  --type-annotation-font:var(--font-titre);
+  --type-annotation-weight:var(--fw-medium);
+  --type-annotation-size:var(--text-2xs);
+}

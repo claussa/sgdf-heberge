@@ -1,14 +1,27 @@
-# Projet — API adhérents (associatif)
+# Projet — Plateforme hébergement bénévoles (associatif)
 
-> Ce fichier est la source de vérité pour Claude Code. Le lire avant toute tâche.
+> Ce fichier est la source de vérité TECHNIQUE pour Claude Code. Le lire avant toute tâche.
+> La spec FONCTIONNELLE est `docs/design/rapport-maquette.md` (maquette écran par écran)
+> et le plan d'implémentation v1 approuvé. Ordre d'autorité : maquette > cadrage > ce fichier
+> pour le fonctionnel ; ce fichier reste souverain pour la technique.
 
 ## 1. Contexte
 
-Application de gestion d'adhérents pour une association européenne (~100 000 adhérents).
-Durée de run prévue : **2 mois**, avec un pic de trafic prévisible (campagne d'inscription).
+Plateforme de mise en relation pour l'hébergement des bénévoles d'un grand événement
+(v1 : venue du pape Léon XIV en France, 25-28 sept. 2026 — sites Lourdes/Paris/Metz,
+public potentiel ~100 000 personnes). Trois parcours : bénévole individuel (recherche +
+demandes, max 3 en attente, expiration 7 j), hébergeur (offres à couchages typés, grille
+accessibilité, accepter/question/refuser), unité scoute (jumelage : pure mise en relation,
+échange de coordonnées). Admin : métriques par site + logements institutionnels
+(hôtels → lien externe ; gymnases → flux de demande standard).
+Durée de run prévue : **2 mois**, avec un pic de trafic prévisible.
 
-Données traitées : **données personnelles** (nom, email, téléphone, adresse).
-Personnes concernées : **résidents UE**. Tout doit rester hébergé en UE.
+**Réutilisabilité** : tout ce qui est propre à l'événement (nom, dates, sites, textes,
+branches, logos) vit dans `packages/event-config`. Aucun texte d'événement en dur ailleurs.
+
+Données traitées : **données personnelles** (nom, email, téléphone, adresse des logements,
+besoins d'accessibilité — donnée sensible). Personnes concernées : **résidents UE**.
+Tout doit rester hébergé en UE.
 
 Contraintes conductrices, par ordre de priorité :
 1. Conformité RGPD (souveraineté, minimisation, effacement)
@@ -29,7 +42,7 @@ Contraintes conductrices, par ordre de priorité :
 | ORM | Prisma (mode librairie classique) | **pas** de driver adapter, **pas** d'Accelerate |
 | DB | PostgreSQL 16 — Scaleway Managed Database, région `fr-par` | |
 | Emails | Resend | voir §8 |
-| Front | React + Vite (SPA) | typage via Hono RPC, pas de codegen |
+| Front | React + Vite (SPA) + react-router + TanStack Query | typage via Hono RPC, pas de codegen ; CSS vanilla + tokens charte SGDF (pas de Tailwind) |
 | Tests | Vitest | + Testcontainers pour les tests d'intégration DB |
 | Lint/format | Biome | un seul outil, config unique à la racine |
 | IaC | Terraform, provider Scaleway | |
@@ -73,20 +86,23 @@ Ressources Scaleway :
 │   │   ├── src/
 │   │   │   ├── index.ts      # bootstrap serveur
 │   │   │   ├── app.ts        # OpenAPIHono, export du type AppType pour le RPC
-│   │   │   ├── routes/       # 1 fichier par ressource
-│   │   │   ├── middleware/
+│   │   │   ├── routes/       # 1 fichier par ressource — TOUS branchés dans app.ts (chaîne unique)
+│   │   │   ├── middleware/   # auth (requireAuth/requireAccountType/requireAdmin), rate-limit…
 │   │   │   ├── services/     # logique métier, ne connaît pas HTTP
+│   │   │   ├── jobs/         # purge.ts + daily.ts (CLI auto-exécutables, `now` injectable)
 │   │   │   └── lib/
 │   │   │       ├── prisma.ts # singleton PrismaClient
-│   │   │       └── resend.ts
+│   │   │       └── email.ts  # EmailDriver : resend | devfile | memory
 │   │   └── Dockerfile
 │   └── web/                  # SPA React + Vite
 │       └── src/lib/api.ts    # client RPC Hono typé
 ├── packages/
 │   ├── db/                   # schema.prisma, migrations, seed, client généré
 │   ├── contracts/            # schémas Zod partagés API ↔ SPA
-│   ├── emails/               # templates React Email
-│   └── config/               # tsconfig, biome, vitest de base
+│   ├── event-config/         # config de l'événement — LE point de rebranding (Zod seul)
+│   ├── emails/               # templates React Email (magic link + demandes + jumelage)
+│   └── config/               # tsconfig partagés
+├── docs/design/              # maquette hi-fi + rapport d'analyse (spec UI) + tokens charte
 ├── infra/                    # Terraform
 ├── turbo.json
 ├── pnpm-workspace.yaml
@@ -96,7 +112,8 @@ Ressources Scaleway :
 Règles de dépendances :
 
 - `apps/*` peuvent dépendre de `packages/*`. L'inverse est interdit.
-- `packages/contracts` ne dépend de rien d'autre que Zod. C'est le point de contact front/back.
+- `packages/contracts` ne dépend que de Zod **et de `@repo/event-config`** (entorse assumée :
+  la liste des sites vient de la config événement). `event-config` ne dépend que de Zod.
 - `apps/web` **ne dépend jamais** de `packages/db` — le client Prisma ne doit pas finir dans le bundle front.
 - Le type `AppType` est le seul export de `apps/api` consommé par `apps/web`, en `import type` uniquement.
 
@@ -165,11 +182,13 @@ extension appliquée au `PrismaClient`).
 
 | Champ | Chiffré | Raison |
 |---|---|---|
-| `email` | ✅ + blind index | sert de clé de login → besoin d'égalité exacte |
-| `phone` | ✅ | jamais recherché ni trié |
-| `address` | ✅ | idem |
-| `birthDate` | ✅ | idem |
-| `firstName`, `lastName` | ❌ **en clair** | tri alphabétique et recherche « commence par » nécessaires au back-office ; infaisable à 100 k lignes si chiffré |
+| `User.email` | ✅ + blind index | sert de clé de login → besoin d'égalité exacte |
+| `User.phone` | ✅ | transmis à l'hébergeur avec la demande / échangé en jumelage ; jamais recherché |
+| `User.accessibilityNeeds` | ✅ | donnée sensible (JSON de slugs) ; le filtre recherche s'applique aux booléens du Listing, jamais à ce champ |
+| `Listing.addressFull` | ✅ | révélée UNIQUEMENT à l'acceptation d'une demande ; la recherche se fait par `site` + `distanceKm` |
+| `RequestMessage.body`, `JumelageContact.message` | ✅ | texte libre (contient téléphones/adresses) |
+| `User.firstName/lastName`, `User.unitName` | ❌ **en clair** | tri/recherche + cartes jumelage publiques |
+| `Listing.displayArea`, `Listing.distanceKm` | ❌ **en clair** | affichage carte (« Paris 12e ») et tri par distance — granularité quartier assumée |
 
 Règles :
 
@@ -181,6 +200,8 @@ Règles :
   déchiffrement pour permettre la rotation.
 - ⚠️ **`$queryRaw` bypasse l'extension.** Toute requête raw sur un champ chiffré retourne le blob.
   Interdire `$queryRaw` sur les tables contenant des champs chiffrés.
+  **Seule exception admise** : `SELECT pg_advisory_xact_lock(hashtext(...))` — le verrou
+  advisory par demandeur (sérialise quota et accepts concurrents) ne touche aucune table.
 - Le chiffrement doit être en place **dès la première migration**. L'ajouter après coup impose une
   migration de données sur l'ensemble de la table.
 
@@ -250,6 +271,16 @@ session longue.
 implémentation manuelle (~200 lignes). Trancher tôt, pas en cours de route.
 
 #### Magic link
+
+**Le lien crée le compte** (maquette) : un email inconnu crée un compte « coquille »
+(`accountType` null), le type est choisi à la première connexion. Conséquences :
+l'anti-énumération devient triviale (tout email « existe ») ; en contrepartie, un throttle
+d'émission par email est ADOSSÉ À LA BASE (≥ 3 tokens/15 min → skip silencieux,
+cross-instance) et AUCUN envoi ne part vers une adresse `BOUNCED`/`COMPLAINED` — la
+réputation d'envoi est la disponibilité de l'authentification. Les coquilles jamais
+onboardées et sans session sont purgées à 7 j par le job quotidien.
+Le wording utilisateur dit « valable 10 minutes » (le texte « 30 minutes, un seul usage »
+de la maquette était erroné et a été corrigé — voir décision ci-dessous).
 
 **Décision assumée : token multi-usage plafonné, pas usage unique.**
 Rationnel : un token à usage unique est brûlé par les scanners d'email d'entreprise (Outlook Safe
@@ -349,10 +380,36 @@ Tests critiques à écrire **dès le premier jour** :
 8. Terraform + CI/CD
 9. Charge de test sur le pic attendu **avant** le run réel
 
-## 12. Points ouverts à trancher
+## 12. Points tranchés et règles d'intégrité (plan v1 approuvé)
 
-- Better Auth vs implémentation manuelle du magic link
-- HA de la DB : dès le départ ou activée juste pour la fenêtre de pic
-- Sous-domaines expéditeurs séparés auth/marketing (recommandé)
-- Fin de run : la destruction de l'instance DB **ne purge pas les snapshots et backups**. Documenter
-  et exécuter une procédure de purge explicite, sinon les données survivent des semaines.
+Tranchés :
+
+- **Implémentation manuelle** du magic link (pas Better Auth) — faite, testée.
+- **Transitions d'état : compare-and-swap OBLIGATOIRE.** Toute transition = `updateMany`
+  conditionnel + vérification du `count` (0 → 409), le WHERE inclut le prédicat
+  d'expiration (`lastActivityAt ≥ now − 7 j` pour les demandes). Jamais de
+  SELECT-puis-UPDATE. Verrou advisory par demandeur (`requester:{id}`) autour du quota et
+  de l'acceptation. Retry-once sur P2034. Emails APRÈS commit, avec idempotency key —
+  jamais d'envoi dans une `$transaction`.
+- **Le job quotidien est un matérialiseur idempotent** (transitions ligne à ligne en CAS,
+  effets de bord seulement si `count === 1`) : expiration 7 j, masquage des logements
+  d'hébergeurs inactifs (condition `lastHostActivityAt` — anti-faux-positif), relances
+  1/24 h, purge des coquilles à 7 j, re-sync des capacités, purge tokens/sessions.
+  En prod : Scaleway Serverless Job (`node dist/jobs/daily.js`, 07:00 Europe/Paris) ;
+  secours manuel `POST /api/internal/jobs/daily` (header `x-job-secret`).
+- **Suppression de compte/logement : annuler-puis-notifier avant d'effacer.** Les cascades
+  DB sont le filet, pas le chemin nominal (un hébergeur qui part ne fait pas disparaître
+  silencieusement l'hébergement de quelqu'un).
+- HA de la DB : activée pour la fenêtre de pic (facturation horaire, à la mise en prod).
+- Sous-domaines expéditeurs séparés auth/marketing : toujours recommandé (aucun envoi
+  marketing en v1).
+
+Restent ouverts :
+
+- Fin de run : la destruction de l'instance DB **ne purge pas les snapshots et backups**.
+  Procédure : à J+30 après l'événement, purge applicative complète (logements, demandes,
+  messages, annonces, contacts, comptes), puis `terraform destroy`, puis purge explicite
+  des snapshots/backups DB, des versions de secrets et des logs Cockpit
+  (voir `infra/README.md`).
+- Edge Services (routage `/api` même domaine — condition du SameSite=Lax) : à provisionner
+  au moment de la mise en prod avec le domaine réel.

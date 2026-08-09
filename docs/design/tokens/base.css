@@ -1,0 +1,29 @@
+/* Base — valeurs par défaut du document et petites utilitaires de marque. */
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--surface-page);color:var(--text-body);font-family:var(--font-courant);font-size:var(--type-body-size);font-weight:var(--fw-regular);line-height:var(--leading-body);-webkit-font-smoothing:antialiased;text-wrap:pretty}
+h1,h2,h3,h4,h5,h6{font-family:var(--font-titre);font-weight:var(--fw-bold);line-height:var(--leading-titre);margin:0 0 var(--space-4);letter-spacing:var(--tracking-tight)}
+h1{font-size:var(--text-3xl)}h2{font-size:var(--text-2xl)}h3{font-size:var(--text-xl)}h4{font-size:var(--text-lg)}h5{font-size:var(--text-base)}h6{font-size:var(--text-sm)}
+p{margin:0 0 var(--space-4);max-width:var(--measure)}
+a{color:var(--link);text-decoration:none;border-bottom:1px solid currentColor;transition:color var(--duration-fast) var(--ease-standard)}
+a:hover{color:var(--link-hover)}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:var(--focus-ring-width) solid var(--focus-ring);outline-offset:var(--focus-ring-offset)}
+strong,b{font-weight:var(--fw-bold)}
+ul,ol{margin:0 0 var(--space-4);padding-left:1.1em}
+li{margin-bottom:var(--space-1)}
+hr{border:0;border-top:var(--border-hairline-style);margin:var(--space-8) 0}
+img{max-width:100%;display:block}
+
+/* Rôles typographiques */
+.sgdf-titrage{font-family:var(--font-titrage);font-weight:var(--fw-regular);line-height:var(--leading-tight)}
+.sgdf-titre{font-family:var(--font-titre);font-weight:var(--fw-bold);line-height:var(--leading-titre)}
+.sgdf-soustitre{font-family:var(--font-titre);font-weight:var(--fw-light);line-height:var(--leading-snug)}
+.sgdf-annotation{font-family:var(--font-titre);font-weight:var(--fw-medium);font-size:var(--type-annotation-size);letter-spacing:var(--tracking-caps);text-transform:uppercase}
+.sgdf-courant{font-family:var(--font-courant)}
+
+/* Fonds */
+.sgdf-fond-bleu{background:var(--surface-inverse);color:var(--text-on-dark)}
+.sgdf-fond-bleu a{color:var(--sgdf-blanc)}
+
+/* Papier déchiré : bord déchiré appliqué en masque sur un aplat ou une photo */
+.sgdf-papier-dechire-droite{-webkit-mask-image:var(--papier-dechire-v);mask-image:var(--papier-dechire-v);-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+.sgdf-papier-dechire-bas{-webkit-mask-image:var(--papier-dechire-h);mask-image:var(--papier-dechire-h);-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}

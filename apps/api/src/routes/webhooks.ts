@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { getEnv } from '../env'
 import { logger } from '../lib/logger'
 import { getDb } from '../lib/prisma'
-import { markEmailStatus } from '../services/member-service'
+import { markEmailStatus } from '../services/user-service'
 
 /**
  * Webhooks Resend (§8) : bounces et complaints marquent l'adresse en base.
@@ -82,7 +82,14 @@ export const webhooksRouter = new OpenAPIHono().openapi(resendWebhookRoute, asyn
     return c.body(null, 401)
   }
 
-  const parsed = WebhookEventSchema.safeParse(JSON.parse(payload))
+  // Un corps malformé mais correctement signé ne doit pas produire un 500.
+  let json: unknown
+  try {
+    json = JSON.parse(payload)
+  } catch {
+    return c.json(OkResponseSchema.parse({ ok: true }), 200)
+  }
+  const parsed = WebhookEventSchema.safeParse(json)
   if (parsed.success) {
     const { type, data } = parsed.data
     const recipients = Array.isArray(data.to) ? data.to : data.to ? [data.to] : []

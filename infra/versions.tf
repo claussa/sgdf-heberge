@@ -7,12 +7,17 @@ terraform {
       source  = "scaleway/scaleway"
       version = ">= 2.48"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = ">= 3.6"
+    }
   }
 
   # Backend d'état : bucket Object Storage dédié (à créer hors Terraform).
-  # L'état contient des références aux secrets — accès restreint.
+  # ⚠️ L'état contient des VALEURS de secrets (database_url composée ici, et les
+  # data sources secret_version) — accès au bucket strictement restreint.
   # backend "s3" {
-  #   bucket                      = "adherents-terraform-state"
+  #   bucket                      = "sgdf-heberge-terraform-state"
   #   key                         = "prod/terraform.tfstate"
   #   region                      = "fr-par"
   #   endpoints                   = { s3 = "https://s3.fr-par.scw.cloud" }

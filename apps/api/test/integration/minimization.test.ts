@@ -3,7 +3,7 @@
  * de champ PII/technique non déclaré dans son schéma de réponse.
  */
 
-import { MemberExportSchema, MemberListResponseSchema, MemberSchema } from '@repo/contracts'
+import { MeSchema, UserExportSchema } from '@repo/contracts'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   extractToken,
@@ -15,7 +15,6 @@ import {
 
 let t: TestEnv
 let cookie: string
-let memberId: string
 
 /** Les champs qui ne doivent JAMAIS sortir, où que ce soit dans une réponse. */
 const FORBIDDEN_KEYS = ['emailHash', 'tokenHash', 'passwordHash', 'invalidatedAt', 'usedCount']
@@ -34,17 +33,17 @@ function collectKeys(value: unknown, keys = new Set<string>()): Set<string> {
 
 beforeAll(async () => {
   t = await startTestEnv()
-  const member = await t.db.member.create({
+  await t.db.user.create({
     data: {
+      accountType: 'INDIVIDUAL',
       firstName: 'Alice',
       lastName: 'Martin',
       email: 'alice@example.org',
       phone: '+33600000001',
-      address: '12 rue des Lilas',
-      birthDate: '1994-03-12',
+      accessibilityNeeds: JSON.stringify(['pmr']),
+      onboardedAt: new Date(),
     },
   })
-  memberId = member.id
   await t.app.request('/api/auth/magic-link', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -66,56 +65,51 @@ afterAll(async () => {
 })
 
 describe('minimisation en sortie (§5)', () => {
-  it('GET /me : uniquement les clés déclarées dans MemberSchema', async () => {
+  it('GET /me : uniquement les clés déclarées dans MeSchema, aucune clé interdite', async () => {
     const res = await t.app.request('/api/me', { headers: { cookie } })
     const body = (await res.json()) as Record<string, unknown>
-    const allowed = new Set(Object.keys(MemberSchema.shape))
+    const allowed = new Set(Object.keys(MeSchema.shape))
     for (const key of Object.keys(body)) {
       expect(allowed, `clé inattendue: ${key}`).toContain(key)
     }
-  })
-
-  it('GET /members : aucune clé interdite, clés des items ⊆ MemberSchema', async () => {
-    const res = await t.app.request('/api/members', { headers: { cookie } })
-    const body = await res.json()
-    expect(() => MemberListResponseSchema.parse(body)).not.toThrow()
     const keys = collectKeys(body)
     for (const forbidden of FORBIDDEN_KEYS) {
       expect(keys, `champ non déclaré exposé: ${forbidden}`).not.toContain(forbidden)
     }
   })
 
-  it('GET /members/:id/export : conforme au schéma d’export, sans champs techniques', async () => {
-    const res = await t.app.request(`/api/members/${memberId}/export`, { headers: { cookie } })
+  it('GET /me/export : conforme au schéma d’export, sans champs techniques', async () => {
+    const res = await t.app.request('/api/me/export', { headers: { cookie } })
+    expect(res.status).toBe(200)
     const body = await res.json()
-    expect(() => MemberExportSchema.parse(body)).not.toThrow()
+    expect(() => UserExportSchema.parse(body)).not.toThrow()
     const keys = collectKeys(body)
     for (const forbidden of FORBIDDEN_KEYS) {
       expect(keys).not.toContain(forbidden)
     }
   })
 
-  it('les erreurs ne fuient jamais la structure Prisma (P2002 → CONFLICT, §5)', async () => {
-    const create = (payload: object) =>
-      t.app.request('/api/members', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', cookie },
-        body: JSON.stringify(payload),
-      })
-    const payload = {
-      firstName: 'Doublon',
-      lastName: 'Test',
-      email: 'alice@example.org', // déjà pris → P2002 sur emailHash
-    }
-    const res = await create(payload)
+  it('un conflit applicatif renvoie le format unique, sans structure Prisma (§5)', async () => {
+    // Changer de type de compte après onboarding → 409 CONFLICT applicatif
+    const res = await t.app.request('/api/me/onboarding', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({
+        accountType: 'SCOUT_UNIT',
+        unitName: '1re Test',
+        unitBranch: 'Scouts-Guides',
+        firstName: 'Alice',
+        lastName: 'Martin',
+        phone: '+33600000001',
+      }),
+    })
     expect(res.status).toBe(409)
     const body = await res.json()
     expect(body).toEqual({
       error: { code: 'CONFLICT', message: expect.any(String) },
     })
-    // Ni nom de table, ni nom de colonne, ni "prisma" dans la réponse
     const text = JSON.stringify(body).toLowerCase()
-    for (const leak of ['prisma', 'emailhash', 'unique constraint', 'member.']) {
+    for (const leak of ['prisma', 'emailhash', 'unique constraint', 'user.']) {
       expect(text).not.toContain(leak)
     }
   })
@@ -139,7 +133,15 @@ describe('spec OpenAPI (§5)', () => {
     expect(res.status).toBe(200)
     const spec = (await res.json()) as { openapi: string; paths: Record<string, unknown> }
     expect(spec.openapi).toBe('3.1.0')
-    for (const path of ['/auth/magic-link', '/auth/callback', '/me', '/members', '/health']) {
+    for (const path of [
+      '/auth/magic-link',
+      '/auth/callback',
+      '/me',
+      '/me/onboarding',
+      '/me/export',
+      '/health',
+      '/webhooks/resend',
+    ]) {
       expect(Object.keys(spec.paths), `chemin manquant: ${path}`).toContain(path)
     }
   })

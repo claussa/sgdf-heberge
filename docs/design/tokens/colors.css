@@ -1,0 +1,58 @@
+/* Couleurs — charte graphique SGDF juin 2019, p.18 (et pages couleurs de chaque branche).
+   Le bleu institutionnel doit être présent sur TOUS les documents.
+   Les couleurs secondaires ne s'utilisent qu'en touches. */
+:root{
+  /* Couleur principale */
+  --sgdf-bleu-institutionnel:#003a5d; /* P302C · C100 M49 J12 N58 */
+
+  /* Couleurs secondaires (touches) */
+  --sgdf-orange:#ff8300;      /* P151C  · louveteaux et jeannettes */
+  --sgdf-bleu-clair:#0077b3;  /* P3005C · scouts et guides */
+  --sgdf-vert-clair:#65bc99;  /* P346C  · farfadets */
+  --sgdf-violet:#6e74aa;      /* P272C  · vent du large */
+  --sgdf-rouge:#d03f15;       /* P180C  · pionniers et caravelles */
+  --sgdf-vert-fonce:#007254;  /* P3295C · compagnons */
+  --sgdf-blanc:#ffffff;
+
+  /* Couleurs de branche (alias sémantiques) */
+  --branche-farfadets:var(--sgdf-vert-clair);
+  --branche-louveteaux-jeannettes:var(--sgdf-orange);
+  --branche-scouts-guides:var(--sgdf-bleu-clair);
+  --branche-pionniers-caravelles:var(--sgdf-rouge);
+  --branche-compagnons:var(--sgdf-vert-fonce);
+  --branche-vent-du-large:var(--sgdf-violet);
+  --branche-marins:var(--sgdf-bleu-institutionnel); /* les marins prennent la couleur de leur branche + pictos marins */
+
+  /* Teintes du bleu institutionnel (mélanges avec le blanc — extrapolation web, pas dans la charte) */
+  --bleu-04:#f5f7f8;
+  --bleu-08:#ebeff2;
+  --bleu-12:#e0e7ec;
+  --bleu-20:#ccd7df;
+  --bleu-40:#99b0be;
+  --bleu-60:#66899e;
+  --bleu-80:#33627d;
+
+  /* Événement : venue du pape Léon XIV en France, 25-28 septembre 2026.
+     Palette relevée sur le logo officiel — à n'utiliser QU'avec le logo de l'événement,
+     jamais en remplacement du bleu institutionnel. */
+  --pape-bleu:#142a86;
+  --pape-or:#f8a808;
+  --pape-cyan:#28c8f8;
+  --pape-rouge:#f80828;
+  --pape-vert:#08b8a8;
+
+  /* Alias sémantiques */
+  --text-body:var(--sgdf-bleu-institutionnel);
+  --text-muted:var(--bleu-60);
+  --text-on-dark:var(--sgdf-blanc);
+  --text-accent:var(--sgdf-rouge);
+  --link:var(--sgdf-bleu-clair);
+  --link-hover:var(--sgdf-bleu-institutionnel);
+  --surface-page:var(--sgdf-blanc);
+  --surface-subtle:var(--bleu-04);
+  --surface-inverse:var(--sgdf-bleu-institutionnel);
+  --surface-card:var(--sgdf-blanc);
+  --border-hairline:rgba(0,58,93,.16);
+  --border-strong:var(--sgdf-bleu-institutionnel);
+  --focus-ring:var(--sgdf-orange);
+}

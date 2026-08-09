@@ -7,16 +7,19 @@
     ".": "./src/index.tsx"
   },
   "scripts": {
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@react-email/components": "^1.0.12",
     "@react-email/render": "^2.1.0",
+    "@repo/event-config": "workspace:*",
     "react": "^19.2.0"
   },
   "devDependencies": {
     "@repo/config": "workspace:*",
     "@types/react": "^19.2.0",
-    "typescript": "~5.9.3"
+    "typescript": "~5.9.3",
+    "vitest": "^4.1.10"
   }
 }
