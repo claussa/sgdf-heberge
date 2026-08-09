@@ -1,4 +1,4 @@
-import { type SiteSlug, siteLabel } from '@repo/event-config'
+import { siteLabel } from '@repo/event-config'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router'
 import { api } from '../lib/api'
@@ -8,29 +8,6 @@ import './jumelage-admin.css'
 /** Clé des métriques — invalidée par le CRUD des logements institutionnels. */
 export const ADMIN_METRICS_KEY = ['admin-metrics'] as const
 
-/** Miroir d'AdminMetricsSchema (cf. @repo/contracts) — même motif que jumelage-data. */
-type AdminMetrics = {
-  sites: Array<{
-    site: SiteSlug
-    listings: {
-      privateActive: number
-      privateHidden: number
-      hotel: number
-      collective: number
-      totalCapacity: number
-    }
-    requests: {
-      pending: number
-      accepted: number
-      declined: number
-      expired: number
-      cancelled: number
-    }
-    jumelage: { seeking: number; hosting: number; relations: number }
-  }>
-  users: { individuals: number; units: number; shells: number }
-}
-
 /**
  * /admin — tableau de bord (hors maquette : sobre, composants charte). Une carte
  * par site avec trois blocs clé-valeur, puis les comptes tous sites confondus.
@@ -38,7 +15,7 @@ type AdminMetrics = {
 export function Admin() {
   const metrics = useQuery({
     queryKey: ADMIN_METRICS_KEY,
-    queryFn: async (): Promise<AdminMetrics> => {
+    queryFn: async () => {
       const res = await api.admin.metrics.$get()
       if (res.status === 200) return res.json()
       throw new Error(`GET /admin/metrics : ${res.status}`)

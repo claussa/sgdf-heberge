@@ -13,8 +13,7 @@ export function JumelageFiche() {
   const { adId = '' } = useParams()
   const query = useQuery({
     queryKey: ['jumelage-ad', adId],
-    // Type fixé au contrat (JumelageAdSchema) — cf. jumelage-data sur le motif
-    queryFn: async (): Promise<JumelageAd> => {
+    queryFn: async () => {
       const res = await api.jumelage.ads[':id'].$get({ param: { id: adId } })
       if (res.status === 200) return res.json()
       throw new Error(`GET /jumelage/ads/{id} : ${res.status}`)

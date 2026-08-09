@@ -27,8 +27,7 @@ import './jumelage-admin.css'
 
 const ADMIN_LISTINGS_KEY = ['admin-listings'] as const
 
-// Type fixé au contrat (MyListingsResponseSchema) — cf. jumelage-data sur le motif
-async function fetchAdminListings(): Promise<{ items: MyListing[] }> {
+async function fetchAdminListings() {
   const res = await api.admin.listings.$get()
   if (res.status === 200) return res.json()
   throw new Error(`GET /admin/listings : ${res.status}`)

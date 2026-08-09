@@ -1,4 +1,4 @@
-import type { AccessGrid, BedType, MyListing, RequestHostView } from '@repo/contracts'
+import type { AccessGrid, BedType, MyListing } from '@repo/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import type { SigneName } from '../ui'
@@ -16,8 +16,7 @@ export const RECEIVED_REQUESTS_KEY = ['received-requests'] as const
 export function useMyListings(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: MY_LISTINGS_KEY,
-    // Retour annoté (pattern de src/lib/hooks.ts) : le contrat Zod est la source de vérité.
-    queryFn: async (): Promise<MyListing[]> => {
+    queryFn: async () => {
       const res = await api.my.listings.$get()
       if (res.status === 200) return (await res.json()).items
       throw new Error(`GET /my/listings : ${res.status}`)
@@ -30,7 +29,7 @@ export function useMyListings(options?: { enabled?: boolean }) {
 export function useReceivedRequests() {
   return useQuery({
     queryKey: RECEIVED_REQUESTS_KEY,
-    queryFn: async (): Promise<RequestHostView[]> => {
+    queryFn: async () => {
       const res = await api.my['received-requests'].$get()
       if (res.status === 200) return (await res.json()).items
       throw new Error(`GET /my/received-requests : ${res.status}`)
@@ -45,7 +44,7 @@ export function useReceivedRequests() {
 export function useListingStatus() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (input: { id: string; status: 'OPEN' | 'FULL' }): Promise<MyListing> => {
+    mutationFn: async (input: { id: string; status: 'OPEN' | 'FULL' }) => {
       const res = await api.my.listings[':id'].status.$patch({
         param: { id: input.id },
         json: { status: input.status },
