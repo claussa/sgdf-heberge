@@ -1,0 +1,241 @@
+/* Styles des écrans jumelage (A.13-A.16) et admin (hors maquette, composants charte).
+   Préfixe ja- ; tokens de src/styles/tokens.css ; 2 colonnes → 1 sous 768px (C.8). */
+
+/* ============ Colonnes d'écran ============ */
+.ja-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ja-col--560 {
+  max-width: 560px;
+}
+
+.ja-col--680 {
+  max-width: 680px;
+}
+
+.ja-col--760 {
+  max-width: 760px;
+}
+
+/* ============ Liens (retour, navigation interne) ============ */
+.ja-link {
+  align-self: flex-start;
+  font: 700 13px var(--font-courant);
+  color: var(--lien);
+  text-decoration: none;
+}
+
+.ja-link:hover {
+  color: var(--bleu);
+}
+
+.ja-link:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+/* ============ Grille formulaire 2 colonnes ============ */
+.ja-grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* ============ Compteur de liste (« {n} unités · … ») ============ */
+.ja-count {
+  margin: 0;
+  font: 400 14px var(--font-courant);
+  color: var(--bleu);
+}
+
+/* ============ Cartes unité (A.14) ============ */
+.ja-unit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ja-unit-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--blanc);
+  border: 1px solid var(--bordure);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.ja-unit-card:hover {
+  border-color: var(--bleu);
+}
+
+.ja-unit-card:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+.ja-vignette {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--fond-neutre);
+}
+
+.ja-unit-card__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ja-unit-card__name {
+  font: 700 15px var(--font-courant);
+  color: var(--bleu);
+}
+
+.ja-unit-card__sub {
+  font: 400 13px / 1.4 var(--font-courant);
+  color: var(--texte-secondaire);
+}
+
+.ja-unit-card__see {
+  flex: none;
+  font: 700 13px var(--font-courant);
+  color: var(--lien);
+  white-space: nowrap;
+}
+
+/* ============ Fiche unité (A.15) ============ */
+.ja-subtitle {
+  margin: 0;
+  font: 400 14px / 1.6 var(--font-courant);
+  color: var(--texte-secondaire);
+}
+
+.ja-quote {
+  margin: 0;
+  font: 400 14px / 1.6 var(--font-courant);
+  color: var(--bleu);
+}
+
+/* ============ Cartes empilées (A.16 + admin) ============ */
+.ja-card-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ja-card-line {
+  margin: 0;
+  font: 400 14px / 1.5 var(--font-courant);
+  color: var(--bleu);
+}
+
+.ja-card-sub {
+  margin: 0;
+  font: 400 13px / 1.5 var(--font-courant);
+  color: var(--texte-secondaire);
+}
+
+.ja-badge-row {
+  display: flex;
+  gap: 6px;
+}
+
+.ja-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ============ Admin — tableau de bord ============ */
+.ja-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.ja-kv-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ja-kv-title {
+  font: 700 11px var(--font-courant);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--label);
+}
+
+.ja-kv {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ja-kv__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ja-kv__row dt {
+  font: 400 13px var(--font-courant);
+  color: var(--texte-secondaire);
+}
+
+.ja-kv__row dd {
+  margin: 0;
+  font: 700 13px var(--font-courant);
+  color: var(--bleu);
+}
+
+/* ============ Admin — logements institutionnels ============ */
+.ja-row-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ja-row-title {
+  font: 700 15px var(--font-courant);
+  color: var(--bleu);
+}
+
+.ja-address {
+  margin: 0;
+  font: 400 12px / 1.5 var(--font-courant);
+  color: var(--texte-secondaire);
+}
+
+.ja-address-keep {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.ja-address-keep .field {
+  flex: 1;
+}
+
+/* ============ Mobile (< 768px) ============ */
+@media (max-width: 767.98px) {
+  .ja-grid2 {
+    grid-template-columns: 1fr;
+  }
+
+  .ja-metrics {
+    grid-template-columns: 1fr;
+  }
+}
