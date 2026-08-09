@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@hono/zod-openapi@1.5.2':
+    hash: 333bed9dfdce7b684c4dde6d8a2d9f896e3cedb2d83ed89e4c41f13ac861d27f
+    path: patches/@hono__zod-openapi@1.5.2.patch
+
 importers:
 
   .:
@@ -25,7 +30,7 @@ importers:
         version: 1.19.17(hono@4.13.1)
       '@hono/zod-openapi':
         specifier: ^1.5.2
-        version: 1.5.2(hono@4.13.1)(zod@4.4.3)
+        version: 1.5.2(patch_hash=333bed9dfdce7b684c4dde6d8a2d9f896e3cedb2d83ed89e4c41f13ac861d27f)(hono@4.13.1)(zod@4.4.3)
       '@repo/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
@@ -2540,7 +2545,7 @@ snapshots:
     dependencies:
       hono: 4.13.1
 
-  '@hono/zod-openapi@1.5.2(hono@4.13.1)(zod@4.4.3)':
+  '@hono/zod-openapi@1.5.2(patch_hash=333bed9dfdce7b684c4dde6d8a2d9f896e3cedb2d83ed89e4c41f13ac861d27f)(hono@4.13.1)(zod@4.4.3)':
     dependencies:
       '@asteasolutions/zod-to-openapi': 8.5.0(zod@4.4.3)
       '@hono/zod-validator': 0.9.0(hono@4.13.1)(zod@4.4.3)

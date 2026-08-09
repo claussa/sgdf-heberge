@@ -33,6 +33,9 @@
       "cpu-features",
       "ssh2",
       "protobufjs"
-    ]
+    ],
+    "patchedDependencies": {
+      "@hono/zod-openapi@1.5.2": "patches/@hono__zod-openapi@1.5.2.patch"
+    }
   }
 }
