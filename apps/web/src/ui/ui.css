@@ -1,0 +1,454 @@
+/* UI kit — styles exacts de la maquette hi-fi (rapport C.3 à C.6).
+   Aucune ombre, aucun border-radius hors inputs (3px). */
+
+/* ============ Boutons (C.5) ============ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  text-align: center;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.btn--primary {
+  background: var(--bleu);
+  color: var(--blanc);
+  min-height: 46px;
+  padding: 0 24px;
+  font: 700 14px var(--font-courant);
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: var(--bleu-hover);
+}
+
+.btn--primary.btn--sm {
+  min-height: 40px;
+  padding: 0 18px;
+  font-size: 13px;
+}
+
+.btn--secondary {
+  background: var(--blanc);
+  color: var(--bleu);
+  border: 1.5px solid var(--bleu);
+  min-height: 42px;
+  padding: 0 18px;
+  font: 700 13px var(--font-courant);
+}
+
+.btn--secondary:hover:not(:disabled) {
+  background: var(--fond-neutre);
+}
+
+.btn--secondary.btn--sm {
+  min-height: 38px;
+  padding: 0 16px;
+}
+
+.btn--block {
+  width: 100%;
+}
+
+/* ============ Champs (C.5) ============ */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field--group {
+  gap: 10px;
+}
+
+.field__label {
+  font: 700 11px var(--font-courant);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--label);
+}
+
+/* Deux champs accolés sous un même label (ex. « Prénom et nom ») */
+.field__pair {
+  display: flex;
+  gap: 8px;
+}
+
+.field__pair > * {
+  flex: 1;
+  min-width: 0;
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  border: 1px solid var(--bordure-input);
+  border-radius: var(--radius-input);
+  background: var(--blanc);
+  color: var(--bleu);
+  font: 400 14px var(--font-courant);
+}
+
+.input,
+.select {
+  min-height: 42px;
+  padding: 0 12px;
+}
+
+.input--lg {
+  min-height: 44px; /* connexion */
+}
+
+.input--sm {
+  min-height: 36px; /* lignes de tableau */
+  padding: 0 10px;
+  font-size: 13px;
+}
+
+.input--xs {
+  min-height: 34px; /* barre de filtres */
+  font-size: 13px;
+}
+
+.input:disabled,
+.select:disabled,
+.textarea:disabled {
+  border-color: var(--bordure-input-desactive);
+  background: var(--fond-neutre);
+  color: var(--texte-secondaire);
+  -webkit-text-fill-color: var(--texte-secondaire);
+  opacity: 1;
+}
+
+.textarea {
+  min-height: 80px;
+  padding: 10px 12px;
+  font: 400 13px / 1.5 var(--font-courant);
+  resize: vertical;
+}
+
+.textarea--sm {
+  min-height: 64px;
+}
+
+.textarea--lg {
+  min-height: 88px;
+}
+
+.select-wrap {
+  position: relative;
+  display: block;
+}
+
+.select {
+  appearance: none;
+  padding-right: 32px;
+}
+
+.select-wrap::after {
+  content: "▾";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--texte-secondaire);
+  pointer-events: none;
+  font: 400 14px var(--font-courant);
+}
+
+/* ============ Checkbox (carré 18px, coché = carré plein 10px) ============ */
+.checkbox {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  cursor: pointer;
+}
+
+.checkbox__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.checkbox__box {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  margin-top: 1px;
+  border: 1.5px solid var(--bleu);
+  background: var(--blanc);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.checkbox__input:checked + .checkbox__box::after {
+  content: "";
+  width: 10px;
+  height: 10px;
+  background: var(--bleu);
+}
+
+.checkbox__input:focus-visible + .checkbox__box {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+.checkbox__label {
+  font: 400 14px / 1.4 var(--font-courant);
+  color: var(--bleu);
+}
+
+/* ============ Radio (rond 18px, coché = disque 9px) ============ */
+.radio {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  cursor: pointer;
+}
+
+.radio__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.radio__box {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  margin-top: 1px;
+  border: 1.5px solid var(--bleu);
+  border-radius: 50%;
+  background: var(--blanc);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.radio__input:checked + .radio__box::after {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--bleu);
+}
+
+.radio__input:focus-visible + .radio__box {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+.radio__label {
+  font: 400 14px / 1.4 var(--font-courant);
+  color: var(--bleu);
+}
+
+/* ============ Chip (toggle — C.5) ============ */
+.chip {
+  padding: 6px 12px;
+  font: 400 13px var(--font-courant);
+  border: 1px solid var(--bordure-input);
+  border-radius: 0;
+  background: var(--blanc);
+  color: var(--bleu);
+  cursor: pointer;
+}
+
+.chip:hover {
+  border-color: var(--bleu);
+}
+
+.chip--active {
+  border-color: var(--bleu);
+  background: var(--bleu);
+  color: var(--blanc);
+}
+
+/* ============ Onglets (C.5) ============ */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--bordure);
+  overflow-x: auto;
+}
+
+.tabs__tab {
+  padding: 10px 14px;
+  font: 700 13px var(--font-courant);
+  white-space: nowrap;
+  color: var(--texte-secondaire);
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+}
+
+.tabs__tab--active {
+  color: var(--bleu);
+  border-bottom-color: var(--orange);
+}
+
+/* ============ Badges (C.3 — jamais de fond) ============ */
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  font: 400 12px var(--font-courant);
+  border: 1px solid var(--bordure-badge);
+  color: var(--bleu);
+  background: none;
+}
+
+.badge--success {
+  border-color: var(--vert);
+  color: var(--vert);
+  font-weight: 700;
+}
+
+.badge--danger {
+  border-color: var(--rouge);
+  color: var(--rouge);
+  font-weight: 700;
+}
+
+.badge--warning {
+  border-color: var(--orange);
+  color: var(--bleu);
+  font-weight: 700;
+}
+
+/* ============ Cartes (C.4) ============ */
+.card {
+  background: var(--blanc);
+  border: 1px solid var(--bordure);
+  padding: 16px;
+}
+
+.card--accent-brand {
+  border-top: 6px solid var(--bleu);
+}
+
+.card--accent-success {
+  border-top: 6px solid var(--vert);
+}
+
+.card--accent-warning {
+  border-top: 6px solid var(--orange);
+}
+
+/* ============ Avatar (carré, initiales) ============ */
+.avatar {
+  flex: none;
+  background: var(--fond-neutre);
+  color: var(--bleu);
+  font-family: var(--font-courant);
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ============ Stepper ============ */
+.stepper {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.stepper__square {
+  width: 10px;
+  height: 10px;
+  background: var(--stepper-inactif);
+}
+
+.stepper__square--active {
+  background: var(--orange);
+}
+
+.stepper__label {
+  font: 700 11px var(--font-courant);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--label);
+}
+
+/* ============ Panneaux et textes ============ */
+.success-panel {
+  background: var(--blanc);
+  border: 1px solid var(--bordure);
+  border-top: 6px solid var(--vert);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: fade var(--duree) var(--ease) both;
+}
+
+.empty-state {
+  margin: 0;
+  font: 400 14px var(--font-courant);
+  color: var(--texte-secondaire);
+}
+
+.page-title {
+  margin: 0;
+  font: 400 36px / 1.1 var(--font-titrage);
+  color: var(--bleu);
+}
+
+.section-title {
+  margin: 0;
+  font: 400 24px / 1 var(--font-titrage);
+  color: var(--bleu);
+}
+
+.help-text {
+  margin: 0;
+  font: 400 13px / 1.5 var(--font-courant);
+  color: var(--texte-secondaire);
+}
+
+/* Utilitaires texte (paragraphes de la maquette) */
+.text-body {
+  margin: 0;
+  font: 400 14px / 1.5 var(--font-courant);
+  color: var(--bleu);
+}
+
+.alert-text {
+  margin: 0;
+  font: 400 13px / 1.5 var(--font-courant);
+  color: var(--rouge);
+}
+
+/* Séparateur horizontal (1px, hairline) */
+.divider {
+  border: none;
+  height: 1px;
+  background: var(--bordure);
+  margin: 8px 0;
+  width: 100%;
+}
+
+/* Chargement sobre (guards, dispatcher) */
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 64px 16px;
+}

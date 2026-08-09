@@ -1,58 +1,62 @@
-import type { Member } from '@repo/contracts'
-import { useCallback, useEffect, useState } from 'react'
-import { api } from './lib/api'
-import { Login } from './pages/Login'
-import { Members } from './pages/Members'
+import { Route, Routes } from 'react-router'
+import { RequireAdmin, RequireAuth, RequireOnboarded } from './guards'
+import { AppLayout } from './layout/AppLayout'
+import { Admin } from './pages/Admin'
+import { AdminLogements } from './pages/AdminLogements'
+import { Connexion } from './pages/Connexion'
+import { Dispatcher } from './pages/Dispatcher'
+import { HebergeurDemandes } from './pages/HebergeurDemandes'
+import { HebergeurLogementNouveau } from './pages/HebergeurLogementNouveau'
+import { HebergeurLogements } from './pages/HebergeurLogements'
+import { Inscription } from './pages/Inscription'
+import { Jumelage } from './pages/Jumelage'
+import { JumelageFiche } from './pages/JumelageFiche'
+import { Logement } from './pages/Logement'
+import { MesDemandes } from './pages/MesDemandes'
+import { ProfilBenevole } from './pages/ProfilBenevole'
+import { ProfilHebergeur } from './pages/ProfilHebergeur'
+import { ProfilUnite } from './pages/ProfilUnite'
+import { Recherche } from './pages/Recherche'
+import { UniteAnnonce } from './pages/UniteAnnonce'
+import { UniteRelations } from './pages/UniteRelations'
+import './pages/pages.css'
 
-type AuthState = { status: 'loading' } | { status: 'anonymous' } | { status: 'ok'; me: Member }
-
+/**
+ * Router de la SPA. Tout passe par AppLayout (chrome A.0). Les écrans profil
+ * (/profil, /hebergeur, /unite) ne sont PAS derrière RequireOnboarded : c'est là
+ * que se fait l'onboarding (accountType null autorisé).
+ */
 export function App() {
-  const [auth, setAuth] = useState<AuthState>({ status: 'loading' })
-
-  const refresh = useCallback(async () => {
-    try {
-      const res = await api.me.$get()
-      if (res.ok) {
-        setAuth({ status: 'ok', me: await res.json() })
-      } else {
-        setAuth({ status: 'anonymous' })
-      }
-    } catch {
-      setAuth({ status: 'anonymous' })
-    }
-  }, [])
-
-  useEffect(() => {
-    void refresh()
-  }, [refresh])
-
-  const logout = useCallback(async () => {
-    await api.auth.logout.$post()
-    setAuth({ status: 'anonymous' })
-  }, [])
-
-  if (auth.status === 'loading') {
-    return <main className="centered">Chargement…</main>
-  }
-
-  if (auth.status === 'anonymous') {
-    return <Login />
-  }
-
   return (
-    <main className="layout">
-      <header className="topbar">
-        <h1>Espace adhérents</h1>
-        <div className="topbar-right">
-          <span>
-            {auth.me.firstName} {auth.me.lastName}
-          </span>
-          <button type="button" onClick={logout}>
-            Se déconnecter
-          </button>
-        </div>
-      </header>
-      <Members />
-    </main>
+    <Routes>
+      <Route element={<AppLayout />}>
+        <Route path="/connexion" element={<Connexion />} />
+        <Route path="/" element={<Dispatcher />} />
+        <Route element={<RequireAuth />}>
+          <Route path="/inscription" element={<Inscription />} />
+          <Route path="/profil" element={<ProfilBenevole />} />
+          <Route path="/hebergeur" element={<ProfilHebergeur />} />
+          <Route path="/unite" element={<ProfilUnite />} />
+          <Route element={<RequireOnboarded />}>
+            <Route path="/recherche" element={<Recherche />} />
+            <Route path="/logements/:id" element={<Logement />} />
+            <Route path="/mes-demandes" element={<MesDemandes />} />
+            <Route path="/hebergeur/demandes" element={<HebergeurDemandes />} />
+            <Route path="/hebergeur/logements" element={<HebergeurLogements />} />
+            <Route path="/hebergeur/logements/nouveau" element={<HebergeurLogementNouveau />} />
+            <Route path="/jumelage" element={<Jumelage />} />
+            <Route path="/jumelage/:adId" element={<JumelageFiche />} />
+            <Route path="/unite/annonce" element={<UniteAnnonce />} />
+            <Route path="/unite/relations" element={<UniteRelations />} />
+          </Route>
+          <Route element={<RequireAdmin />}>
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/admin/logements" element={<AdminLogements />} />
+          </Route>
+        </Route>
+        {/* Chemin inconnu : le dispatcher renvoie vers l'écran pertinent */}
+        <Route path="*" element={<Dispatcher />} />
+      </Route>
+    </Routes>
   )
 }

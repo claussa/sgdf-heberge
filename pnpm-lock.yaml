@@ -35,6 +35,9 @@ importers:
       '@repo/emails':
         specifier: workspace:*
         version: link:../../packages/emails
+      '@repo/event-config':
+        specifier: workspace:*
+        version: link:../../packages/event-config
       '@scalar/hono-api-reference':
         specifier: ^0.11.13
         version: 0.11.13(hono@4.13.1)
@@ -78,6 +81,18 @@ importers:
 
   apps/web:
     dependencies:
+      '@fontsource/caveat-brush':
+        specifier: ^5.1.0
+        version: 5.3.0
+      '@fontsource/raleway':
+        specifier: ^5.1.0
+        version: 5.3.0
+      '@fontsource/sarabun':
+        specifier: ^5.1.0
+        version: 5.3.0
+      '@tanstack/react-query':
+        specifier: ^5.62.0
+        version: 5.101.4(react@19.2.8)
       hono:
         specifier: ^4.13.1
         version: 4.13.1
@@ -87,6 +102,9 @@ importers:
       react-dom:
         specifier: ^19.2.0
         version: 19.2.8(react@19.2.8)
+      react-router:
+        specifier: ^7.1.0
+        version: 7.18.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
     devDependencies:
       '@repo/api':
         specifier: workspace:*
@@ -97,6 +115,9 @@ importers:
       '@repo/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@repo/event-config':
+        specifier: workspace:*
+        version: link:../../packages/event-config
       '@types/react':
         specifier: ^19.2.0
         version: 19.2.18
@@ -173,6 +194,9 @@ importers:
       '@react-email/render':
         specifier: ^2.1.0
         version: 2.1.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@repo/event-config':
+        specifier: workspace:*
+        version: link:../event-config
       react:
         specifier: ^19.2.0
         version: 19.2.8
@@ -186,6 +210,9 @@ importers:
       typescript:
         specifier: ~5.9.3
         version: 5.9.3
+      vitest:
+        specifier: ^4.1.10
+        version: 4.1.10(@types/node@22.20.1)(vite@8.2.1(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.11)(yaml@2.9.0))
 
   packages/event-config:
     dependencies:
@@ -582,6 +609,15 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
+
+  '@fontsource/caveat-brush@5.3.0':
+    resolution: {integrity: sha512-BHSP/9EKNUtnSj7h4TXuYKOrQWgnkCGm7QMHYiie0xSxtlWKbND6wLkhAgwUtUpbz5k8XL8CWPRrL6tDV+JC8w==}
+
+  '@fontsource/raleway@5.3.0':
+    resolution: {integrity: sha512-BTWr1I14Ji0DWpS/KCIq/CXcvxXWgMO73gynWpbYv7A5wlPhLevozgRmdPJvZmUf0fhH+Lju+F4nigJ6Ums24A==}
+
+  '@fontsource/sarabun@5.3.0':
+    resolution: {integrity: sha512-8GWxnEIG9g/2JlZxU+APaVwipcLMkZkBps9N1tEyBxXWaJEnAtHpuaDYmFVG7lzTgr28orG7//htD/rfxDlfFg==}
 
   '@grpc/grpc-js@1.14.4':
     resolution: {integrity: sha512-k9Dj3DV/itK9D06Y8f190Qgop7/Ui+D0njFV3LHMPwPT75DpXLQohE9Wmz0QElrJnzsjB7KPWiKJbOl7IPDArQ==}
@@ -1016,6 +1052,14 @@ packages:
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
+  '@tanstack/query-core@5.101.4':
+    resolution: {integrity: sha512-gNwcvOJcRbLWPOLG/2OBm+zM+Yv+MKsXKEOWC57USuZDEsI71hEErQsiEGx5wX9rzWWkfwM0fVSPoiIFSsxfiw==}
+
+  '@tanstack/react-query@5.101.4':
+    resolution: {integrity: sha512-yRg2pfOCxIs4ZJW3XYYHU/WgtD04FHSnfHlpRT7h7pR77hwkdRG4wxbKe4aq6P0RvXUTBSQpQeadS1SUYUe+KA==}
+    peerDependencies:
+      react: ^18 || ^19
+
   '@testcontainers/postgresql@12.1.0':
     resolution: {integrity: sha512-Pjf2VSVNirEPfz36nidyrVAnZvc2YhajOznY4VgyEsvfTd5qiMNOuPq96drREvxAUtXl5SFLX7vXj7sSq4aTcA==}
 
@@ -1312,6 +1356,10 @@ packages:
 
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
+
+  cookie@1.1.1:
+    resolution: {integrity: sha512-ei8Aos7ja0weRpFzJnEA9UHJ/7XQmqglbRwnf2ATjcB9Wq874VKH9kfjjirM6UhU2/E5fFYadylyhFldcqSidQ==}
+    engines: {node: '>=18'}
 
   core-util-is@1.0.3:
     resolution: {integrity: sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==}
@@ -1858,6 +1906,16 @@ packages:
     peerDependencies:
       react: ^19.2.8
 
+  react-router@7.18.2:
+    resolution: {integrity: sha512-aUVMjFm3GAPTTZL7oYr5E7ETiqfQCHRLH+B+5afnICvf0r7kkK4eR6SMuwbSTJw/7t+12khT/Kahij49fqOCIg==}
+    engines: {node: '>=20.0.0'}
+    peerDependencies:
+      react: '>=18'
+      react-dom: '>=18'
+    peerDependenciesMeta:
+      react-dom:
+        optional: true
+
   react@19.2.8:
     resolution: {integrity: sha512-PWaYA1L/q9u2u7xYQi+Y3L3Yfnie7XyLeaJICV1MGD6LprsBxcAqGjYyr0eY3p+QdsA+x/Irkt4Qif8D63+Sbw==}
     engines: {node: '>=0.10.0'}
@@ -1933,6 +1991,9 @@ packages:
 
   selderee@0.11.0:
     resolution: {integrity: sha512-5TF+l7p4+OsnP8BCCvSyZiSPc4x4//p5uPwK8TCnVPJYRmU2aYKMpOXvw8zM5a5JvuuCGN1jmsMwuU2W02ukfA==}
+
+  set-cookie-parser@2.7.2:
+    resolution: {integrity: sha512-oeM1lpU/UvhTxw+g3cIfxXHyJRc/uidd3yK1P242gzHds0udQBYzs3y8j4gCCW+ZJ7ad0yctld8RYO+bdurlvw==}
 
   shebang-command@2.0.0:
     resolution: {integrity: sha512-kHxr2zZpYtdmrN1qDjrrX/Z1rR1kG8Dx+gkpK1G4eXmvXswmcE1hTWBWYUzlraYw1/yZp6YuDY77YtvbN0dmDA==}
@@ -2450,6 +2511,12 @@ snapshots:
   '@esbuild/win32-x64@0.28.1':
     optional: true
 
+  '@fontsource/caveat-brush@5.3.0': {}
+
+  '@fontsource/raleway@5.3.0': {}
+
+  '@fontsource/sarabun@5.3.0': {}
+
   '@grpc/grpc-js@1.14.4':
     dependencies:
       '@grpc/proto-loader': 0.8.1
@@ -2790,6 +2857,13 @@ snapshots:
 
   '@standard-schema/spec@1.1.0': {}
 
+  '@tanstack/query-core@5.101.4': {}
+
+  '@tanstack/react-query@5.101.4(react@19.2.8)':
+    dependencies:
+      '@tanstack/query-core': 5.101.4
+      react: 19.2.8
+
   '@testcontainers/postgresql@12.1.0':
     dependencies:
       testcontainers: 12.1.0
@@ -3099,6 +3173,8 @@ snapshots:
   consola@3.4.2: {}
 
   convert-source-map@2.0.0: {}
+
+  cookie@1.1.1: {}
 
   core-util-is@1.0.3: {}
 
@@ -3652,6 +3728,14 @@ snapshots:
       react: 19.2.8
       scheduler: 0.27.0
 
+  react-router@7.18.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
+    dependencies:
+      cookie: 1.1.1
+      react: 19.2.8
+      set-cookie-parser: 2.7.2
+    optionalDependencies:
+      react-dom: 19.2.8(react@19.2.8)
+
   react@19.2.8: {}
 
   readable-stream@2.3.8:
@@ -3736,6 +3820,8 @@ snapshots:
   selderee@0.11.0:
     dependencies:
       parseley: 0.12.1
+
+  set-cookie-parser@2.7.2: {}
 
   shebang-command@2.0.0:
     dependencies:

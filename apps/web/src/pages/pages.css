@@ -1,0 +1,261 @@
+/* Styles des écrans (connexion, inscription, profils, placeholders).
+   Grilles 2 colonnes → 1 colonne sous 768px (C.8). */
+
+/* ============ Connexion (A.1) ============ */
+.connexion {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 420px 1fr;
+}
+
+.connexion__hero {
+  position: relative;
+  background: var(--bleu);
+  padding: 36px 56px 36px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-height: 360px;
+}
+
+.connexion__hero-logo {
+  width: 96px;
+  align-self: flex-start;
+}
+
+.connexion__hero-spacer {
+  flex: 1;
+}
+
+.connexion__hero-title {
+  margin: 0;
+  font: 400 46px / 1.05 var(--font-titrage);
+  color: var(--blanc);
+  max-width: 360px;
+}
+
+.connexion__hero-text {
+  margin: 0;
+  font: 400 15px / 1.6 var(--font-courant);
+  color: var(--blanc);
+  max-width: 340px;
+}
+
+/* Papier déchiré : séparateur vertical, desktop uniquement */
+.connexion__dechirure {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  margin-left: -14px;
+  height: 100%;
+  width: 32px;
+  object-fit: fill;
+}
+
+.connexion__panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 48px 36px;
+  gap: 16px;
+}
+
+.connexion__form {
+  max-width: 400px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.connexion__event-logo {
+  width: 88px;
+}
+
+.banner-error {
+  margin: 0;
+  border: 1px solid var(--rouge);
+  background: var(--blanc);
+  padding: 12px 16px;
+  font: 400 14px / 1.5 var(--font-courant);
+  color: var(--rouge);
+}
+
+/* ============ Inscription (A.2) ============ */
+.inscription {
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.inscription__choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.choice-card {
+  position: relative;
+  cursor: pointer;
+  padding: 18px;
+  background: var(--blanc);
+  border: 1px solid var(--bordure-badge);
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.choice-card:hover {
+  border-color: var(--bleu);
+}
+
+.choice-card--selected {
+  border: 2px solid var(--bleu);
+}
+
+.choice-card__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.choice-card:has(.choice-card__input:focus-visible) {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+.choice-card__dot {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--bleu);
+  border-radius: 50%;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.choice-card__dot-inner {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--bleu);
+}
+
+.choice-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.choice-card__title {
+  font: 700 15px var(--font-courant);
+  color: var(--bleu);
+}
+
+.choice-card__text {
+  font: 400 13px / 1.5 var(--font-courant);
+  color: var(--texte-secondaire);
+}
+
+.inscription__actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ============ Profils (A.3, A.7, A.12) ============ */
+.profil {
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.profil__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* « Nous serons » : nombre + « personnes » */
+.profil__inline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.profil__inline .input {
+  width: 90px;
+}
+
+/* ============ Bloc compte (déconnexion, suppression, export) ============ */
+.account-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.account-actions__logout {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: 700 13px var(--font-courant);
+  color: var(--lien);
+}
+
+.account-actions__logout:hover {
+  color: var(--bleu);
+}
+
+.account-actions__delete {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: 400 13px var(--font-courant);
+  color: var(--texte-secondaire);
+  text-decoration: underline;
+}
+
+.account-actions__delete:hover {
+  color: var(--rouge);
+}
+
+.account-actions__export {
+  font: 400 13px var(--font-courant);
+}
+
+/* ============ Placeholder ============ */
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ============ Mobile (< 768px) ============ */
+@media (max-width: 767.98px) {
+  .connexion {
+    grid-template-columns: 1fr;
+  }
+
+  .connexion__dechirure {
+    display: none;
+  }
+
+  .inscription__choices {
+    grid-template-columns: 1fr;
+  }
+
+  .profil__grid {
+    grid-template-columns: 1fr;
+  }
+}
