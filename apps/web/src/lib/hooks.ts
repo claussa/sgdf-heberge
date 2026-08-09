@@ -6,7 +6,7 @@ import { api } from './api'
 export const ME_QUERY_KEY = ['me'] as const
 
 /** 401 = anonyme (data `null`), pas une erreur. Les autres statuts remontent en `error`. */
-async function fetchMe(): Promise<Me | null> {
+async function fetchMe() {
   const res = await api.me.$get()
   if (res.status === 200) return res.json()
   if (res.status === 401) return null

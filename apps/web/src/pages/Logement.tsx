@@ -1,4 +1,4 @@
-import { ACCESS_CRITERIA, type ErrorResponse, type ListingDetail, type Me } from '@repo/contracts'
+import { ACCESS_CRITERIA, type ListingDetail, type Me } from '@repo/contracts'
 import { eventConfig, formatDateRangeLong } from '@repo/event-config'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
@@ -45,7 +45,7 @@ export function Logement() {
   const fiche = useQuery({
     queryKey: ['listing', id],
     enabled: id !== '',
-    queryFn: async (): Promise<ListingDetail | null> => {
+    queryFn: async () => {
       const res = await api.listings[':id'].$get({ param: { id } })
       if (res.status === 200) return res.json()
       if (res.status === 404) return null
@@ -175,8 +175,7 @@ function PanneauDemande({
       })
       if (res.status === 201) return
       if (res.status === 409) {
-        // Le json() du RPC ressort en any (cf. lib/hooks.ts) — on fixe le type au contrat
-        const corps: ErrorResponse = await res.json()
+        const corps = await res.json()
         throw new Error(corps.error.message)
       }
       throw new Error('L’envoi a échoué. Attends un instant, puis réessaie.')

@@ -10,14 +10,6 @@ import { Badge, Chip, EmptyState, HelpText, Input, Loading, PageTitle, SigneImag
 import { signeDe } from './benevole-lib'
 import './benevole.css'
 
-/** Réponse de GET /listings (miroir de ListingSearchResponseSchema, cf. contrats). */
-type ListingSearchResponse = {
-  items: ListingCard[]
-  total: number
-  page: number
-  pageSize: number
-}
-
 /** Chips « Type » (A.4) — libellé maquette → valeur de filtre API, en OR. */
 const CHIPS_TYPE: ReadonlyArray<{ label: string; value: SearchType }> = [
   { label: 'Canapé', value: 'COUCH' },
@@ -65,9 +57,7 @@ function RechercheView({ me }: { me: Me }) {
       [...types].sort().join('+'),
       besoins ? me.accessibilityNeeds.join('+') : '',
     ],
-    // Annotation explicite (même motif que fetchMe dans lib/hooks.ts) : le json()
-    // du RPC ressort en any — on fixe le type au contrat.
-    queryFn: async (): Promise<ListingSearchResponse> => {
+    queryFn: async () => {
       const res = await api.listings.$get({
         query: {
           site,

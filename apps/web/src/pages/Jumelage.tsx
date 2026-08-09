@@ -1,4 +1,4 @@
-import type { JumelageAd, JumelageKind } from '@repo/contracts'
+import type { JumelageKind } from '@repo/contracts'
 import { eventConfig, formatDateRangeShort, type SiteSlug, siteLabel } from '@repo/event-config'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router'
@@ -42,8 +42,7 @@ function JumelageList({ site, kind }: { site: SiteSlug; kind: JumelageKind }) {
   const navigate = useNavigate()
   const ads = useQuery({
     queryKey: [...JUMELAGE_ADS_KEY, site, kind],
-    // Miroir de JumelageAdsResponseSchema (cf. jumelage-data sur le motif)
-    queryFn: async (): Promise<{ items: JumelageAd[]; total: number }> => {
+    queryFn: async () => {
       const res = await api.jumelage.ads.$get({ query: { site, kind } })
       if (res.status === 200) return res.json()
       throw new Error(`GET /jumelage/ads : ${res.status}`)

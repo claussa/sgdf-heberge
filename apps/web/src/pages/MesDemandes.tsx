@@ -19,13 +19,6 @@ import './benevole.css'
 
 type DemandeAcceptee = Extract<RequestRequesterView, { effectiveStatus: 'ACCEPTED' }>
 
-/** Réponse de GET /my/requests (miroir de MyRequestsResponseSchema, cf. contrats). */
-type MyRequestsResponse = {
-  items: RequestRequesterView[]
-  pendingCount: number
-  pendingLimit: number
-}
-
 const JOUR_MS = 86_400_000
 
 /** « Envoyée il y a N jours » — badge relatif depuis createdAt. */
@@ -71,9 +64,7 @@ export function MesDemandes() {
 
   const demandes = useQuery({
     queryKey: ['my-requests'],
-    // Annotation explicite (même motif que fetchMe dans lib/hooks.ts) : le json()
-    // du RPC ressort en any — on fixe le type au contrat.
-    queryFn: async (): Promise<MyRequestsResponse> => {
+    queryFn: async () => {
       const res = await api.my.requests.$get()
       if (res.status !== 200) throw new Error(`GET /my/requests : ${res.status}`)
       return res.json()
