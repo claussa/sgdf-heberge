@@ -452,3 +452,39 @@
   justify-content: center;
   padding: 64px 16px;
 }
+
+/* AddressAutocomplete — suggestions BAN (maquette A.10 : 1re surlignée) */
+.address-ac {
+  position: relative;
+}
+.address-ac__list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: var(--blanc, #ffffff);
+  border: 1px solid rgba(0, 58, 93, 0.35);
+  border-top: none;
+}
+.address-ac__item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border: none;
+  background: none;
+  font: 400 14px var(--font-courant, Sarabun, sans-serif);
+  color: #003a5d;
+  cursor: pointer;
+}
+.address-ac__item:hover {
+  background: #ebeff2;
+}
+.address-ac__item--first {
+  background: #ebeff2;
+  font-weight: 700;
+}

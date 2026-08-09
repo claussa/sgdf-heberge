@@ -1,5 +1,6 @@
 import './ui.css'
 
+export { AddressAutocomplete, type AddressValue } from './AddressAutocomplete'
 export { Avatar, initialsOf } from './Avatar'
 export { Badge } from './Badge'
 export { Button } from './Button'

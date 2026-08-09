@@ -258,6 +258,15 @@ export const ListingUpsertSchema = z.object({
 })
 export type ListingUpsertInput = z.infer<typeof ListingUpsertSchema>
 
+/**
+ * Mise à jour d'un logement : l'adresse est OPTIONNELLE — absente, elle est conservée
+ * telle quelle (le propriétaire n'a pas à repasser par l'autocomplete BAN pour changer
+ * une description). Si le site change sans nouvelle adresse, la distance est remise à
+ * null (les coordonnées ne sont pas stockées).
+ */
+export const ListingUpdateSchema = ListingUpsertSchema.partial({ address: true })
+export type ListingUpdateInput = z.infer<typeof ListingUpdateSchema>
+
 export const ListingStatusUpdateSchema = z.object({ status: ListingStatusSchema })
 
 /** Chips de filtre « Type » : couchages + catégories institutionnelles */

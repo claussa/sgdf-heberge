@@ -158,3 +158,20 @@ cx('chip', active && 'chip--active', className)  // concatène en ignorant les f
 - `src/lib/hooks.ts` : `useMe()` (`me`, `isAnonymous`), `useSetMe()` (pousser un profil
   frais après PATCH/onboarding), `useLogout()`.
 - Tout texte propre à l'ÉVÉNEMENT vient de `@repo/event-config` (jamais en dur).
+
+## AddressAutocomplete
+
+```tsx
+interface AddressValue { label: string; city: string; postcode: string; lat: number; lng: number }
+<AddressAutocomplete
+  label="Adresse"
+  glose="obligatoire"
+  value={address}            // AddressValue | null — null tant que rien n'est CHOISI dans la liste
+  onChange={setAddress}
+  initialQuery={listing?.addressFull}  // édition : pré-remplit le champ sans valeur
+/>
+```
+
+BAN (api-adresse.data.gouv.fr), debounce 300 ms, min 3 caractères. La saisie libre ne
+produit JAMAIS de valeur : exiger `value !== null` avant submit (création) ; en édition,
+`value === null` = adresse inchangée (le PATCH accepte un body sans `address`).

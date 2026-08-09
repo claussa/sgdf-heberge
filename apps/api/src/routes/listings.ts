@@ -5,6 +5,7 @@ import {
   ListingSearchQuerySchema,
   ListingSearchResponseSchema,
   ListingStatusUpdateSchema,
+  ListingUpdateSchema,
   ListingUpsertSchema,
   MyListingSchema,
   MyListingsResponseSchema,
@@ -132,11 +133,13 @@ const updateListingRoute = createRoute({
   path: '/my/listings/{id}',
   tags: ['listings'],
   summary: 'Modifier un logement',
-  description: 'Les couchages sont remplacés en bloc et la capacité recalculée en transaction.',
+  description:
+    'Les couchages sont remplacés en bloc et la capacité recalculée en transaction. ' +
+    "L'adresse est optionnelle : absente, elle est conservée telle quelle.",
   middleware: [requireAuth, requireAccountType('INDIVIDUAL')] as const,
   request: {
     params: idParam,
-    body: { content: { 'application/json': { schema: ListingUpsertSchema } }, required: true },
+    body: { content: { 'application/json': { schema: ListingUpdateSchema } }, required: true },
   },
   responses: {
     200: {

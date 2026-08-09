@@ -1,6 +1,7 @@
 import type {
   AccessCriterion,
   ListingSearchQuerySchema,
+  ListingUpdateInput,
   ListingUpsertInput,
   SearchType,
 } from '@repo/contracts'
@@ -171,20 +172,16 @@ export async function syncListingCapacity(tx: Tx, listingId: string): Promise<vo
   await tx.listing.update({ where: { id: listingId }, data: { capacity } })
 }
 
-function assertDateRange(input: ListingUpsertInput): void {
+function assertDateRange(input: { availableFrom: string; availableTo: string }): void {
   if (input.availableFrom >= input.availableTo) {
     throw new AppError('VALIDATION_ERROR', 'La date de début doit précéder la date de fin')
   }
 }
 
 /** Colonnes dérivées du corps d'upsert — la catégorie n'est JAMAIS pilotée par ce corps. */
-function listingData(input: ListingUpsertInput) {
+function commonListingData(input: Omit<ListingUpsertInput, 'address'>) {
   return {
     site: input.site,
-    // Libellé BAN complet, chiffré par l'extension ; seule displayArea est publique.
-    addressFull: input.address.label,
-    displayArea: deriveDisplayArea(input.address),
-    distanceKm: computeDistanceKm(input.site, input.address),
     availableFrom: new Date(input.availableFrom),
     availableTo: new Date(input.availableTo),
     description: input.description ?? null,
@@ -198,6 +195,19 @@ function listingData(input: ListingUpsertInput) {
     accessQuiet: input.access.quiet,
     accessibilityNotes: input.accessibilityNotes ?? null,
   }
+}
+
+function addressListingData(site: string, address: ListingUpsertInput['address']) {
+  return {
+    // Libellé BAN complet, chiffré par l'extension ; seule displayArea est publique.
+    addressFull: address.label,
+    displayArea: deriveDisplayArea(address),
+    distanceKm: computeDistanceKm(site, address),
+  }
+}
+
+function listingData(input: ListingUpsertInput) {
+  return { ...commonListingData(input), ...addressListingData(input.site, input.address) }
 }
 
 function bedRows(listingId: string, beds: ListingUpsertInput['beds']) {
@@ -242,19 +252,26 @@ export async function updateListing(
   db: Db,
   ownerId: string,
   listingId: string,
-  input: ListingUpsertInput,
+  input: ListingUpdateInput,
   now = new Date(),
 ) {
   assertDateRange(input)
   await db.$transaction(async (tx) => {
     const owned = await tx.listing.findFirst({
       where: { id: listingId, ownerId },
-      select: { id: true },
+      select: { id: true, site: true },
     })
     if (!owned) throw new AppError('NOT_FOUND', 'Logement introuvable')
+    // Adresse absente = conservée telle quelle ; si le site change sans nouvelle
+    // adresse, la distance devient null (les coordonnées ne sont pas stockées).
+    const addressData = input.address
+      ? addressListingData(input.site, input.address)
+      : input.site !== owned.site
+        ? { distanceKm: null }
+        : {}
     await tx.listing.update({
       where: { id: listingId },
-      data: { ...listingData(input), lastHostActivityAt: now },
+      data: { ...commonListingData(input), ...addressData, lastHostActivityAt: now },
     })
     // Couchages : remplacement complet, puis recalcul complet — jamais d'incrémental.
     await tx.listingBed.deleteMany({ where: { listingId } })
