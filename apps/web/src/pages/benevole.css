@@ -1,0 +1,266 @@
+/* Styles du parcours bénévole : Recherche (A.4), Fiche logement (A.5), Mes demandes (A.6).
+   Importé par ces trois pages uniquement. Composants et tokens viennent du kit —
+   ici seulement la mise en page. Grilles → 1 colonne sous 768px (C.8). */
+
+/* ============ Recherche (A.4) ============ */
+.recherche {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Barre de filtres : fond #f5f7f8, bordure, 2 lignes (site + type) */
+.recherche__filtres {
+  background: var(--fond-filtres);
+  border: 1px solid var(--bordure);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.recherche__filtres-ligne {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.recherche__filtres-libelle {
+  width: 36px;
+  flex: none;
+}
+
+.recherche__chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Dates et personnes, à droite de la ligne 1 */
+.recherche__criteres {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.recherche__date {
+  width: 150px;
+}
+
+.recherche__nombre {
+  width: 64px;
+}
+
+.recherche__suffixe {
+  font: 400 13px var(--font-courant);
+  color: var(--texte-secondaire);
+}
+
+.recherche__compte {
+  margin: 0;
+  font: 400 14px var(--font-courant);
+  color: var(--bleu);
+}
+
+.recherche__grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 20px;
+}
+
+/* Carte logement (C.2) — toute la carte est un lien vers la fiche */
+.carte-logement {
+  display: flex;
+  flex-direction: column;
+  background: var(--blanc);
+  border: 1px solid var(--bordure);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.carte-logement:hover {
+  border-color: var(--bleu);
+}
+
+.carte-logement__media {
+  height: 148px;
+  background: var(--fond-neutre);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.carte-logement__corps {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.carte-logement__titre {
+  font: 700 15px var(--font-courant);
+  color: var(--bleu);
+}
+
+.carte-logement__zone {
+  font: 400 13px var(--font-courant);
+  color: var(--texte-secondaire);
+}
+
+.carte-logement__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* ============ Fiche logement (A.5) ============ */
+.fiche-logement {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.fiche-logement__retour {
+  align-self: flex-start;
+  font: 700 13px var(--font-courant);
+  color: var(--lien);
+  text-decoration: none;
+}
+
+.fiche-logement__retour:hover {
+  color: var(--bleu);
+}
+
+.fiche-logement__grille {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+.fiche-logement__colonne {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.fiche-logement__media {
+  height: 280px;
+  background: var(--fond-neutre);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fiche-logement__soustitre {
+  margin: 0;
+  font: 400 14px / 1.5 var(--font-courant);
+  color: var(--texte-secondaire);
+}
+
+.fiche-logement__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.fiche-logement__description {
+  margin: 0;
+  font: 400 14px / 1.6 var(--font-courant);
+  color: var(--bleu);
+}
+
+/* Panneau demande : Card accent brand, padding 20px (maquette A.5) */
+.card.fiche-logement__panneau {
+  padding: 20px;
+}
+
+.fiche-logement__form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.fiche-logement__prix {
+  margin: 0;
+  font: 700 18px var(--font-courant);
+  color: var(--bleu);
+}
+
+.fiche-logement__personnes {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fiche-logement__personnes .input {
+  width: 90px;
+  flex: none;
+}
+
+/* Bouton-lien externe (hôtel) : ancre habillée avec les classes du kit */
+a.btn {
+  text-decoration: none;
+}
+
+/* ============ Mes demandes (A.6) ============ */
+.mes-demandes {
+  max-width: 760px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.mes-demandes__liste {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mes-demandes__carte {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.mes-demandes__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.mes-demandes__coordonnees {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mes-demandes__reponse {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mes-demandes__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ============ Mobile (< 768px) ============ */
+@media (max-width: 767.98px) {
+  .fiche-logement__grille {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .recherche__criteres {
+    margin-left: 0;
+  }
+}
