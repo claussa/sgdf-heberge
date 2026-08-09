@@ -1,0 +1,259 @@
+/* Styles du parcours hébergeur : Demandes reçues (A.8), Mes logements (A.9),
+   Nouveau logement 1/2 et 2/2 (A.10-A.11). Colonnes 760px, grilles → 1 colonne
+   sous 768px (C.8). Aucune ombre, aucun border-radius (C.1). */
+
+/* ============ Demandes reçues (A.8) ============ */
+.demandes {
+  max-width: 760px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.demandes__list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.demande-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.demande-card__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.demande-card__title {
+  margin: 0;
+  font: 400 14px / 1.5 var(--font-courant);
+  color: var(--bleu);
+}
+
+.demande-card__quote {
+  margin: 0;
+  font: 400 13px / 1.55 var(--font-courant);
+  color: var(--bleu);
+}
+
+.demande-card__contact {
+  margin: 0;
+  font: 400 13px / 1.5 var(--font-courant);
+  color: var(--bleu);
+}
+
+.demande-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.demande-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.demande-card__question {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Ligne « {titre} + chips » du bloc Disponibilité */
+.dispo-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.dispo-row__title {
+  font: 700 14px var(--font-courant);
+  color: var(--bleu);
+}
+
+/* Paire de chips Libre / Complet (A.8, A.9) */
+.chips {
+  display: flex;
+  gap: 8px;
+}
+
+/* ============ Mes logements (A.9) ============ */
+.logements {
+  max-width: 760px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.logements__list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.logement-row {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.logement-row__vignette {
+  width: 96px;
+  height: 72px;
+  flex: none;
+  background: var(--fond-neutre);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logement-row__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.logement-row__title {
+  font: 700 15px var(--font-courant);
+  color: var(--bleu);
+}
+
+.logement-row__meta {
+  font: 400 13px / 1.5 var(--font-courant);
+  color: var(--texte-secondaire);
+}
+
+.logement-row__hidden {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.logement-row__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.logement-row__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+/* ============ Nouveau logement (A.10-A.11) ============ */
+.logement-form {
+  max-width: 760px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.logement-form__grid3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+}
+
+/* Tableau des couchages : Type (2fr) · Combien (70px) · Personnes (100px) ·
+   Précision (2fr) · retrait — scroll horizontal sous 560px (A.10). */
+.couchages {
+  overflow-x: auto;
+}
+
+.couchages__inner {
+  min-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.couchages__head,
+.couchages__row {
+  display: grid;
+  grid-template-columns: 2fr 70px 100px 2fr 52px;
+  gap: 8px;
+  align-items: center;
+}
+
+.couchages__head span {
+  font: 700 11px var(--font-courant);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--label);
+}
+
+/* Rapport C.5 : inputs de tableau à 36px — on aligne aussi le select du type */
+.couchages .select {
+  min-height: 36px;
+  padding: 0 32px 0 10px;
+  font-size: 13px;
+}
+
+.couchages__remove {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: 400 12px var(--font-courant);
+  color: var(--texte-secondaire);
+  text-decoration: underline;
+}
+
+.couchages__remove:hover {
+  color: var(--rouge);
+}
+
+/* Grille des 8 critères d'accessibilité (A.11) */
+.acces-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 14px;
+}
+
+/* Retour discret vers l'étape 1 */
+.retour-link {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  align-self: flex-start;
+  font: 700 13px var(--font-courant);
+  color: var(--lien);
+}
+
+.retour-link:hover {
+  color: var(--bleu);
+}
+
+/* ============ Mobile (< 768px) ============ */
+@media (max-width: 767.98px) {
+  .logement-row {
+    flex-wrap: wrap;
+  }
+
+  .logement-row__actions {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+  }
+
+  .logement-form__grid3 {
+    grid-template-columns: 1fr;
+  }
+
+  .acces-grid {
+    grid-template-columns: 1fr;
+  }
+}

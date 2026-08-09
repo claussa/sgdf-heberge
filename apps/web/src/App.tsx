@@ -44,6 +44,10 @@ export function App() {
             <Route path="/hebergeur/demandes" element={<HebergeurDemandes />} />
             <Route path="/hebergeur/logements" element={<HebergeurLogements />} />
             <Route path="/hebergeur/logements/nouveau" element={<HebergeurLogementNouveau />} />
+            <Route
+              path="/hebergeur/logements/:id/modifier"
+              element={<HebergeurLogementNouveau />}
+            />
             <Route path="/jumelage" element={<Jumelage />} />
             <Route path="/jumelage/:adId" element={<JumelageFiche />} />
             <Route path="/unite/annonce" element={<UniteAnnonce />} />
