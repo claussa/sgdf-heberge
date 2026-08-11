@@ -25,3 +25,4 @@ infra/*.tfvars
 # misc
 .DS_Store
 coverage/
+.idea
