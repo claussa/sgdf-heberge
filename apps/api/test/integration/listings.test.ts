@@ -102,6 +102,7 @@ interface MyListingBody {
   addressFull: string
   hiddenAt: string | null
   pendingRequests: number
+  acceptedPeople: number
   bedTypes: string[]
   beds: Array<{ type: string; count: number; capacityEach: number; note: string | null }>
 }
@@ -301,6 +302,7 @@ describe('création', () => {
     // Vue propriétaire : sa propre adresse, déchiffrée par l'extension
     expect(created.addressFull).toBe(PARIS_12E.label)
     expect(created.pendingRequests).toBe(0)
+    expect(created.acceptedPeople).toBe(0)
   })
 
   it('GET /my/listings expose la vue propriétaire (adresse comprise)', async () => {
@@ -312,6 +314,7 @@ describe('création', () => {
     expect(mine?.addressFull).toBe(PARIS_12E.label)
     expect(mine?.hiddenAt).toBeNull()
     expect(mine?.pendingRequests).toBe(0)
+    expect(mine?.acceptedPeople).toBe(0)
   })
 
   it('l’adresse complète ne sort JAMAIS sur la fiche publique (stockée chiffrée)', async () => {

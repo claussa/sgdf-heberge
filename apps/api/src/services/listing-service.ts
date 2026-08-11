@@ -77,6 +77,9 @@ const MY_LISTING_SELECT = {
   addressFull: true,
   status: true,
   _count: { select: { requests: { where: { status: 'PENDING' } } } },
+  // Remplissage « 3/8 places » : Σ peopleCount des demandes acceptées, calculée ici
+  // (jamais côté front) — quelques lignes par logement au plus.
+  requests: { where: { status: 'ACCEPTED' }, select: { peopleCount: true } },
 } as const satisfies Prisma.ListingSelect
 
 type CardRow = Prisma.ListingGetPayload<{ select: typeof CARD_SELECT }>
@@ -154,6 +157,7 @@ function toMyListing(row: MyListingRow) {
     hiddenAt: row.hiddenAt ? row.hiddenAt.toISOString() : null,
     addressFull: row.addressFull,
     pendingRequests: row._count.requests,
+    acceptedPeople: row.requests.reduce((sum, request) => sum + request.peopleCount, 0),
   }
 }
 

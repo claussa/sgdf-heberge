@@ -253,6 +253,8 @@ export const MyListingSchema = ListingDetailSchema.extend({
   /** Sa propre adresse, déchiffrée — uniquement pour le propriétaire */
   addressFull: z.string(),
   pendingRequests: z.number().int(),
+  /** Σ peopleCount des demandes acceptées — remplissage « 3/8 places » (A.8) */
+  acceptedPeople: z.number().int(),
 })
 export type MyListing = z.infer<typeof MyListingSchema>
 
