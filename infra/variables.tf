@@ -50,6 +50,12 @@ variable "api_image_tag" {
   default     = "latest"
 }
 
+variable "posthog_api_key" {
+  description = "Clé de projet PostHog Cloud EU (events + erreurs API). Vide = télémétrie désactivée. Ce n'est PAS un secret : la même clé est publique dans le bundle front."
+  type        = string
+  default     = ""
+}
+
 variable "cockpit_logs_retention_days" {
   description = "Rétention Cockpit COURTE (§7) : les logs sont une copie des PII"
   type        = number
