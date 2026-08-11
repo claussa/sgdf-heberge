@@ -1,4 +1,4 @@
-import type { JumelageKind, Me } from '@repo/contracts'
+import type { Me } from '@repo/contracts'
 import { eventConfig } from '@repo/event-config'
 import { useMutation } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
@@ -6,22 +6,12 @@ import { Navigate, useNavigate } from 'react-router'
 import { AccountActions } from '../components/AccountActions'
 import { api } from '../lib/api'
 import { useMe, useSetMe } from '../lib/hooks'
-import {
-  Button,
-  Field,
-  FieldGroup,
-  HelpText,
-  Input,
-  Loading,
-  PageTitle,
-  Radio,
-  Select,
-} from '../ui'
+import { Button, Field, HelpText, Input, Loading, PageTitle, Select } from '../ui'
 
 /**
  * Profil unité (A.12). « Continuer » enregistre (onboarding SCOUT_UNIT au premier
- * passage, PATCH ensuite) puis ouvre l'annonce, avec le sens choisi en state de
- * navigation ({ kind: 'SEEKING' | 'HOSTING' }).
+ * passage, PATCH ensuite) puis ouvre l'annonce ; le sens de l'annonce se choisit
+ * sur l'écran annonce lui-même.
  */
 export function ProfilUnite() {
   const { me, isPending } = useMe()
@@ -39,7 +29,6 @@ function ProfilUniteForm({ me }: { me: Me }) {
   const [firstName, setFirstName] = useState(me.firstName ?? '')
   const [lastName, setLastName] = useState(me.lastName ?? '')
   const [phone, setPhone] = useState(me.phone ?? '')
-  const [kind, setKind] = useState<JumelageKind>('SEEKING')
 
   const save = useMutation({
     mutationFn: async () => {
@@ -59,7 +48,7 @@ function ProfilUniteForm({ me }: { me: Me }) {
     },
     onSuccess: (fresh) => {
       setMe(fresh)
-      navigate('/unite/annonce', { state: { kind } })
+      navigate('/unite/annonce')
     },
   })
 
@@ -124,28 +113,6 @@ function ProfilUniteForm({ me }: { me: Me }) {
           required
         />
       </Field>
-      <FieldGroup label="Notre annonce">
-        <Radio
-          name="annonce-sens"
-          checked={kind === 'SEEKING'}
-          onChange={() => setKind('SEEKING')}
-          label={
-            <>
-              Nous <b>cherchons</b> un jumelage sur place
-            </>
-          }
-        />
-        <Radio
-          name="annonce-sens"
-          checked={kind === 'HOSTING'}
-          onChange={() => setKind('HOSTING')}
-          label={
-            <>
-              Nous <b>pouvons jumeler</b> une unité qui vient chez nous
-            </>
-          }
-        />
-      </FieldGroup>
       {save.isError && (
         <p className="alert-text">Impossible d’enregistrer. Vérifie les champs, puis réessaie.</p>
       )}

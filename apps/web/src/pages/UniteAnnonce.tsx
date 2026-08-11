@@ -2,7 +2,7 @@ import type { JumelageKind } from '@repo/contracts'
 import { eventConfig, type SiteSlug } from '@repo/event-config'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router'
+import { useNavigate } from 'react-router'
 import { api } from '../lib/api'
 import {
   Button,
@@ -21,8 +21,8 @@ import './jumelage-admin.css'
 
 /**
  * /unite/annonce — écran A.13 « Notre annonce de jumelage, ». Une seule annonce
- * par unité : le PUT crée ou remplace. Le sens (SEEKING/HOSTING) arrive du profil
- * unité en state de navigation, ou de l'annonce existante en édition.
+ * par unité : le PUT crée ou remplace. Le sens (SEEKING/HOSTING) se choisit en
+ * tête d'écran, pré-rempli depuis l'annonce existante en édition.
  */
 export function UniteAnnonce() {
   const { data, isPending, isError } = useMyJumelage()
@@ -37,11 +37,9 @@ export function UniteAnnonce() {
 
 function UniteAnnonceForm({ ad }: { ad: MyJumelage['ad'] }) {
   const navigate = useNavigate()
-  const location = useLocation()
   const queryClient = useQueryClient()
-  const navState = (location.state ?? null) as { kind?: JumelageKind } | null
 
-  const [kind, setKind] = useState<JumelageKind>(ad?.kind ?? navState?.kind ?? 'SEEKING')
+  const [kind, setKind] = useState<JumelageKind>(ad?.kind ?? 'SEEKING')
   const [site, setSite] = useState<SiteSlug>(ad?.site ?? eventConfig.sites[0].slug)
   const [dateFrom, setDateFrom] = useState(ad?.dateFrom ?? eventConfig.dates.start)
   const [dateTo, setDateTo] = useState(ad?.dateTo ?? eventConfig.dates.end)
@@ -81,6 +79,28 @@ function UniteAnnonceForm({ ad }: { ad: MyJumelage['ad'] }) {
   return (
     <form className="ja-col ja-col--560 fade" onSubmit={onSubmit}>
       <PageTitle>{seeking ? 'Notre annonce de jumelage,' : 'Nous pouvons jumeler,'}</PageTitle>
+      <FieldGroup label="Notre annonce">
+        <Radio
+          name="annonce-sens"
+          checked={seeking}
+          onChange={() => setKind('SEEKING')}
+          label={
+            <>
+              Nous <b>cherchons</b> un jumelage sur place
+            </>
+          }
+        />
+        <Radio
+          name="annonce-sens"
+          checked={!seeking}
+          onChange={() => setKind('HOSTING')}
+          label={
+            <>
+              Nous <b>pouvons jumeler</b> une unité qui vient chez nous
+            </>
+          }
+        />
+      </FieldGroup>
       <div className="ja-grid2">
         <Field label="Site">
           <Select value={site} onChange={(event) => setSite(event.target.value as SiteSlug)}>
@@ -123,36 +143,18 @@ function UniteAnnonceForm({ ad }: { ad: MyJumelage['ad'] }) {
           required
         />
       </Field>
-      <Field label="Un mot sur notre projet">
+      <Field label={seeking ? 'Un mot sur notre projet' : 'Ce que nous pouvons proposer'}>
         <Textarea
           value={description}
           onChange={(event) => setDescription(event.target.value)}
-          placeholder="Quelques lignes libres : notre service, notre tranche d’âge, ce que nous cherchons…"
+          placeholder={
+            seeking
+              ? 'Quelques lignes libres : notre service, notre tranche d’âge, ce que nous cherchons…'
+              : 'Quelques lignes libres : notre local, notre tranche d’âge, ce que nous proposons…'
+          }
           maxLength={1000}
         />
       </Field>
-      <FieldGroup label="Notre annonce">
-        <Radio
-          name="annonce-sens"
-          checked={seeking}
-          onChange={() => setKind('SEEKING')}
-          label={
-            <>
-              Nous <b>cherchons</b> un jumelage sur place
-            </>
-          }
-        />
-        <Radio
-          name="annonce-sens"
-          checked={!seeking}
-          onChange={() => setKind('HOSTING')}
-          label={
-            <>
-              Nous <b>pouvons jumeler</b> une unité qui vient chez nous
-            </>
-          }
-        />
-      </FieldGroup>
       {save.isError && (
         <p className="alert-text">
           Impossible d’enregistrer l’annonce. Vérifiez les dates, puis réessayez.

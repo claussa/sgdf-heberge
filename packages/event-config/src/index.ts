@@ -149,6 +149,7 @@ export const eventConfig = {
     'Pionniers-Caravelles',
     'Compagnons',
     'Vent du large',
+    'Groupe',
   ],
   assets: {
     logoHorizontal: 'sgdf-horizontal-blue.png',
