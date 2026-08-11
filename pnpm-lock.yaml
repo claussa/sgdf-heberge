@@ -101,6 +101,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.62.0
         version: 5.101.4(react@19.2.8)
+      driver.js:
+        specifier: ^1.8.0
+        version: 1.8.0
       hono:
         specifier: ^4.13.1
         version: 4.13.1
@@ -1612,6 +1615,9 @@ packages:
   dotenv@16.6.1:
     resolution: {integrity: sha512-uBq4egWHTcTt33a72vpSG0z3HnPuIl6NqYcTrKEg2azoEyl2hpW0zqlxysq2pK9HlDIHyHyakeYaYnSAwd8bow==}
     engines: {node: '>=12'}
+
+  driver.js@1.8.0:
+    resolution: {integrity: sha512-+8/IO7h1v14IzWh2GP60N7T3PFZweXwdn5e5POuxRSBoCYUojsBxzqawPeXh3YZIibRy7EehYNEyxe7slwwtdg==}
 
   eastasianwidth@0.2.0:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
@@ -3689,6 +3695,8 @@ snapshots:
   dotenv@10.0.0: {}
 
   dotenv@16.6.1: {}
+
+  driver.js@1.8.0: {}
 
   eastasianwidth@0.2.0: {}
 
