@@ -15,9 +15,9 @@ import { JumelageFiche } from './pages/JumelageFiche'
 import { Logement } from './pages/Logement'
 import { MentionsLegales } from './pages/MentionsLegales'
 import { MesDemandes } from './pages/MesDemandes'
-import { ProfilBenevole } from './pages/ProfilBenevole'
 import { ProfilHebergeur } from './pages/ProfilHebergeur'
 import { ProfilUnite } from './pages/ProfilUnite'
+import { ProfilVolontaire } from './pages/ProfilVolontaire'
 import { Recherche } from './pages/Recherche'
 import { UniteAnnonce } from './pages/UniteAnnonce'
 import { UniteRelations } from './pages/UniteRelations'
@@ -38,7 +38,7 @@ export function App() {
         <Route path="/" element={<Dispatcher />} />
         <Route element={<RequireAuth />}>
           <Route path="/inscription" element={<Inscription />} />
-          <Route path="/profil" element={<ProfilBenevole />} />
+          <Route path="/profil" element={<ProfilVolontaire />} />
           <Route path="/hebergeur" element={<ProfilHebergeur />} />
           <Route path="/unite" element={<ProfilUnite />} />
           <Route element={<RequireOnboarded />}>

@@ -153,7 +153,7 @@ cx('chip', active && 'chip--active', className)  // concatène en ignorant les f
 ## Hors kit, mais à connaître
 
 - `src/lib/access-criteria.ts` : `ACCESS_CRITERIA_LABELS` — libellés français des
-  8 critères d'accessibilité (profil bénévole ET formulaire logement 2/2).
+  8 critères d'accessibilité (profil volontaire ET formulaire logement 2/2).
 - `src/lib/assets.ts` : `assetUrl(name)` — résout les fichiers de `eventConfig.assets`.
 - `src/lib/hooks.ts` : `useMe()` (`me`, `isAnonymous`), `useSetMe()` (pousser un profil
   frais après PATCH/onboarding), `useLogout()`.

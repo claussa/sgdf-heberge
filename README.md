@@ -1,8 +1,8 @@
 # Plateforme hébergement — monorepo
 
-Mise en relation pour l'hébergement des bénévoles d'un grand événement (v1 : venue du pape
+Mise en relation pour l'hébergement des volontaires et participants d'un grand événement (v1 : venue du pape
 Léon XIV en France, 25-28 septembre 2026 — Lourdes · Paris · Metz). Trois parcours :
-bénévoles individuels (recherche de logement, demandes), hébergeurs (offres de logements,
+volontaires et participants (recherche de logement, demandes), hébergeurs (offres de logements,
 réponses), unités scoutes (jumelage, pure mise en relation). Admins : métriques + logements
 institutionnels.
 
@@ -46,7 +46,7 @@ Comptes de démo (seed) :
 
 | Email | Rôle |
 |---|---|
-| `marie.lefevre@exemple.fr` | Bénévole (3 demandes en cours, quota plein) |
+| `marie.lefevre@exemple.fr` | Volontaire (3 demandes en cours, quota plein) |
 | `claire@exemple.fr` | Hébergeur (logement 8 places, demandes reçues) |
 | `1nancy@exemple.fr` | Unité scoute (annonce jumelage Metz, relations) |
 | `admin@exemple.fr` | Administrateur (métriques, logements institutionnels) |

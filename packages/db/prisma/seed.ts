@@ -304,7 +304,7 @@ async function main() {
       site: 'paris',
       title: 'Hôtel Ibis Nation · chambres',
       description:
-        'Lot de chambres négocié pour les bénévoles. Réservation directement sur la ' +
+        'Lot de chambres négocié pour les volontaires et participants. Réservation directement sur la ' +
         'plateforme de l’hôtel avec le code promo.',
       addressFull: '2 avenue de Taillebourg, 75011 Paris',
       displayArea: 'Paris 12e',
@@ -355,7 +355,7 @@ async function main() {
           {
             senderId: marie.id,
             body:
-              'Bonjour Claire, nous sommes trois bénévoles au service accueil, ' +
+              'Bonjour Claire, nous sommes trois volontaires au service accueil, ' +
               'deux femmes et un homme, calmes et autonomes.',
             createdAt: daysAgo(2),
           },

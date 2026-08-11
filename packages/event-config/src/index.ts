@@ -122,7 +122,7 @@ export const eventConfig = {
     dpoEmail: 'dpo@sgdf.fr',
   },
   hero: {
-    title: 'Un toit pour chaque bénévole,',
+    title: 'Un toit pour chaque volontaire et participant,',
     text: 'Trouver où dormir — ou accueillir ceux qui viennent — pour la venue du pape Léon XIV, du 25 au 28 septembre 2026.',
   },
   otherRoutes: {

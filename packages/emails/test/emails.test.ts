@@ -62,7 +62,7 @@ const cases: Record<string, EmailCase> = {
         peopleCount: 3,
         dateRange: 'du 25 au 28 septembre',
         listingTitle: 'Chambre privée · 2 places',
-        message: 'Bonjour Claire, nous sommes trois bénévoles au service accueil.',
+        message: 'Bonjour Claire, nous sommes trois volontaires au service accueil.',
         actionUrl: `${BASE}/hebergeur/demandes`,
       }),
     expectHtml: [
@@ -72,7 +72,7 @@ const cases: Record<string, EmailCase> = {
       '3 personnes',
       'du 25 au 28 septembre',
       'Chambre privée · 2 places',
-      'nous sommes trois bénévoles',
+      'nous sommes trois volontaires',
       'Voir la demande',
     ],
     expectSubject: "Nouvelle demande d'hébergement",

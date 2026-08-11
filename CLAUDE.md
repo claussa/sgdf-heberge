@@ -1,4 +1,4 @@
-# Projet — Plateforme hébergement bénévoles (associatif)
+# Projet — Plateforme hébergement volontaires (associatif)
 
 > Ce fichier est la source de vérité TECHNIQUE pour Claude Code. Le lire avant toute tâche.
 > La spec FONCTIONNELLE est `docs/design/rapport-maquette.md` (maquette écran par écran)
@@ -7,9 +7,9 @@
 
 ## 1. Contexte
 
-Plateforme de mise en relation pour l'hébergement des bénévoles d'un grand événement
+Plateforme de mise en relation pour l'hébergement des volontaires et participants d'un grand événement
 (v1 : venue du pape Léon XIV en France, 25-28 sept. 2026 — sites Lourdes/Paris/Metz,
-public potentiel ~100 000 personnes). Trois parcours : bénévole individuel (recherche +
+public potentiel ~100 000 personnes). Trois parcours : volontaire ou participant individuel (recherche +
 demandes, max 3 en attente, expiration 7 j), hébergeur (offres à couchages typés, grille
 accessibilité, accepter/question/refuser), unité scoute (jumelage : pure mise en relation,
 échange de coordonnées). Admin : métriques par site + logements institutionnels

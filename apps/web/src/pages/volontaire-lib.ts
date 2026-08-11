@@ -2,7 +2,7 @@ import type { BedType, ListingCard } from '@repo/contracts'
 import type { SigneName } from '../ui'
 
 /**
- * Aides partagées du parcours bénévole (Recherche A.4, Fiche logement A.5,
+ * Aides partagées du parcours volontaire (Recherche A.4, Fiche logement A.5,
  * Mes demandes A.6). Pas de JSX ici — uniquement du texte et des mappings.
  */
 

@@ -299,7 +299,7 @@ function WaitingAnswerCard({ request }: { request: RequestHostView }) {
   )
 }
 
-/** Demande acceptée : coordonnées échangées, autres demandes du bénévole annulées. */
+/** Demande acceptée : coordonnées échangées, autres demandes du volontaire annulées. */
 function AcceptedCard({ request }: { request: RequestHostView }) {
   return (
     <Card accentTop="success" className="demande-card">

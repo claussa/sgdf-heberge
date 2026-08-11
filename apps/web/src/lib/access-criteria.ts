@@ -3,7 +3,7 @@ import type { AccessCriterion } from '@repo/contracts'
 /**
  * Libellés français des 8 critères d'accessibilité (rapport A.11 — grille relue par
  * une ergothérapeute). Rendu type : <b>{label}</b> — {precision}.
- * Partagé entre le profil bénévole (besoins) et le formulaire logement (étape 2/2).
+ * Partagé entre le profil volontaire (besoins) et le formulaire logement (étape 2/2).
  */
 export const ACCESS_CRITERIA_LABELS: Record<
   AccessCriterion,

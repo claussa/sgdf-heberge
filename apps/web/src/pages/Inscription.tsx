@@ -3,7 +3,7 @@ import { Navigate, useNavigate } from 'react-router'
 import { useMe } from '../lib/hooks'
 import { Button, cx, HelpText, Loading, PageTitle } from '../ui'
 
-type Choice = 'benevole' | 'unite'
+type Choice = 'volontaire' | 'unite'
 
 type ChoiceCardProps = {
   selected: boolean
@@ -35,7 +35,7 @@ function ChoiceCard({ selected, onSelect, title, text }: ChoiceCardProps) {
 }
 
 /**
- * Écran « Je m'inscris comme… » (A.2). Aucun appel API ici : le choix bénévole mène
+ * Écran « Je m'inscris comme… » (A.2). Aucun appel API ici : le choix volontaire mène
  * aux écrans profil (où se fait l'onboarding réel), avec l'accountType mémorisé en
  * state de navigation. Un compte déjà typé est renvoyé vers l'accueil.
  */
@@ -52,9 +52,9 @@ export function Inscription() {
       <PageTitle>Je m’inscris comme…</PageTitle>
       <div className="inscription__choices">
         <ChoiceCard
-          selected={choice === 'benevole'}
-          onSelect={() => setChoice('benevole')}
-          title="Bénévole individuel"
+          selected={choice === 'volontaire'}
+          onSelect={() => setChoice('volontaire')}
+          title="Volontaire ou participant"
           text="Seul ou en petit groupe : je cherche où dormir, ou je propose un logement."
         />
         <ChoiceCard
@@ -64,7 +64,7 @@ export function Inscription() {
           text="Jumelage : nous cherchons une unité sur place, ou nous pouvons en accueillir une."
         />
       </div>
-      {choice === 'benevole' && (
+      {choice === 'volontaire' && (
         <div className="inscription__actions fade">
           <Button
             onClick={() =>

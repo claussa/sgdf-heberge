@@ -661,7 +661,7 @@ const hotelBody = {
   category: 'HOTEL',
   site: 'paris',
   title: 'Hôtel Ibis Nation · chambres',
-  description: 'Tarif négocié pour les bénévoles.',
+  description: 'Tarif négocié pour les volontaires et participants.',
   address: {
     label: '18 avenue du Trône, 75012 Paris',
     city: 'Paris',
