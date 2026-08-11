@@ -50,6 +50,7 @@ const EventConfigSchema = z.object({
     logoSymbole: z.string(),
     logoVertical: z.string(),
     logoEvent: z.string(),
+    favicon: z.string(),
   }),
 })
 
@@ -90,6 +91,7 @@ export const eventConfig = {
     logoSymbole: 'sgdf-symbole-blue.png',
     logoVertical: 'sgdf-vertical-white.png',
     logoEvent: 'pape-leon-xiv-france-2026.png',
+    favicon: 'favicon.svg',
   },
 } as const satisfies EventConfig
 

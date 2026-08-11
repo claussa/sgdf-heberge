@@ -1,9 +1,9 @@
 /**
- * Résolution des assets nommés par eventConfig.assets (logos, papier déchiré).
+ * Résolution des assets nommés par eventConfig.assets (logos, papier déchiré, favicon).
  * Les fichiers vivent dans src/assets/ ; le glob laisse Vite les fingerprinter
  * tout en gardant la config événement comme seule source des noms.
  */
-const files = import.meta.glob('../assets/*.png', {
+const files = import.meta.glob('../assets/*.{png,svg}', {
   eager: true,
   query: '?url',
   import: 'default',

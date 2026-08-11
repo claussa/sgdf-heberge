@@ -45,10 +45,11 @@ resource "scaleway_container" "api" {
   # dans le bundle front), pas un secret. Absente = télémétrie no-op.
   environment_variables = merge(
     {
-      NODE_ENV     = "production"
-      EMAIL_DRIVER = "resend"
-      EMAIL_FROM   = "Connexion <auth@${var.app_domain}>"
-      APP_ORIGIN   = "https://${var.app_domain}"
+      NODE_ENV       = "production"
+      EMAIL_DRIVER   = "resend"
+      EMAIL_FROM     = "${var.email_from_name} <no-reply@${var.app_domain}>"
+      EMAIL_REPLY_TO = var.email_reply_to
+      APP_ORIGIN     = "https://${var.app_domain}"
     },
     var.posthog_api_key != "" ? { POSTHOG_API_KEY = var.posthog_api_key } : {},
   )
@@ -117,10 +118,11 @@ resource "scaleway_job_definition" "daily" {
   }
 
   env = {
-    NODE_ENV     = "production"
-    EMAIL_DRIVER = "resend"
-    EMAIL_FROM   = "Connexion <auth@${var.app_domain}>"
-    APP_ORIGIN   = "https://${var.app_domain}"
+    NODE_ENV       = "production"
+    EMAIL_DRIVER   = "resend"
+    EMAIL_FROM     = "${var.email_from_name} <no-reply@${var.app_domain}>"
+    EMAIL_REPLY_TO = var.email_reply_to
+    APP_ORIGIN     = "https://${var.app_domain}"
   }
 
   # Secrets via références Secret Manager — jamais dans `env` : les valeurs y

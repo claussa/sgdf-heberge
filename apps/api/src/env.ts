@@ -11,6 +11,8 @@ const EnvSchema = z.object({
   /** resend en prod ; devfile écrit dans .local/outbox ; memory pour les tests */
   EMAIL_DRIVER: z.enum(['resend', 'devfile', 'memory']).default('devfile'),
   EMAIL_FROM: z.string().min(3),
+  /** Reply-To des emails sortants — l'expéditeur no-reply ne reçoit rien */
+  EMAIL_REPLY_TO: z.string().min(3).optional(),
   RESEND_API_KEY: z.string().optional(),
   RESEND_WEBHOOK_SECRET: z.string().optional(),
   /** Origine de la SPA — CORS restreint (§9) et base des magic links */
