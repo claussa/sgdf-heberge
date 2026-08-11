@@ -25,6 +25,12 @@ resource "scaleway_container" "api" {
   min_scale = var.container_min_scale
   max_scale = var.container_max_scale
 
+  # v2 (gVisor) = cold starts rapides — important tant que min_scale = 0.
+  # Défaut de l'API pour les nouveaux containers depuis sept. 2024, épinglé ici
+  # pour ne pas dépendre d'un défaut silencieux. Compatible avec la stack :
+  # Prisma 6 en moteur library (in-process), pas d'écriture /tmp en prod.
+  sandbox = "v2"
+
   # ⚠️ POINT CRITIQUE (§3) : concurrence par instance EXPLICITEMENT > 1, sinon
   # saturation des connexions PostgreSQL garantie pendant le pic.
   scaling_option {

@@ -34,13 +34,13 @@ variable "container_max_scale" {
 }
 
 variable "container_max_concurrency" {
-  description = "⚠️ DOIT être > 1 (§3) : sinon 200 requêtes = 200 instances = 200 connexions PostgreSQL"
+  description = "⚠️ DOIT être > 1 (§3) : sinon 200 requêtes = 200 instances = 200 connexions PostgreSQL. 80 = défaut plateforme ET maximum dur par instance ; charge I/O-bound → concurrence haute = moins d'instances, moins de cold starts, moins de connexions DB. À recaler pendant la charge de test (§11)."
   type        = number
-  default     = 50
+  default     = 80
 
   validation {
-    condition     = var.container_max_concurrency > 1
-    error_message = "La concurrence par instance doit être > 1 (§3 du CLAUDE.md) — mode d'échec garanti pendant le pic sinon."
+    condition     = var.container_max_concurrency > 1 && var.container_max_concurrency <= 80
+    error_message = "La concurrence par instance doit être > 1 (§3 du CLAUDE.md — saturation DB garantie sinon) et ≤ 80 (maximum dur Scaleway par instance)."
   }
 }
 
