@@ -5,6 +5,7 @@ import { cors } from 'hono/cors'
 import { secureHeaders } from 'hono/secure-headers'
 import { getEnv } from './env'
 import { handleError } from './errors'
+import { noStore } from './middleware/no-store'
 import { requestLogger } from './middleware/request-logger'
 import { adminRouter } from './routes/admin'
 import { authRouter } from './routes/auth'
@@ -32,6 +33,7 @@ const api = new OpenAPIHono({
 
 api.use(requestLogger)
 api.use(secureHeaders())
+api.use(noStore)
 api.use(
   cors({
     // §9 — CORS restreint à l'origine de la SPA. En prod, SPA et API partagent le

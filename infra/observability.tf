@@ -11,17 +11,17 @@
 #   - le chemin loggé exclut la query string (token du magic link)
 
 resource "scaleway_cockpit_source" "logs" {
-  name            = "${var.project_name}-logs"
-  type            = "logs"
-  region          = "fr-par"
-  retention_days  = var.cockpit_logs_retention_days
+  name           = "${var.project_name}-logs"
+  type           = "logs"
+  region         = "fr-par"
+  retention_days = var.cockpit_logs_retention_days
 }
 
 resource "scaleway_cockpit_source" "metrics" {
-  name            = "${var.project_name}-metrics"
-  type            = "metrics"
-  region          = "fr-par"
-  retention_days  = 31
+  name           = "${var.project_name}-metrics"
+  type           = "metrics"
+  region         = "fr-par"
+  retention_days = 31
 }
 
 # Alerte à câbler (Grafana/Cockpit) : taux d'erreur d'envoi Resend = alerte de

@@ -1,0 +1,170 @@
+# Déploiement manuel en production (workflow_dispatch uniquement).
+#
+# Ordre : build image + build SPA en parallèle → migrations → bascule API →
+# publication SPA + purge du cache Edge. La SPA neuve ne sort qu'après l'API
+# neuve (elle peut dépendre de nouveaux endpoints) ; les migrations sont jouées
+# pendant que l'ancienne image sert le trafic → migrations ADDITIVES uniquement
+# (expand/contract, voir infra/README.md).
+#
+# Secrets GitHub (clé de l'application IAM CI, outputs Terraform ci_access_key /
+# ci_secret_key) : SCW_ACCESS_KEY, SCW_SECRET_KEY, SCW_DEFAULT_PROJECT_ID,
+# SCW_DEFAULT_ORGANIZATION_ID. Pas de DATABASE_URL dupliquée ici : elle est lue
+# dans Secret Manager au moment des migrations.
+# Variables GitHub (outputs Terraform) : SCW_REGISTRY_ENDPOINT, SCW_CONTAINER_ID,
+# SCW_JOB_DEFINITION_ID, SCW_EDGE_PIPELINE_ID, SCW_SPA_BUCKET,
+# SCW_DATABASE_URL_SECRET_ID, APP_DOMAIN.
+
+name: Deploy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Un seul déploiement à la fois, jamais annulé en cours de route.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  IMAGE: ${{ vars.SCW_REGISTRY_ENDPOINT }}/api:${{ github.sha }}
+  SCW_CLI_VERSION: v2.60.0
+
+jobs:
+  build-image:
+    name: Build & push image API
+    runs-on: ubuntu-latest # amd64 — l'architecture attendue par Serverless Containers
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login au Container Registry Scaleway
+        env:
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+        run: echo "$SCW_SECRET_KEY" | docker login rg.fr-par.scw.cloud -u nologin --password-stdin
+
+      - name: Build (racine du monorepo) + push
+        run: |
+          docker build -f apps/api/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
+
+  build-spa:
+    name: Build SPA
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4 # lit packageManager du package.json racine
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build Vite
+        run: pnpm --filter @repo/web build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: spa-dist
+          path: apps/web/dist
+          retention-days: 1
+
+  migrate:
+    name: Migrations Prisma
+    needs: build-image # ne migre que si la nouvelle image existe (pas de schéma en avance sur rien)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: scaleway/action-scw@v0
+        with:
+          version: ${{ env.SCW_CLI_VERSION }}
+          access-key: ${{ secrets.SCW_ACCESS_KEY }}
+          secret-key: ${{ secrets.SCW_SECRET_KEY }}
+          default-project-id: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
+          default-organization-id: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
+          save-config: true
+
+      - name: prisma migrate deploy (DATABASE_URL lue dans Secret Manager)
+        # Un seul step : l'URL (qui contient le mot de passe) ne transite ni par
+        # GITHUB_ENV ni par un output — masquée puis exportée localement.
+        run: |
+          DATABASE_URL="$(scw secret version access ${{ vars.SCW_DATABASE_URL_SECRET_ID }} revision=latest_enabled raw=true)"
+          echo "::add-mask::$DATABASE_URL"
+          export DATABASE_URL
+          npx prisma@6.19.3 migrate deploy --schema packages/db/prisma/schema.prisma
+
+  deploy-api:
+    name: Bascule du container API
+    needs: migrate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: scaleway/action-scw@v0
+        with:
+          version: ${{ env.SCW_CLI_VERSION }}
+          access-key: ${{ secrets.SCW_ACCESS_KEY }}
+          secret-key: ${{ secrets.SCW_SECRET_KEY }}
+          default-project-id: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
+          default-organization-id: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
+          save-config: true
+
+      - name: Update du container vers l'image SHA (rollout)
+        run: scw container container update ${{ vars.SCW_CONTAINER_ID }} image="$IMAGE" --wait
+
+      - name: Alignement du job quotidien sur la même image
+        run: scw jobs definition update ${{ vars.SCW_JOB_DEFINITION_ID }} image-uri="$IMAGE"
+
+      - name: Smoke test
+        # Suppose le CNAME + pipeline Edge actifs. Les retries absorbent un
+        # éventuel cold start (min_scale = 0 hors campagne).
+        run: curl -fsS --retry 10 --retry-delay 5 --retry-all-errors "https://${{ vars.APP_DOMAIN }}/api/health"
+
+  deploy-spa:
+    name: Publication SPA + purge cache
+    needs: [build-spa, deploy-api] # la SPA neuve ne sort qu'après l'API neuve
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+      AWS_DEFAULT_REGION: fr-par
+      S3_ENDPOINT: https://s3.fr-par.scw.cloud
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: spa-dist
+          path: dist
+
+      - name: Assets fingerprintés — cache immutable
+        # PAS de --delete : des sessions en vol référencent encore les anciens
+        # assets ; ils seront simplement orphelins (nettoyage au run suivant si besoin).
+        run: |
+          aws s3 sync dist "s3://${{ vars.SCW_SPA_BUCKET }}" \
+            --endpoint-url "$S3_ENDPOINT" \
+            --exclude "index.html" \
+            --cache-control "public, max-age=31536000, immutable"
+
+      - name: index.html en dernier — bascule atomique, no-cache
+        run: |
+          aws s3 cp dist/index.html "s3://${{ vars.SCW_SPA_BUCKET }}/index.html" \
+            --endpoint-url "$S3_ENDPOINT" \
+            --cache-control "no-cache" \
+            --content-type "text/html; charset=utf-8"
+
+      - uses: scaleway/action-scw@v0
+        with:
+          version: ${{ env.SCW_CLI_VERSION }}
+          access-key: ${{ secrets.SCW_ACCESS_KEY }}
+          secret-key: ${{ secrets.SCW_SECRET_KEY }}
+          default-project-id: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
+          default-organization-id: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
+          save-config: true
+
+      - name: Purge du cache Edge Services
+        run: scw edge-services purge-request create pipeline-id=${{ vars.SCW_EDGE_PIPELINE_ID }} all=true

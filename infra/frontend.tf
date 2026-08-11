@@ -23,18 +23,96 @@ resource "scaleway_object_bucket_website_configuration" "spa" {
 }
 
 # --- Edge Services -----------------------------------------------------------
-# Le pipeline Edge Services (domaine, TLS, routage /api vs statique, cache) se
-# configure via les ressources scaleway_edge_services_* (pipeline, dns_stage,
-# tls_stage, cache_stage, backend_stage, route_stage). L'offre évolue vite côté
-# provider : valider les arguments avec `terraform plan` sur la version épinglée
-# avant d'appliquer. Schéma cible :
+# Un seul domaine (var.app_domain) pour la SPA ET l'API — condition du cookie
+# SameSite=Lax (§9). Chaîne réelle du pipeline (l'ordre est imposé par l'offre) :
 #
-#   pipeline
-#     └─ dns_stage (var.app_domain)
-#         └─ tls_stage (certificat managé)
-#             └─ route_stage
-#                  ├─ rule: path_prefix "/api" → backend_stage(container api)
-#                  └─ défaut                   → cache_stage → backend_stage(bucket spa)
+#   head → dns_stage (var.app_domain)
+#        → tls_stage (certificat managé Let's Encrypt)
+#        → cache_stage (fallback_ttl = 0 — voir ⚠️ ci-dessous)
+#        → route_stage ── /api/* → backend_stage.api (Serverless Container)
+#                       └─ défaut → backend_stage.spa (bucket, mode website)
 #
-# Cache : uniquement sur les assets fingerprintés de la SPA (immutable).
-# JAMAIS de cache sur /api (réponses contenant des PII, §5).
+# ⚠️ Le cache Edge est GLOBAL au pipeline et placé AVANT le routage : impossible
+# de ne cacher que la SPA par construction. fallback_ttl = 0 signifie « rien
+# n'est caché sauf directive Cache-Control explicite de l'origine » :
+#   - les assets fingerprintés sont uploadés avec `public, max-age=31536000, immutable`
+#   - index.html est uploadé en `no-cache`
+#   - l'API répond `no-store` (middleware apps/api) — réponses avec PII (§5)
+# NE JAMAIS monter fallback_ttl > 0 : les réponses /api deviendraient cachables.
+#
+# NB : le backend container n'est configurable que par API/CLI/Terraform (pas
+# la console). Le domaine doit être un SOUS-domaine : l'activation passe par un
+# CNAME <pipeline-id>.svc.edge.scw.cloud, impossible sur un apex chez un
+# registrar externe (voir infra/README.md).
+
+resource "scaleway_edge_services_plan" "main" {
+  # Abonnement requis avant tout pipeline. "starter" suffit : 1 pipeline, 100 Go
+  # de cache, pas de WAF. Facturé dès la souscription — vérifier le pricing.
+  name = "starter"
+}
+
+resource "scaleway_edge_services_pipeline" "main" {
+  name       = "${var.project_name}-pipeline"
+  depends_on = [scaleway_edge_services_plan.main]
+}
+
+resource "scaleway_edge_services_backend_stage" "spa" {
+  pipeline_id = scaleway_edge_services_pipeline.main.id
+
+  s3_backend_config {
+    bucket_name   = scaleway_object_bucket.spa.name
+    bucket_region = "fr-par"
+    # Mode website : error_document → index.html sert de fallback SPA, et les
+    # objets du bucket restent PRIVÉS (aucune bucket policy publique à créer).
+    is_website = true
+  }
+}
+
+resource "scaleway_edge_services_backend_stage" "api" {
+  pipeline_id = scaleway_edge_services_pipeline.main.id
+
+  container_backend_config {
+    container_id = scaleway_container.api.id
+    region       = "fr-par"
+  }
+}
+
+resource "scaleway_edge_services_route_stage" "main" {
+  pipeline_id = scaleway_edge_services_pipeline.main.id
+  # Défaut : tout ce qui ne matche aucune règle → SPA.
+  backend_stage_id = scaleway_edge_services_backend_stage.spa.id
+
+  rule {
+    backend_stage_id = scaleway_edge_services_backend_stage.api.id
+    rule_http_match {
+      path_filter {
+        path_filter_type = "regex"
+        value            = "^/api/.*"
+      }
+    }
+  }
+}
+
+resource "scaleway_edge_services_cache_stage" "main" {
+  pipeline_id    = scaleway_edge_services_pipeline.main.id
+  route_stage_id = scaleway_edge_services_route_stage.main.id
+  # 0 = aucun cache sans directive explicite de l'origine. NE PAS AUGMENTER (PII).
+  fallback_ttl = 0
+}
+
+resource "scaleway_edge_services_tls_stage" "main" {
+  pipeline_id         = scaleway_edge_services_pipeline.main.id
+  cache_stage_id      = scaleway_edge_services_cache_stage.main.id
+  managed_certificate = true # Let's Encrypt géré — requiert le CNAME déjà posé
+}
+
+resource "scaleway_edge_services_dns_stage" "main" {
+  pipeline_id  = scaleway_edge_services_pipeline.main.id
+  tls_stage_id = scaleway_edge_services_tls_stage.main.id
+  fqdns        = [var.app_domain]
+}
+
+resource "scaleway_edge_services_head_stage" "main" {
+  pipeline_id   = scaleway_edge_services_pipeline.main.id
+  head_stage_id = scaleway_edge_services_dns_stage.main.id
+}

@@ -15,9 +15,9 @@ resource "scaleway_container" "api" {
   name         = "${var.project_name}-api"
   namespace_id = scaleway_container_namespace.main.id
 
-  registry_image = "${scaleway_registry_namespace.main.endpoint}/api:${var.api_image_tag}"
-  port           = 3001
-  protocol       = "http1"
+  image    = "${scaleway_registry_namespace.main.endpoint}/api:${var.api_image_tag}"
+  port     = 3001
+  protocol = "http1"
 
   cpu_limit          = 1000               # mvCPU
   memory_limit_bytes = 1024 * 1024 * 1024 # 1 Gio
@@ -62,6 +62,13 @@ resource "scaleway_container" "api" {
     timeout           = "5s"
     failure_threshold = 3
   }
+
+  # L'image est pilotée par la CI (deploy.yml : tag = SHA git, rollback = ancien
+  # SHA). Terraform ne pose que l'image initiale (var.api_image_tag) et n'y
+  # touche plus — sinon chaque apply écraserait la version déployée.
+  lifecycle {
+    ignore_changes = [image]
+  }
 }
 
 # ---------------------------------------------------------------------------
@@ -88,14 +95,38 @@ resource "scaleway_job_definition" "daily" {
   }
 
   env = {
-    NODE_ENV                          = "production"
-    EMAIL_DRIVER                      = "resend"
-    EMAIL_FROM                        = "Connexion <auth@${var.app_domain}>"
-    APP_ORIGIN                        = "https://${var.app_domain}"
-    DATABASE_URL                      = scaleway_secret_version.database_url.data
-    PRISMA_FIELD_ENCRYPTION_KEY       = data.scaleway_secret_version.encryption_key.data
-    PRISMA_FIELD_ENCRYPTION_HASH_SALT = data.scaleway_secret_version.hash_salt.data
-    RESEND_API_KEY                    = data.scaleway_secret_version.resend_api_key.data
-    JOB_SECRET                        = data.scaleway_secret_version.job_secret.data
+    NODE_ENV     = "production"
+    EMAIL_DRIVER = "resend"
+    EMAIL_FROM   = "Connexion <auth@${var.app_domain}>"
+    APP_ORIGIN   = "https://${var.app_domain}"
+  }
+
+  # Secrets via références Secret Manager — jamais dans `env` : les valeurs y
+  # seraient visibles en clair dans la console/API Scaleway (§9).
+  secret_reference {
+    secret_id   = scaleway_secret.database_url.id
+    environment = "DATABASE_URL"
+  }
+  secret_reference {
+    secret_id   = scaleway_secret.encryption_key.id
+    environment = "PRISMA_FIELD_ENCRYPTION_KEY"
+  }
+  secret_reference {
+    secret_id   = scaleway_secret.hash_salt.id
+    environment = "PRISMA_FIELD_ENCRYPTION_HASH_SALT"
+  }
+  secret_reference {
+    secret_id   = scaleway_secret.resend_api_key.id
+    environment = "RESEND_API_KEY"
+  }
+  secret_reference {
+    secret_id   = scaleway_secret.job_secret.id
+    environment = "JOB_SECRET"
+  }
+
+  # Même pilotage par la CI que le container : deploy.yml aligne image_uri sur
+  # le SHA déployé (`scw jobs definition update`).
+  lifecycle {
+    ignore_changes = [image_uri]
   }
 }
