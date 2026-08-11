@@ -1,5 +1,5 @@
 output "db_endpoint" {
-  value       = "${scaleway_rdb_instance.main.load_balancer[0].ip}:${scaleway_rdb_instance.main.load_balancer[0].port}"
+  value       = "${scaleway_rdb_instance.main.endpoint_ip}:${scaleway_rdb_instance.main.endpoint_port}"
   description = "Endpoint PostgreSQL managé"
 }
 

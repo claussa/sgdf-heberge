@@ -35,4 +35,8 @@ resource "scaleway_iam_policy" "ci" {
 resource "scaleway_iam_api_key" "ci" {
   application_id = scaleway_iam_application.ci.id
   description    = "Clé CI GitHub Actions (SCW_ACCESS_KEY / SCW_SECRET_KEY)"
+
+  # La politique de sécurité de l'organisation impose une expiration.
+  # Fin 2026 : après l'événement (sept. 2026) et la purge à J+30 (§12).
+  expires_at = "2026-12-31T23:59:59Z"
 }

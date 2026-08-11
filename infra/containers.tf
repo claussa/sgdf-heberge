@@ -39,9 +39,10 @@ resource "scaleway_container" "api" {
 
   https_connections_only = true
 
+  # PORT est une variable réservée : Scaleway l'injecte lui-même avec la valeur
+  # du champ `port` ci-dessus — la définir ici est refusé par l'API.
   environment_variables = {
     NODE_ENV     = "production"
-    PORT         = "3001"
     EMAIL_DRIVER = "resend"
     EMAIL_FROM   = "Connexion <auth@${var.app_domain}>"
     APP_ORIGIN   = "https://${var.app_domain}"
@@ -51,13 +52,18 @@ resource "scaleway_container" "api" {
   # PRÉREQUIS : poser les versions AVANT le premier apply (scw secret version create …),
   # sinon les data sources de secrets.tf échouent — c'est voulu (fail fast, pas de "" qui
   # ferait planter EnvSchema au boot).
+  # ⚠️ Tout `.data` relu depuis l'API Secret Manager (data source COMME
+  # ressource) revient ENCODÉ EN BASE64 — injecter sans décoder casse le
+  # runtime (clé de chiffrement rejetée par Zod au boot, DATABASE_URL rejetée
+  # par Prisma à la première requête). D'où base64decode() sur les data
+  # sources, et local.database_url (valeur composée, jamais relue) pour la DB.
   secret_environment_variables = {
-    DATABASE_URL                      = scaleway_secret_version.database_url.data
-    PRISMA_FIELD_ENCRYPTION_KEY       = data.scaleway_secret_version.encryption_key.data
-    PRISMA_FIELD_ENCRYPTION_HASH_SALT = data.scaleway_secret_version.hash_salt.data
-    RESEND_API_KEY                    = data.scaleway_secret_version.resend_api_key.data
-    RESEND_WEBHOOK_SECRET             = data.scaleway_secret_version.resend_webhook_secret.data
-    JOB_SECRET                        = data.scaleway_secret_version.job_secret.data
+    DATABASE_URL                      = local.database_url
+    PRISMA_FIELD_ENCRYPTION_KEY       = base64decode(data.scaleway_secret_version.encryption_key.data)
+    PRISMA_FIELD_ENCRYPTION_HASH_SALT = base64decode(data.scaleway_secret_version.hash_salt.data)
+    RESEND_API_KEY                    = base64decode(data.scaleway_secret_version.resend_api_key.data)
+    RESEND_WEBHOOK_SECRET             = base64decode(data.scaleway_secret_version.resend_webhook_secret.data)
+    JOB_SECRET                        = base64decode(data.scaleway_secret_version.job_secret.data)
   }
 
   liveness_probe {
@@ -93,6 +99,11 @@ resource "scaleway_job_definition" "daily" {
   image_uri              = "${scaleway_registry_namespace.main.endpoint}/api:${var.api_image_tag}"
   startup_command        = ["node", "dist/jobs/daily.js"]
   timeout                = "10m"
+
+  # Le secret database_url est créé vide puis versionné une fois l'instance RDB
+  # sortie (~3 min). L'API Jobs refuse (404) une référence vers un secret sans
+  # version — attendre la version, pas seulement le secret.
+  depends_on = [scaleway_secret_version.database_url]
 
   cron {
     # 07:00 Europe/Paris, tous les jours — avant les heures d'activité.
