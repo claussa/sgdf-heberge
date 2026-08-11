@@ -21,16 +21,19 @@ export interface EmailDriver {
 class ResendDriver implements EmailDriver {
   private client: Resend
   private from: string
+  private replyTo: string | undefined
 
-  constructor(apiKey: string, from: string) {
+  constructor(apiKey: string, from: string, replyTo?: string) {
     this.client = new Resend(apiKey)
     this.from = from
+    this.replyTo = replyTo
   }
 
   async send(email: OutgoingEmail): Promise<void> {
     const { error } = await this.client.emails.send(
       {
         from: this.from,
+        replyTo: this.replyTo,
         to: email.to,
         subject: email.subject,
         html: email.html,
@@ -85,7 +88,7 @@ export function getEmailDriver(): EmailDriver {
   switch (env.EMAIL_DRIVER) {
     case 'resend':
       if (!env.RESEND_API_KEY) throw new Error('RESEND_API_KEY manquante')
-      driver = new ResendDriver(env.RESEND_API_KEY, env.EMAIL_FROM)
+      driver = new ResendDriver(env.RESEND_API_KEY, env.EMAIL_FROM, env.EMAIL_REPLY_TO)
       break
     case 'devfile':
       driver = new DevFileDriver()

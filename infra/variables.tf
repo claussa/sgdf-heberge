@@ -9,6 +9,18 @@ variable "app_domain" {
   type        = string
 }
 
+variable "email_from_name" {
+  description = "Nom d'affichage de l'expéditeur des emails (propre à l'événement)"
+  type        = string
+  default     = "Hébergement — Léon XIV France 2026"
+}
+
+variable "email_reply_to" {
+  description = "Adresse Reply-To des emails sortants (l'expéditeur no-reply ne reçoit rien)"
+  type        = string
+  default     = "aclauss@sgdf.fr"
+}
+
 variable "db_node_type" {
   description = "Gamme de la Managed Database. Dev : DB-DEV-S (~11 €/mois). Pic : monter en gamme."
   type        = string
