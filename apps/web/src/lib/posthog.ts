@@ -6,7 +6,12 @@ import posthog from 'posthog-js'
  * - PAS de session replay (adresses, téléphones et besoins d'accessibilité — donnée
  *   sensible — s'affichent à l'écran ; le chiffrement en base ne protège pas le DOM) ;
  * - PAS d'autocapture (le texte des éléments cliqués peut contenir des PII) ;
- * - identify() UNIQUEMENT avec l'ID interne, jamais d'email ni de nom en propriété.
+ * - identify() UNIQUEMENT avec l'ID interne, jamais d'email ni de nom en propriété ;
+ * - persistence en MÉMOIRE : aucun cookie ni localStorage posé → pas de traceur au
+ *   sens ePrivacy/CNIL, donc pas de bannière de consentement. Contrepartie assumée :
+ *   les visiteurs anonymes ne sont pas suivis d'une page-load à l'autre (chaque
+ *   chargement = nouveau device id) ; la continuité ne vaut que pour les connectés,
+ *   via identify(uid) à chaque chargement.
  * Ne pas élargir sans re-passer par l'analyse (registre des traitements).
  */
 
@@ -41,6 +46,9 @@ export function initAnalytics(): void {
     disable_session_recording: true,
     disable_surveys: true,
     capture_exceptions: true,
+    // CNIL : aucun stockage navigateur (voir en-tête). Ne pas repasser en
+    // localStorage/cookie sans mettre en place le consentement qui va avec.
+    persistence: 'memory',
     sanitize_properties: scrubTokens,
   })
 }
