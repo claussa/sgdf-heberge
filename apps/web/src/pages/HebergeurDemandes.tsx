@@ -40,41 +40,68 @@ import './hebergeur.css'
  */
 export function HebergeurDemandes() {
   const [tab, setTab] = useState(0)
-  // Logement dont on suggère le passage en « Complet » après une acceptation (A.8).
-  const [suggestFullFor, setSuggestFullFor] = useState<string | null>(null)
+  // Demande tout juste acceptée pour laquelle on suggère de passer le logement
+  // en « Complet » (A.8). On garde requestId + peopleCount pour compter la
+  // demande dans le remplissage même avant que le refetch n'aboutisse.
+  const [suggestion, setSuggestion] = useState<{
+    listingId: string
+    requestId: string
+    peopleCount: number
+  } | null>(null)
   const requestsQuery = useReceivedRequests()
   const listingsQuery = useMyListings()
   const setStatus = useListingStatus()
 
   const listings = listingsQuery.data ?? []
+  const requests = requestsQuery.data ?? []
 
   useEffect(() => {
-    if (suggestFullFor === null) return
-    const listing = listings.find((item) => item.id === suggestFullFor)
-    // Rien à suggérer si le logement a disparu, est déjà complet (le chip vient
-    // d'être cliqué, ou l'était déjà), ou est institutionnel — un gymnase de
-    // 120 places n'est pas complet après chaque acceptation.
-    if (!listing || listing.status === 'FULL' || listing.category !== 'PRIVATE') {
-      setSuggestFullFor(null)
+    if (suggestion === null) return
+    const listing = listings.find((item) => item.id === suggestion.listingId)
+    // Rien à suggérer si le logement a disparu ou est déjà complet (le chip
+    // vient d'être cliqué, ou l'était déjà) — on referme la mise en avant.
+    if (!listing || listing.status === 'FULL') {
+      setSuggestion(null)
       return
     }
-    const element = document.querySelector<HTMLElement>(`[data-full-chip="${suggestFullFor}"]`)
+    const acceptedPeople =
+      suggestion.peopleCount +
+      requests
+        .filter(
+          (item) =>
+            item.listingId === suggestion.listingId &&
+            item.effectiveStatus === 'ACCEPTED' &&
+            item.id !== suggestion.requestId,
+        )
+        .reduce((sum, item) => sum + item.peopleCount, 0)
+    // Institutionnels (hôtels, gymnases gérés par les admins) : gros volumes,
+    // la suggestion n'apparaît qu'à l'approche du plein (≥ 80 % de remplissage).
+    if (listing.category !== 'PRIVATE' && acceptedPeople < listing.capacity * 0.8) {
+      setSuggestion(null)
+      return
+    }
+    const element = document.querySelector<HTMLElement>(
+      `[data-full-chip="${suggestion.listingId}"]`,
+    )
     if (!element) return
-    // Le cleanup détruit la mise en avant à chaque refetch des logements (l'effet
-    // la recrée aussitôt) : ne vider l'état que si c'est l'utilisateur qui ferme.
+    // Le cleanup détruit la mise en avant à chaque refetch (l'effet la recrée
+    // aussitôt) : ne vider l'état que si c'est l'utilisateur qui ferme.
     let cancelled = false
     const highlight = driver({
       showButtons: ['close'],
       stagePadding: 8,
       onDestroyed: () => {
-        if (!cancelled) setSuggestFullFor(null)
+        if (!cancelled) setSuggestion(null)
       },
     })
     highlight.highlight({
       element,
       popover: {
         title: 'Ce logement est-il complet ?',
-        description: `Demande acceptée ! Si « ${listing.title} » n’a plus de place, clique sur Complet pour le sortir des recherches — ça n’annule rien.`,
+        description:
+          listing.category === 'PRIVATE'
+            ? `Demande acceptée ! Si « ${listing.title} » n’a plus de place, clique sur Complet pour le sortir des recherches — ça n’annule rien.`
+            : `Demande acceptée ! ${acceptedPeople} places sur ${listing.capacity} sont prises dans « ${listing.title} ». S’il est plein, clique sur Complet pour le sortir des recherches — ça n’annule rien.`,
         side: 'top',
       },
     })
@@ -82,17 +109,16 @@ export function HebergeurDemandes() {
       cancelled = true
       highlight.destroy()
     }
-  }, [suggestFullFor, listings])
+  }, [suggestion, listings, requests])
 
   if (requestsQuery.isPending || listingsQuery.isPending) return <Loading />
 
-  const items = requestsQuery.data ?? []
   const capacityById = new Map(listings.map((listing) => [listing.id, listing.capacity]))
 
-  const pending = items.filter((r) => r.effectiveStatus === 'PENDING')
-  const accepted = items.filter((r) => r.effectiveStatus === 'ACCEPTED')
-  const declined = items.filter((r) => r.effectiveStatus === 'DECLINED')
-  const expired = items.filter((r) => r.effectiveStatus === 'EXPIRED')
+  const pending = requests.filter((r) => r.effectiveStatus === 'PENDING')
+  const accepted = requests.filter((r) => r.effectiveStatus === 'ACCEPTED')
+  const declined = requests.filter((r) => r.effectiveStatus === 'DECLINED')
+  const expired = requests.filter((r) => r.effectiveStatus === 'EXPIRED')
 
   return (
     <div className="demandes fade">
@@ -119,7 +145,13 @@ export function HebergeurDemandes() {
                 key={request.id}
                 request={request}
                 capacity={capacityById.get(request.listingId)}
-                onAccepted={() => setSuggestFullFor(request.listingId)}
+                onAccepted={() =>
+                  setSuggestion({
+                    listingId: request.listingId,
+                    requestId: request.id,
+                    peopleCount: request.peopleCount,
+                  })
+                }
               />
             ) : (
               <WaitingAnswerCard key={request.id} request={request} />
