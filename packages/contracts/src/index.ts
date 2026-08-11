@@ -127,7 +127,6 @@ export const MeSchema = z.object({
   phone: z.string().nullable(),
   groupSize: z.number().int().nullable(),
   accessibilityNeeds: z.array(AccessCriterionSchema),
-  groupName: z.string().nullable(),
   unitName: z.string().nullable(),
   unitBranch: z.string().nullable(),
   onboardedAt: z.iso.datetime().nullable(),
@@ -148,8 +147,6 @@ const IndividualProfileFields = {
 }
 
 const UnitProfileFields = {
-  /** Groupe SGDF de rattachement — optionnel côté contrat (comptes existants), requis dans le formulaire */
-  groupName: z.string().min(1).max(120).nullish(),
   unitName: z.string().min(1).max(120),
   unitBranch: z.string().min(1).max(60),
   /** Prénom et nom du responsable — révélés à la mise en relation acceptée */

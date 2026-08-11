@@ -24,7 +24,6 @@ export function ProfilUnite() {
 function ProfilUniteForm({ me }: { me: Me }) {
   const navigate = useNavigate()
   const setMe = useSetMe()
-  const [groupName, setGroupName] = useState(me.groupName ?? '')
   const [unitName, setUnitName] = useState(me.unitName ?? '')
   const [unitBranch, setUnitBranch] = useState(me.unitBranch ?? eventConfig.unitBranches[0])
   const [firstName, setFirstName] = useState(me.firstName ?? '')
@@ -34,7 +33,6 @@ function ProfilUniteForm({ me }: { me: Me }) {
   const save = useMutation({
     mutationFn: async () => {
       const profile = {
-        groupName: groupName.trim(),
         unitName: unitName.trim(),
         unitBranch,
         firstName: firstName.trim(),
@@ -62,14 +60,6 @@ function ProfilUniteForm({ me }: { me: Me }) {
   return (
     <form className="profil fade" onSubmit={onSubmit}>
       <PageTitle>Unité scoute,</PageTitle>
-      <Field label="Groupe">
-        <Input
-          value={groupName}
-          onChange={(event) => setGroupName(event.target.value)}
-          aria-label="Nom du groupe"
-          required
-        />
-      </Field>
       <Field label="Unité">
         <span className="field__pair">
           <Input
