@@ -41,6 +41,8 @@ const EventConfigSchema = z.object({
     )
     .min(1),
   /** Panneau gauche de l'écran de connexion */
+  /** Adresse postale de l'organisateur — pied de page des emails (délivrabilité/anti-spam) */
+  organizerAddress: z.string().min(1),
   hero: z.object({ title: z.string().min(1), text: z.string().min(1) }),
   /** Branches proposées au profil des unités scoutes (spécifique à l'organisateur) */
   unitBranches: z.array(z.string().min(1)).min(1),
@@ -62,6 +64,7 @@ export const eventConfig = {
   appName: 'Hébergement',
   organizer: 'Scouts et Guides de France',
   contactEmail: 'communication@sgdf.fr',
+  organizerAddress: '65 rue de la Glacière, 75013 Paris',
   dates: {
     start: '2026-09-25',
     end: '2026-09-28',

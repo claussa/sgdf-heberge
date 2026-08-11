@@ -15,11 +15,17 @@ export interface MagicLinkEmailProps {
  * Le texte avertit explicitement de ne pas transférer le message (risque résiduel accepté §9).
  */
 export function MagicLinkEmail({ firstName, url }: MagicLinkEmailProps) {
+  // Phrase de contexte anti-spam : les mails « bouton seul » scorent mal.
+  // Le domaine est dérivé du lien lui-même — pas d'URL d'événement en dur ici.
+  const host = new URL(url).host
   return (
     <EmailLayout preview="Votre lien de connexion — valable 10 minutes">
       <Heading as="h2" style={emailStyles.heading}>
         {greeting(firstName)}
       </Heading>
+      <Text style={emailStyles.paragraph}>
+        Vous recevez ce message car une connexion a été demandée sur <strong>{host}</strong>.
+      </Text>
       <Text style={emailStyles.paragraph}>
         Voici votre lien de connexion. Ce lien est valable <strong>10 minutes</strong>.
       </Text>

@@ -97,7 +97,7 @@ export function EmailLayout({ preview, children }: EmailLayoutProps) {
           <Section style={{ padding: '28px 32px 16px' }}>{children}</Section>
           <Section style={{ borderTop: '1px solid rgba(0,58,93,.16)', padding: '16px 32px 24px' }}>
             <Text style={{ color: '#66899e', fontSize: '12px', lineHeight: '1.5', margin: 0 }}>
-              {eventConfig.organizer}
+              {eventConfig.organizer} — {eventConfig.organizerAddress}
             </Text>
             <Text
               style={{ color: '#66899e', fontSize: '12px', lineHeight: '1.5', margin: '4px 0 0' }}
