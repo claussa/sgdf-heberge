@@ -57,6 +57,8 @@ const ADMIN_LISTING_SELECT = {
   accessAssistanceDog: true,
   accessQuiet: true,
   _count: { select: { requests: { where: { status: 'PENDING' } } } },
+  // Remplissage « 12/80 places » — même agrégat que la vue propriétaire.
+  requests: { where: { status: 'ACCEPTED' }, select: { peopleCount: true } },
 } as const satisfies Prisma.ListingSelect
 
 type AdminListingRow = Prisma.ListingGetPayload<{ select: typeof ADMIN_LISTING_SELECT }>
@@ -101,6 +103,7 @@ function toAdminListing(row: AdminListingRow) {
     hiddenAt: row.hiddenAt ? row.hiddenAt.toISOString() : null,
     addressFull: row.addressFull,
     pendingRequests: row._count.requests,
+    acceptedPeople: row.requests.reduce((sum, request) => sum + request.peopleCount, 0),
   }
 }
 
