@@ -133,6 +133,31 @@
   flex-direction: column;
 }
 
+/* ============ Footer (lien mentions légales) ============ */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 14px 16px;
+  border-top: 1px solid var(--bordure);
+}
+
+.footer__org {
+  font: 400 12px var(--font-courant);
+  color: var(--texte-secondaire);
+}
+
+.footer__link {
+  font: 400 12px var(--font-courant);
+  color: var(--texte-secondaire);
+  text-decoration: underline;
+}
+
+.footer__link:hover {
+  color: var(--bleu);
+}
+
 /* ============ Bottom nav mobile (connecté et onboardé uniquement) ============ */
 .bottom-nav {
   display: none;
