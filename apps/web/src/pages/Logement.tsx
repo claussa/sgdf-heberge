@@ -15,7 +15,9 @@ import {
   HelpText,
   Input,
   Loading,
+  PARKING_EASE_LABELS,
   PageTitle,
+  ParkingGauge,
   SectionTitle,
   SigneImage,
   SuccessPanel,
@@ -106,6 +108,12 @@ function FicheLogement({ logement, me }: { logement: ListingDetail; me: Me }) {
                 <Badge key={slug}>{ACCESS_CRITERIA_LABELS[slug].label}</Badge>
               ))}
             </div>
+          )}
+          {logement.parkingEase && (
+            <p className="fiche-logement__parking text-body">
+              <ParkingGauge ease={logement.parkingEase} />
+              Stationnement à proximité : {PARKING_EASE_LABELS[logement.parkingEase].toLowerCase()}
+            </p>
           )}
           {logement.description && (
             <p className="fiche-logement__description">« {logement.description} »</p>

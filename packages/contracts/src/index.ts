@@ -98,6 +98,14 @@ export const AccessGridSchema = z.object({
 })
 export type AccessGrid = z.infer<typeof AccessGridSchema>
 
+/**
+ * Facilité de se garer à proximité du logement (jauge publique) — distincte du
+ * critère d'accessibilité `parking`, qui vise la dépose/place PMR proche de l'entrée.
+ */
+export const PARKING_EASE = ['EASY', 'MEDIUM', 'HARD'] as const
+export const ParkingEaseSchema = z.enum(PARKING_EASE)
+export type ParkingEase = z.infer<typeof ParkingEaseSchema>
+
 // ---------------------------------------------------------------------------
 // Auth / compte
 // ---------------------------------------------------------------------------
@@ -228,6 +236,8 @@ export type ListingCard = z.infer<typeof ListingCardSchema>
 export const ListingDetailSchema = ListingCardSchema.extend({
   description: z.string().nullable(),
   accessibilityNotes: z.string().nullable(),
+  /** Facilité de stationnement — null = non renseigné (institutionnels notamment) */
+  parkingEase: ParkingEaseSchema.nullable(),
   /** « chez Claire M. » — null pour les institutionnels */
   hostDisplayName: z.string().nullable(),
   beds: z.array(BedSchema),
@@ -255,6 +265,7 @@ export const ListingUpsertSchema = z.object({
   beds: z.array(BedInputSchema).min(1).max(20),
   access: AccessGridSchema,
   accessibilityNotes: z.string().max(1000).nullish(),
+  parkingEase: ParkingEaseSchema.nullish(),
 })
 export type ListingUpsertInput = z.infer<typeof ListingUpsertSchema>
 

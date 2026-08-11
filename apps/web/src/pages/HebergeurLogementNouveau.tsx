@@ -1,5 +1,5 @@
-import type { BedType, MyListing } from '@repo/contracts'
-import { ACCESS_CRITERIA } from '@repo/contracts'
+import type { BedType, MyListing, ParkingEase } from '@repo/contracts'
+import { ACCESS_CRITERIA, PARKING_EASE } from '@repo/contracts'
 import type { SiteSlug } from '@repo/event-config'
 import { eventConfig } from '@repo/event-config'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -13,10 +13,14 @@ import {
   Button,
   Checkbox,
   Field,
+  FieldGroup,
   HelpText,
   Input,
   Loading,
+  PARKING_EASE_LABELS,
   PageTitle,
+  ParkingGauge,
+  Radio,
   SectionTitle,
   Select,
   Stepper,
@@ -103,6 +107,7 @@ function LogementForm({ listing }: { listing: MyListing | null }) {
   const [description, setDescription] = useState(listing?.description ?? '')
   const [access, setAccess] = useState(() => (listing ? { ...listing.access } : emptyAccessGrid()))
   const [accessibilityNotes, setAccessibilityNotes] = useState(listing?.accessibilityNotes ?? '')
+  const [parkingEase, setParkingEase] = useState<ParkingEase | null>(listing?.parkingEase ?? null)
   const [stepError, setStepError] = useState<string | null>(null)
 
   const capacity = rows.reduce(
@@ -130,6 +135,7 @@ function LogementForm({ listing }: { listing: MyListing | null }) {
         access,
         accessibilityNotes:
           accessibilityNotes.trim() === '' ? undefined : accessibilityNotes.trim(),
+        parkingEase,
       }
       if (listing) {
         const res = await api.my.listings[':id'].$patch({
@@ -352,6 +358,34 @@ function LogementForm({ listing }: { listing: MyListing | null }) {
               )
             })}
           </div>
+          <FieldGroup label="Se garer à proximité">
+            <div className="parking-choix">
+              <Radio
+                name="parkingEase"
+                checked={parkingEase === null}
+                onChange={() => setParkingEase(null)}
+                label="Non renseigné"
+              />
+              {PARKING_EASE.map((ease) => (
+                <Radio
+                  key={ease}
+                  name="parkingEase"
+                  checked={parkingEase === ease}
+                  onChange={() => setParkingEase(ease)}
+                  label={
+                    <span className="parking-choix__option">
+                      <ParkingGauge ease={ease} />
+                      {PARKING_EASE_LABELS[ease]}
+                    </span>
+                  }
+                />
+              ))}
+            </div>
+            <HelpText>
+              Stationnement dans la rue ou parking proche — une indication pour les bénévoles qui
+              viennent en voiture.
+            </HelpText>
+          </FieldGroup>
           <Field label="Autres informations d’accessibilité">
             <Textarea
               uiSize="sm"

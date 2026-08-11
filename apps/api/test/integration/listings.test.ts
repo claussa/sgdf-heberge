@@ -324,6 +324,25 @@ describe('création', () => {
     expect(dump).not.toContain('addressFull')
   })
 
+  it('parkingEase : absent → null, renseigné → aller-retour sur la fiche publique', async () => {
+    // Créée sans parkingEase plus haut : la fiche publique le rend null.
+    const sans = await api(`/listings/${createdId}`, { headers: { cookie: marie } })
+    expect(((await sans.json()) as { parkingEase: string | null }).parkingEase).toBeNull()
+
+    // PATCH sans address (adresse conservée) — le champ se pose et ressort.
+    const { address: _address, ...bodySansAdresse } = listingBody({
+      description: 'Grand appartement lumineux',
+    })
+    const patch = await api(`/my/listings/${createdId}`, {
+      method: 'PATCH',
+      headers: jsonHeaders(claire),
+      body: JSON.stringify({ ...bodySansAdresse, parkingEase: 'MEDIUM' }),
+    })
+    expect(patch.status).toBe(200)
+    const avec = await api(`/listings/${createdId}`, { headers: { cookie: marie } })
+    expect(((await avec.json()) as { parkingEase: string | null }).parkingEase).toBe('MEDIUM')
+  })
+
   it('rejette availableFrom ≥ availableTo (VALIDATION_ERROR)', async () => {
     const res = await api('/my/listings', {
       method: 'POST',

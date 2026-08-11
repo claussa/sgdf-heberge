@@ -64,6 +64,7 @@ const DETAIL_SELECT = {
   ownerId: true,
   description: true,
   accessibilityNotes: true,
+  parkingEase: true,
   bookingUrl: true,
   hiddenAt: true,
   owner: { select: { firstName: true, lastName: true } },
@@ -125,6 +126,7 @@ function toDetail(row: DetailRow) {
     ...toCard(row),
     description: row.description,
     accessibilityNotes: row.accessibilityNotes,
+    parkingEase: row.parkingEase,
     // « chez Claire M. » — les institutionnels s'identifient par leur title, pas par
     // le compte admin qui les gère.
     hostDisplayName: row.category === 'PRIVATE' ? hostDisplayName(row.owner) : null,
@@ -194,6 +196,7 @@ function commonListingData(input: Omit<ListingUpsertInput, 'address'>) {
     accessAssistanceDog: input.access.assistanceDog,
     accessQuiet: input.access.quiet,
     accessibilityNotes: input.accessibilityNotes ?? null,
+    parkingEase: input.parkingEase ?? null,
   }
 }
 

@@ -44,6 +44,14 @@ enum ListingStatus {
   FULL
 }
 
+/// Facilité de stationnement à proximité du logement (jauge publique, distincte
+/// du critère d'accessibilité `accessParking` qui vise la dépose/place PMR)
+enum ParkingEase {
+  EASY
+  MEDIUM
+  HARD
+}
+
 enum BedType {
   PRIVATE_ROOM
   COUCH
@@ -196,6 +204,9 @@ model Listing {
   accessQuiet              Boolean @default(false)
   /// Champ libre public « autres informations d'accessibilité »
   accessibilityNotes String?
+
+  /// Facilité de se garer à proximité — null = non renseigné
+  parkingEase ParkingEase?
 
   /// Institutionnels : prix/conditions saisis par l'admin (« 45 € · code PAPE15 »)
   priceInfo  String?

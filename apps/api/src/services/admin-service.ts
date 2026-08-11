@@ -44,6 +44,7 @@ const ADMIN_LISTING_SELECT = {
   bookingUrl: true,
   description: true,
   accessibilityNotes: true,
+  parkingEase: true,
   status: true,
   hiddenAt: true,
   addressFull: true,
@@ -91,6 +92,8 @@ function toAdminListing(row: AdminListingRow) {
     priceInfo: row.priceInfo,
     description: row.description,
     accessibilityNotes: row.accessibilityNotes,
+    // Institutionnels : jamais saisi par l'admin en v1 — la jauge n'apparaît pas.
+    parkingEase: row.parkingEase,
     // Ils s'identifient par leur title, jamais par le compte admin qui les gère.
     hostDisplayName: null,
     bookingUrl: row.bookingUrl,

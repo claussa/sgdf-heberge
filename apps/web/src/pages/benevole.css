@@ -168,6 +168,13 @@
   gap: 6px;
 }
 
+.fiche-logement__parking {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
 .fiche-logement__description {
   margin: 0;
   font: 400 14px / 1.6 var(--font-courant);
