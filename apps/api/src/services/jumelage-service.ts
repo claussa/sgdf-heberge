@@ -295,15 +295,20 @@ export async function acceptContact(
     throw new AppError('NOT_FOUND', 'Demande introuvable')
   }
 
+  // Le jumelage étant multi, l'annonce de chaque unité reste ACTIVE après
+  // l'acceptation : l'email propose de la retirer (seule porte de sortie) —
+  // bouton présent uniquement si l'unité a effectivement une annonce ACTIVE.
+  const activeAd = { where: { status: 'ACTIVE' }, take: 1, select: { id: true } } as const
   const contact = await db.jumelageContact.findUniqueOrThrow({
     where: { id: contactId },
     select: {
-      requester: { select: NOTIFY_PARTY_SELECT },
-      ad: { select: { user: { select: NOTIFY_PARTY_SELECT } } },
+      requester: { select: { ...NOTIFY_PARTY_SELECT, jumelageAds: activeAd } },
+      ad: { select: { user: { select: { ...NOTIFY_PARTY_SELECT, jumelageAds: activeAd } } } },
     },
   })
   const ownerParty = contact.ad.user
   const requesterParty = contact.requester
+  const withdrawUrl = `${getEnv().APP_ORIGIN}/unite/relations`
 
   // Au propriétaire : les coordonnées du demandeur.
   const toOwner = await renderJumelageAcceptedEmail({
@@ -312,6 +317,7 @@ export async function acceptContact(
     contactName: fullName(requesterParty),
     contactEmail: requesterParty.email,
     contactPhone: requesterParty.phone ?? '',
+    withdrawUrl: ownerParty.jumelageAds.length > 0 ? withdrawUrl : null,
   })
   sendToRecipientAsync(ownerParty, { ...toOwner, idempotencyKey: `jumelage-accepted/${contactId}` })
 
@@ -322,6 +328,7 @@ export async function acceptContact(
     contactName: fullName(ownerParty),
     contactEmail: ownerParty.email,
     contactPhone: ownerParty.phone ?? '',
+    withdrawUrl: requesterParty.jumelageAds.length > 0 ? withdrawUrl : null,
   })
   sendToRecipientAsync(requesterParty, {
     ...toRequester,
