@@ -45,6 +45,7 @@ export function toMe(
     unitBranch: user.unitBranch,
     onboardedAt: user.onboardedAt ? user.onboardedAt.toISOString() : null,
     hasListings: extras.hasListings,
+    seeksAccommodation: user.seekerOnboardedAt !== null,
     hasActiveAd: extras.hasActiveAd,
     createdAt: user.createdAt.toISOString(),
   }
@@ -83,6 +84,10 @@ export async function completeOnboarding(
           accessibilityNeeds: input.accessibilityNeeds?.length
             ? JSON.stringify(input.accessibilityNeeds)
             : null,
+          // Interrupteur à sens unique : le parcours hébergeur ne l'envoie pas
+          ...(input.seeksAccommodation && !user.seekerOnboardedAt
+            ? { seekerOnboardedAt: now }
+            : {}),
         }
       : {
           accountType: input.accountType,
@@ -112,6 +117,7 @@ export async function updateProfile(
   if (input.lastName !== undefined) data.lastName = input.lastName
   if (input.phone !== undefined) data.phone = input.phone
   if (user.accountType === 'INDIVIDUAL') {
+    if (input.seeksAccommodation && !user.seekerOnboardedAt) data.seekerOnboardedAt = new Date()
     if (input.groupSize !== undefined) data.groupSize = input.groupSize
     if (input.accessibilityNeeds !== undefined) {
       data.accessibilityNeeds = input.accessibilityNeeds.length

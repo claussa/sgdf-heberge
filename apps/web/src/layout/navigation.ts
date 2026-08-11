@@ -26,30 +26,40 @@ export type NavItem = {
 export function buildNav(me: Me | null): NavItem[] {
   if (!me?.accountType) return []
 
+  // Chaque espace INDIVIDUAL est opt-in (B.9 : navs bénévole et hébergeur distinctes).
+  // Volontaire : parcours « Je cherche un logement » (seeksAccommodation). Hébergeur :
+  // un logement existe — ou hébergeur pur par élimination, pour que la nav hébergeur
+  // soit là dès la création du premier logement.
+  const seeker = me.seeksAccommodation
+  const host = me.hasListings || !seeker
+
   const items: NavItem[] =
     me.accountType === 'INDIVIDUAL'
       ? [
-          {
-            to: '/recherche',
-            label: 'Rechercher un logement',
-            short: 'Rechercher',
-            signe: 'fleche',
-            match: ['/recherche', '/logements'],
-          },
-          {
-            to: '/mes-demandes',
-            label: 'Mes demandes',
-            short: 'Demandes',
-            signe: 'tente',
-            match: ['/mes-demandes'],
-          },
-          // Espace hébergeur : fusionné dans la nav dès qu'un logement existe
-          ...(me.hasListings
+          ...(seeker
+            ? ([
+                {
+                  to: '/recherche',
+                  label: 'Rechercher un logement',
+                  short: 'Rechercher',
+                  signe: 'fleche',
+                  match: ['/recherche', '/logements'],
+                },
+                {
+                  to: '/mes-demandes',
+                  label: 'Mes demandes',
+                  short: 'Demandes',
+                  signe: 'tente',
+                  match: ['/mes-demandes'],
+                },
+              ] satisfies NavItem[])
+            : []),
+          ...(host
             ? ([
                 {
                   to: '/hebergeur/demandes',
                   label: 'Demandes reçues',
-                  short: 'Reçues',
+                  short: seeker ? 'Reçues' : 'Demandes',
                   signe: 'tente',
                   match: ['/hebergeur/demandes'],
                 },
@@ -63,7 +73,8 @@ export function buildNav(me: Me | null): NavItem[] {
               ] satisfies NavItem[])
             : []),
           {
-            to: '/profil',
+            // Hébergeur pur : le profil est l'écran hébergeur, pas le volontaire
+            to: seeker ? '/profil' : '/hebergeur',
             label: 'Mon profil',
             short: 'Profil',
             signe: 'etoile',

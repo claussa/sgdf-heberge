@@ -139,6 +139,10 @@ model User {
   /// Posée quand l'onboarding (choix du type + profil) est terminé
   onboardedAt DateTime?
 
+  /// Espace volontaire (recherche) activé — parcours « Je cherche un logement » ou
+  /// première demande. Null = hébergeur pur : nav et redirections restent côté hébergeur.
+  seekerOnboardedAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

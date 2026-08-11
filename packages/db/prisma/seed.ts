@@ -38,6 +38,7 @@ async function main() {
       groupSize: 3,
       accessibilityNeeds: JSON.stringify(['pmr']),
       onboardedAt: daysAgo(10),
+      seekerOnboardedAt: daysAgo(10),
     },
   })
   const claire = await db.user.create({
@@ -59,6 +60,7 @@ async function main() {
       phone: '06 55 44 33 22',
       groupSize: 1,
       onboardedAt: daysAgo(8),
+      seekerOnboardedAt: daysAgo(8),
     },
   })
   const lea = await db.user.create({
@@ -70,6 +72,7 @@ async function main() {
       phone: '06 21 32 43 54',
       groupSize: 2,
       onboardedAt: daysAgo(9),
+      seekerOnboardedAt: daysAgo(9),
     },
   })
   // Hébergeurs des autres logements de la grille de recherche
