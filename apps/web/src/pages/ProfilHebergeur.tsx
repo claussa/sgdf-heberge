@@ -1,7 +1,7 @@
 import type { Me } from '@repo/contracts'
 import { useMutation } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
-import { Navigate, useNavigate } from 'react-router'
+import { Navigate, useNavigate, useSearchParams } from 'react-router'
 import { AccountActions } from '../components/AccountActions'
 import { api } from '../lib/api'
 import { useMe, useSetMe } from '../lib/hooks'
@@ -23,6 +23,10 @@ export function ProfilHebergeur() {
 function ProfilHebergeurForm({ me }: { me: Me }) {
   const navigate = useNavigate()
   const setMe = useSetMe()
+  // ?premiere : arrivée depuis le choix d'inscription — on ne propose pas l'autre
+  // parcours tant que celui-ci n'est pas terminé.
+  const [searchParams] = useSearchParams()
+  const isPremiere = searchParams.has('premiere')
   const [firstName, setFirstName] = useState(me.firstName ?? '')
   const [lastName, setLastName] = useState(me.lastName ?? '')
   const [phone, setPhone] = useState(me.phone ?? '')
@@ -102,18 +106,22 @@ function ProfilHebergeurForm({ me }: { me: Me }) {
       >
         Créer mon premier logement
       </Button>
-      <hr className="divider" />
-      <span className="field__label">Et si besoin</span>
-      <Button
-        variant="secondary"
-        style={{ alignSelf: 'flex-start' }}
-        onClick={() => navigate('/profil')}
-      >
-        Chercher aussi un logement, ailleurs
-      </Button>
-      <HelpText>
-        Ça ouvre ton espace volontaire, en plus de celui-ci — même compte, même connexion.
-      </HelpText>
+      {!isPremiere && (
+        <>
+          <hr className="divider" />
+          <span className="field__label">Et si besoin</span>
+          <Button
+            variant="secondary"
+            style={{ alignSelf: 'flex-start' }}
+            onClick={() => navigate('/profil')}
+          >
+            Chercher aussi un logement, ailleurs
+          </Button>
+          <HelpText>
+            Ça ouvre ton espace volontaire, en plus de celui-ci — même compte, même connexion.
+          </HelpText>
+        </>
+      )}
       <AccountActions />
     </form>
   )
