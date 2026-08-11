@@ -18,6 +18,21 @@ type SigneImageProps = {
   className?: string
 }
 
+/**
+ * Signe recoloré via mask CSS (blanc sur bleu, orange sur blanc…).
+ * Couleur héritée de `currentColor`, taille à poser en CSS sur `.signe-mask`.
+ */
+export function SigneMask({ name, className }: { name: SigneName; className?: string }) {
+  const url = signes[`../assets/signes/${name}.png`]
+  return (
+    <span
+      aria-hidden
+      className={cx('signe-mask', className)}
+      style={{ WebkitMaskImage: `url(${url})`, maskImage: `url(${url})` }}
+    />
+  )
+}
+
 /** Signe PNG décoratif (alt vide). */
 export function SigneImage({ name, size = 22, opacity = 1, className }: SigneImageProps) {
   return (
