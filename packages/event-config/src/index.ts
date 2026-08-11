@@ -61,6 +61,21 @@ const EventConfigSchema = z.object({
     contactEmail: z.email(),
     dpoEmail: z.email(),
   }),
+  /** Sorties de l'écran de connexion — bloc « Tu cherches autre chose ? » */
+  otherRoutes: z.object({
+    title: z.string().min(1),
+    links: z
+      .array(
+        z.object({
+          label: z.string().min(1),
+          description: z.string().min(1),
+          href: z.url(),
+          /** Nom d'un signe de la charte (fleche, etoile, tente…) */
+          signe: z.string().min(1),
+        }),
+      )
+      .min(1),
+  }),
   /** Branches proposées au profil des unités scoutes (spécifique à l'organisateur) */
   unitBranches: z.array(z.string().min(1)).min(1),
   /** Noms de fichiers dans apps/web/src/assets/ */
@@ -109,6 +124,23 @@ export const eventConfig = {
   hero: {
     title: 'Un toit pour chaque bénévole,',
     text: 'Trouver où dormir — ou accueillir ceux qui viennent — pour la venue du pape Léon XIV, du 25 au 28 septembre 2026.',
+  },
+  otherRoutes: {
+    title: 'Tu cherches autre chose ?',
+    links: [
+      {
+        label: 'Le transport, c’est par ici',
+        description: 'Formulaire cars et covoiturage',
+        href: 'https://exemple.sgdf.fr/transport',
+        signe: 'fleche',
+      },
+      {
+        label: 'Tout savoir sur le rassemblement',
+        description: 'Page ressources des Scouts et Guides de France',
+        href: 'https://www.sgdf.fr',
+        signe: 'etoile',
+      },
+    ],
   },
   unitBranches: [
     'Farfadets',

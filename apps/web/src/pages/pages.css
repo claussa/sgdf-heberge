@@ -73,6 +73,176 @@
   width: 88px;
 }
 
+/* ---- Chemin des autres routes (maquette « Connexion - propositions », 1c/4a) ----
+   Deux traitements du même contenu : --hero sur le panneau bleu (desktop),
+   --panel sur fond blanc (mobile). Jalons posés sur un tracé pointillé vertical. */
+.routes {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.routes--hero {
+  margin-top: 8px;
+}
+
+.routes__title {
+  margin: 0;
+  font: 400 26px / 1 var(--font-titrage);
+}
+
+.routes--hero .routes__title {
+  color: var(--orange);
+}
+
+.routes--panel .routes__title {
+  color: var(--bleu);
+  font-size: 24px;
+}
+
+.routes__chemin {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-left: 40px;
+}
+
+.routes__chemin::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: -16px;
+  bottom: -16px;
+  width: 3px;
+}
+
+.routes--hero .routes__chemin::before {
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.5) 0 7px,
+    transparent 7px 13px
+  );
+}
+
+.routes--panel .routes__chemin::before {
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 58, 93, 0.45) 0 7px,
+    transparent 7px 13px
+  );
+}
+
+.routes__link {
+  position: relative;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-left: -40px;
+  text-decoration: none;
+  transition: opacity var(--duree) var(--ease);
+}
+
+.routes__link:hover {
+  opacity: 0.8;
+}
+
+/* Jalon : le fond du carré reprend celui du panneau et masque le tracé */
+.routes__signe-box {
+  width: 27px;
+  height: 27px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.routes--hero .routes__signe-box {
+  background: var(--bleu);
+  color: var(--blanc);
+}
+
+.routes--panel .routes__signe-box {
+  background: var(--blanc);
+  color: var(--orange);
+}
+
+.routes__signe {
+  width: 22px;
+  height: 22px;
+}
+
+.routes__text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.routes__label {
+  font: 700 13.5px var(--font-courant);
+}
+
+.routes--hero .routes__label {
+  color: var(--blanc);
+}
+
+.routes--panel .routes__label {
+  color: var(--bleu);
+}
+
+.routes__desc {
+  font: 400 12.5px var(--font-courant);
+}
+
+.routes--hero .routes__desc {
+  color: #b3c4cf;
+}
+
+.routes--panel .routes__desc {
+  color: var(--texte-secondaire);
+}
+
+/* Amorce « Continue vers la connexion » et second spacer — mobile 4a uniquement */
+.connexion__continue {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font: 700 12.5px var(--font-courant);
+  color: var(--blanc);
+}
+
+.connexion__continue-fleche {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  color: var(--orange);
+  transform: rotate(90deg);
+}
+
+.connexion__hero-spacer--mobile {
+  display: none;
+}
+
+/* Bloc « autres routes » sous le formulaire — mobile 4a uniquement */
+.connexion__autres {
+  display: none;
+  max-width: 400px;
+  width: 100%;
+  margin: 0 auto;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.connexion__autres-filet {
+  height: 1px;
+  background: var(--bordure);
+  margin: 6px 0 2px;
+}
+
 .banner-error {
   margin: 0;
   border: 1px solid var(--rouge);
@@ -261,8 +431,87 @@
 
 /* ============ Mobile (< 768px) ============ */
 @media (max-width: 767.98px) {
+  /* Connexion 4a : deux écrans aimantés. Le document est le conteneur de
+     défilement ; le header mobile devient sticky sur cet écran et chaque
+     section remplit la fenêtre sous lui (588px sur la maquette 375×640). */
+  :root {
+    /* Header mobile : 28px de logo + 2 × 10px de padding + 1px de filet */
+    --connexion-header-h: 49px;
+  }
+
+  html:has(.connexion) {
+    scroll-snap-type: y mandatory;
+    scroll-padding-top: var(--connexion-header-h);
+  }
+
+  .frame:has(.connexion) .header-mobile {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--blanc);
+  }
+
+  /* Sans point d'aimantation, le footer serait inatteignable sous le second écran */
+  .frame:has(.connexion) .footer {
+    scroll-snap-align: end;
+  }
+
   .connexion {
     grid-template-columns: 1fr;
+  }
+
+  .connexion__hero {
+    scroll-snap-align: start;
+    min-height: calc(100dvh - var(--connexion-header-h));
+    padding: 28px 20px 24px;
+    gap: 12px;
+  }
+
+  .connexion__hero-logo {
+    width: 56px;
+  }
+
+  .connexion__hero-title {
+    font-size: 40px;
+  }
+
+  .connexion__hero-text {
+    font-size: 14px;
+  }
+
+  .connexion__hero-spacer--mobile {
+    display: block;
+  }
+
+  .connexion__continue {
+    display: flex;
+  }
+
+  /* Le chemin quitte le bleu (1c) pour rejoindre le bas du second écran (4a) */
+  .routes--hero {
+    display: none;
+  }
+
+  .connexion__panel {
+    scroll-snap-align: start;
+    min-height: calc(100dvh - var(--connexion-header-h));
+    padding: 22px 20px 26px;
+    gap: 14px;
+    /* Écrans hauts (S20 Ultra, iPhone Pro Max) : formulaire calé en haut,
+       chemin calé en bas — le blanc se concentre entre les deux. */
+    justify-content: flex-start;
+  }
+
+  .connexion__autres {
+    margin-top: auto;
+  }
+
+  .connexion__event-logo {
+    width: 52px;
+  }
+
+  .connexion__autres {
+    display: flex;
   }
 
   .connexion__dechirure {

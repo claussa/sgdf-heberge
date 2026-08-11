@@ -488,3 +488,15 @@
   background: #ebeff2;
   font-weight: 700;
 }
+
+/* ============ SigneMask : signe recoloré (couleur = currentColor) ============ */
+.signe-mask {
+  display: block;
+  background: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
