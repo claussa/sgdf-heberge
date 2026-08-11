@@ -1,4 +1,11 @@
-import { ACCESS_CRITERIA, type ListingCard, type Me, type SearchType } from '@repo/contracts'
+import {
+  ACCESS_CRITERIA,
+  type ListingCard,
+  type Me,
+  PARKING_EASE,
+  type ParkingEase,
+  type SearchType,
+} from '@repo/contracts'
 import { eventConfig, type SiteSlug } from '@repo/event-config'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -6,7 +13,18 @@ import { Link } from 'react-router'
 import { ACCESS_CRITERIA_LABELS } from '../lib/access-criteria'
 import { api } from '../lib/api'
 import { useMe } from '../lib/hooks'
-import { Badge, Chip, EmptyState, HelpText, Input, Loading, PageTitle, SigneImage } from '../ui'
+import {
+  Badge,
+  Chip,
+  EmptyState,
+  HelpText,
+  Input,
+  Loading,
+  PARKING_EASE_LABELS,
+  PageTitle,
+  ParkingGauge,
+  SigneImage,
+} from '../ui'
 import { signeDe } from './benevole-lib'
 import './benevole.css'
 
@@ -43,6 +61,8 @@ function RechercheView({ me }: { me: Me }) {
   const [personnes, setPersonnes] = useState(String(me.groupSize ?? 1))
   const [types, setTypes] = useState<SearchType[]>([])
   const [besoins, setBesoins] = useState(false)
+  /** Facilité de stationnement minimale exigée (null = pas de filtre) */
+  const [parking, setParking] = useState<ParkingEase | null>(null)
 
   const nbPersonnes = Number(personnes)
   const personnesValide = Number.isInteger(nbPersonnes) && nbPersonnes >= 1
@@ -56,6 +76,7 @@ function RechercheView({ me }: { me: Me }) {
       personnes,
       [...types].sort().join('+'),
       besoins ? me.accessibilityNeeds.join('+') : '',
+      parking ?? '',
     ],
     queryFn: async () => {
       const res = await api.listings.$get({
@@ -66,6 +87,7 @@ function RechercheView({ me }: { me: Me }) {
           people: personnesValide ? personnes : undefined,
           types: types.length > 0 ? types : undefined,
           access: besoins && me.accessibilityNeeds.length > 0 ? me.accessibilityNeeds : undefined,
+          parking: parking ?? undefined,
           pageSize: '60',
         },
       })
@@ -156,6 +178,22 @@ function RechercheView({ me }: { me: Me }) {
             )}
           </span>
         </div>
+        <div className="recherche__filtres-ligne">
+          <span className="field__label recherche__filtres-libelle">Parking</span>
+          <span className="recherche__chips">
+            {PARKING_EASE.map((ease) => (
+              <Chip
+                key={ease}
+                active={parking === ease}
+                onClick={() => setParking((actif) => (actif === ease ? null : ease))}
+              >
+                <ParkingGauge ease={ease} className="recherche__chip-jauge" />
+                {PARKING_EASE_LABELS[ease]}
+                {ease !== 'EASY' ? ' ou mieux' : ''}
+              </Chip>
+            ))}
+          </span>
+        </div>
       </div>
       {recherche.isError ? (
         <p className="alert-text">La recherche a échoué. Réessaie dans un instant.</p>
@@ -196,6 +234,12 @@ function CarteLogement({ carte, lienSuffixe }: { carte: ListingCard; lienSuffixe
       <span className="carte-logement__corps">
         <span className="carte-logement__titre">{carte.title}</span>
         <span className="carte-logement__zone">{carte.displayArea}</span>
+        {carte.parkingEase && (
+          <span className="carte-logement__parking">
+            <ParkingGauge ease={carte.parkingEase} />
+            Stationnement {PARKING_EASE_LABELS[carte.parkingEase].toLowerCase()}
+          </span>
+        )}
         {badge && (
           <span className="carte-logement__badges">
             <Badge>{badge}</Badge>

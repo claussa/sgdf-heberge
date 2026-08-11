@@ -98,6 +98,14 @@ export const AccessGridSchema = z.object({
 })
 export type AccessGrid = z.infer<typeof AccessGridSchema>
 
+/**
+ * Facilité de se garer à proximité du logement (jauge publique) — distincte du
+ * critère d'accessibilité `parking`, qui vise la dépose/place PMR proche de l'entrée.
+ */
+export const PARKING_EASE = ['EASY', 'MEDIUM', 'HARD'] as const
+export const ParkingEaseSchema = z.enum(PARKING_EASE)
+export type ParkingEase = z.infer<typeof ParkingEaseSchema>
+
 // ---------------------------------------------------------------------------
 // Auth / compte
 // ---------------------------------------------------------------------------
@@ -218,6 +226,8 @@ export const ListingCardSchema = z.object({
   availableFrom: z.iso.date(),
   availableTo: z.iso.date(),
   access: AccessGridSchema,
+  /** Facilité de stationnement — null = non renseigné (institutionnels notamment) */
+  parkingEase: ParkingEaseSchema.nullable(),
   /** Types de couchages présents (icône + sous-titre carte) */
   bedTypes: z.array(BedTypeSchema),
   /** Institutionnels : « 45 € · code PAPE15 » */
@@ -255,6 +265,7 @@ export const ListingUpsertSchema = z.object({
   beds: z.array(BedInputSchema).min(1).max(20),
   access: AccessGridSchema,
   accessibilityNotes: z.string().max(1000).nullish(),
+  parkingEase: ParkingEaseSchema.nullish(),
 })
 export type ListingUpsertInput = z.infer<typeof ListingUpsertSchema>
 
@@ -291,6 +302,8 @@ export const ListingSearchQuerySchema = z.object({
   types: queryArray(SearchTypeSchema),
   /** Slugs d'accessibilité exigés (filtre « compatibles avec mes besoins ») */
   access: queryArray(AccessCriterionSchema),
+  /** Facilité de stationnement MINIMALE exigée (MEDIUM = facile ou moyen) */
+  parking: ParkingEaseSchema.optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(60).default(24),
 })

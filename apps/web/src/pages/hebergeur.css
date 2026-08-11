@@ -222,6 +222,20 @@
   gap: 10px 14px;
 }
 
+/* Choix « Se garer à proximité » (étape 2) : radios en ligne, jauge devant le libellé */
+.parking-choix {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  padding-top: 4px;
+}
+
+.parking-choix__option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 /* Retour discret vers l'étape 1 */
 .retour-link {
   background: none;

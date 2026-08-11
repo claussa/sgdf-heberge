@@ -500,3 +500,27 @@
   -webkit-mask-size: contain;
   mask-size: contain;
 }
+
+/* ============ ParkingGauge : 3 barres, couleur selon la facilité ============ */
+.parking-gauge {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.parking-gauge__bar {
+  width: 4px;
+  background: var(--stepper-inactif);
+}
+
+.parking-gauge--easy .parking-gauge__bar--filled {
+  background: var(--vert);
+}
+
+.parking-gauge--medium .parking-gauge__bar--filled {
+  background: var(--orange);
+}
+
+.parking-gauge--hard .parking-gauge__bar--filled {
+  background: var(--rouge);
+}

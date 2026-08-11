@@ -27,7 +27,7 @@
 }
 
 .recherche__filtres-libelle {
-  width: 36px;
+  width: 56px;
   flex: none;
 }
 
@@ -36,6 +36,12 @@
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+/* Jauge dans une chip de filtre : accolée au libellé, alignée sur le texte */
+.recherche__chip-jauge {
+  margin-right: 6px;
+  vertical-align: baseline;
 }
 
 /* Dates et personnes, à droite de la ligne 1 */
@@ -111,6 +117,14 @@
   color: var(--texte-secondaire);
 }
 
+.carte-logement__parking {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: 400 12px var(--font-courant);
+  color: var(--texte-secondaire);
+}
+
 .carte-logement__badges {
   display: flex;
   flex-wrap: wrap;
@@ -166,6 +180,13 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+.fiche-logement__parking {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
 }
 
 .fiche-logement__description {

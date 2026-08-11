@@ -42,6 +42,7 @@ describe('minimisation : les schémas de réponse strippent les champs non décl
       availableFrom: '2026-09-24',
       availableTo: '2026-09-29',
       access: accessGrid,
+      parkingEase: null,
       bedTypes: ['PRIVATE_ROOM'],
       priceInfo: null,
       // champs interdits injectés volontairement :
