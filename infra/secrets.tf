@@ -63,14 +63,21 @@ resource "scaleway_secret" "database_url" {
   name = "${var.project_name}-database-url"
 }
 
-resource "scaleway_secret_version" "database_url" {
-  secret_id = scaleway_secret.database_url.id
-  data = format(
+# ⚠️ Composée dans un local et référencée PARTOUT via local.database_url :
+# l'attribut .data relu depuis l'API (ressource comme data source) revient
+# encodé en base64 — l'injecter tel quel casse Prisma au runtime.
+locals {
+  database_url = format(
     "postgresql://%s:%s@%s:%d/%s?connection_limit=10&pool_timeout=20&sslmode=require",
     scaleway_rdb_user.app.name,
     random_password.db_user.result,
-    scaleway_rdb_instance.main.load_balancer[0].ip,
-    scaleway_rdb_instance.main.load_balancer[0].port,
+    scaleway_rdb_instance.main.endpoint_ip,
+    scaleway_rdb_instance.main.endpoint_port,
     scaleway_rdb_database.app.name,
   )
+}
+
+resource "scaleway_secret_version" "database_url" {
+  secret_id = scaleway_secret.database_url.id
+  data      = local.database_url
 }

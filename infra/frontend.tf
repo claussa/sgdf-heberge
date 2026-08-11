@@ -46,9 +46,11 @@ resource "scaleway_object_bucket_website_configuration" "spa" {
 # registrar externe (voir infra/README.md).
 
 resource "scaleway_edge_services_plan" "main" {
-  # Abonnement requis avant tout pipeline. "starter" suffit : 1 pipeline, 100 Go
-  # de cache, pas de WAF. Facturé dès la souscription — vérifier le pricing.
-  name = "starter"
+  # Abonnement requis avant tout pipeline. "starter" (0,99 €/mois) est
+  # INSUFFISANT : backend_limit = 1, or ce pipeline a DEUX backend stages
+  # (SPA + API) — c'est la condition du même-domaine / SameSite=Lax (§9).
+  # "professional" (12,99 €/mois) : 10 pipelines, 10 backends, 1 To de cache.
+  name = "professional"
 }
 
 resource "scaleway_edge_services_pipeline" "main" {
@@ -62,8 +64,9 @@ resource "scaleway_edge_services_backend_stage" "spa" {
   s3_backend_config {
     bucket_name   = scaleway_object_bucket.spa.name
     bucket_region = "fr-par"
-    # Mode website : error_document → index.html sert de fallback SPA, et les
-    # objets du bucket restent PRIVÉS (aucune bucket policy publique à créer).
+    # Mode website : error_document → index.html sert de fallback SPA.
+    # ⚠️ L'endpoint website ne fait AUCUNE auth : les objets doivent être en
+    # ACL public-read (posée par deploy.yml au sync), sinon 403 AccessDenied.
     is_website = true
   }
 }
@@ -77,13 +80,27 @@ resource "scaleway_edge_services_backend_stage" "api" {
   }
 }
 
+# WAF sur le trafic API uniquement (la SPA — assets statiques — n'en a pas
+# besoin). Inclus dans le plan professional : 5 M de requêtes filtrées/mois,
+# puis 0,60 €/M. Paranoia 1 : l'API accepte du texte libre (messages avec
+# téléphones/adresses) — un niveau plus élevé bloquerait des requêtes légitimes
+# pendant le pic. Monter en "log_only" d'abord si on veut tester un niveau 2.
+resource "scaleway_edge_services_waf_stage" "api" {
+  pipeline_id    = scaleway_edge_services_pipeline.main.id
+  mode           = "enable"
+  paranoia_level = 1
+  # Après filtrage, le WAF forwarde vers le container API.
+  backend_stage_id = scaleway_edge_services_backend_stage.api.id
+}
+
 resource "scaleway_edge_services_route_stage" "main" {
   pipeline_id = scaleway_edge_services_pipeline.main.id
   # Défaut : tout ce qui ne matche aucune règle → SPA.
   backend_stage_id = scaleway_edge_services_backend_stage.spa.id
 
   rule {
-    backend_stage_id = scaleway_edge_services_backend_stage.api.id
+    # /api/* passe par le WAF, qui forwarde ensuite au backend API.
+    waf_stage_id = scaleway_edge_services_waf_stage.api.id
     rule_http_match {
       path_filter {
         path_filter_type = "regex"

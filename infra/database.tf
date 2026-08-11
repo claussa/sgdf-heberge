@@ -43,9 +43,17 @@ resource "scaleway_rdb_database" "app" {
   name        = "adherents"
 }
 
+# Contrainte Scaleway : au moins un chiffre, une majuscule, une minuscule et un
+# caractère spécial. Spéciaux restreints aux non-réservés URL (RFC 3986) pour
+# pouvoir composer la DATABASE_URL sans percent-encoding.
 resource "random_password" "db_user" {
-  length  = 32
-  special = false
+  length           = 32
+  special          = true
+  override_special = "-._~"
+  min_numeric      = 1
+  min_upper        = 1
+  min_lower        = 1
+  min_special      = 1
 }
 
 resource "scaleway_rdb_user" "app" {

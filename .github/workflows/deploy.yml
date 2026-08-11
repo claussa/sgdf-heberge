@@ -148,12 +148,14 @@ jobs:
           aws s3 sync dist "s3://${{ vars.SCW_SPA_BUCKET }}" \
             --endpoint-url "$S3_ENDPOINT" \
             --exclude "index.html" \
+            --acl public-read \
             --cache-control "public, max-age=31536000, immutable"
 
       - name: index.html en dernier — bascule atomique, no-cache
         run: |
           aws s3 cp dist/index.html "s3://${{ vars.SCW_SPA_BUCKET }}/index.html" \
             --endpoint-url "$S3_ENDPOINT" \
+            --acl public-read \
             --cache-control "no-cache" \
             --content-type "text/html; charset=utf-8"
 
