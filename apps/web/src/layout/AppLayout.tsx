@@ -82,6 +82,13 @@ export function AppLayout() {
         <Outlet />
       </main>
 
+      <footer className="footer">
+        <span className="footer__org">© {eventConfig.organizer}</span>
+        <Link to="/mentions-legales" className="footer__link">
+          Mentions légales
+        </Link>
+      </footer>
+
       {mobileNav.length > 0 && (
         <nav className="bottom-nav">
           {mobileNav.map((item) => (

@@ -12,6 +12,7 @@ import { Inscription } from './pages/Inscription'
 import { Jumelage } from './pages/Jumelage'
 import { JumelageFiche } from './pages/JumelageFiche'
 import { Logement } from './pages/Logement'
+import { MentionsLegales } from './pages/MentionsLegales'
 import { MesDemandes } from './pages/MesDemandes'
 import { ProfilBenevole } from './pages/ProfilBenevole'
 import { ProfilHebergeur } from './pages/ProfilHebergeur'
@@ -31,6 +32,7 @@ export function App() {
     <Routes>
       <Route element={<AppLayout />}>
         <Route path="/connexion" element={<Connexion />} />
+        <Route path="/mentions-legales" element={<MentionsLegales />} />
         <Route path="/" element={<Dispatcher />} />
         <Route element={<RequireAuth />}>
           <Route path="/inscription" element={<Inscription />} />

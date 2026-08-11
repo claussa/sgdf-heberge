@@ -42,6 +42,23 @@ const EventConfigSchema = z.object({
     .min(1),
   /** Panneau gauche de l'écran de connexion */
   hero: z.object({ title: z.string().min(1), text: z.string().min(1) }),
+  /** Mentions légales (page /mentions-legales) — propre à l'organisme éditeur */
+  legal: z.object({
+    /** Raison sociale de l'éditeur */
+    legalName: z.string().min(1),
+    /** Forme juridique, ex. « association loi 1901 reconnue d'utilité publique » */
+    legalForm: z.string().min(1),
+    siren: z.string().min(1),
+    ape: z.string().min(1),
+    /** Adresse du siège social */
+    address: z.string().min(1),
+    phone: z.string().min(1),
+    /** Mention légalement obligatoire — null tant que la personne n'est pas désignée */
+    publicationDirector: z.string().min(1).nullable(),
+    /** Contact général de la plateforme (distinct du contactEmail des emails) */
+    contactEmail: z.email(),
+    dpoEmail: z.email(),
+  }),
   /** Branches proposées au profil des unités scoutes (spécifique à l'organisateur) */
   unitBranches: z.array(z.string().min(1)).min(1),
   /** Noms de fichiers dans apps/web/src/assets/ */
@@ -73,6 +90,18 @@ export const eventConfig = {
     { slug: 'paris', label: 'Paris', coords: { lat: 48.853, lng: 2.3499 } },
     { slug: 'metz', label: 'Metz', coords: { lat: 49.1203, lng: 6.1778 } },
   ],
+  legal: {
+    legalName: 'Scouts et Guides de France',
+    legalForm: "association loi 1901 reconnue d'utilité publique",
+    siren: '775 682 024',
+    ape: '9329Z',
+    address: 'Immeuble le Baudran – Bâtiment D, 21-37 rue de Stalingrad, 94110 Arcueil',
+    phone: '01 44 52 37 37',
+    // À désigner avant la mise en production (mention obligatoire, art. 6 III LCEN)
+    publicationDirector: null,
+    contactEmail: 'auservicedupape@sgdf.fr',
+    dpoEmail: 'dpo@sgdf.fr',
+  },
   hero: {
     title: 'Un toit pour chaque bénévole,',
     text: 'Trouver où dormir — ou accueillir ceux qui viennent — pour la venue du pape Léon XIV, du 25 au 28 septembre 2026.',

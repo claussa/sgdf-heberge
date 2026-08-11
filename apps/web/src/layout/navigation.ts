@@ -141,6 +141,7 @@ export function activeNavIndex(items: NavItem[], pathname: string): number {
  */
 const SCREEN_TITLES: Array<[string, string]> = [
   ['/connexion', 'Connexion'],
+  ['/mentions-legales', 'Mentions légales'],
   ['/inscription', 'Inscription'],
   ['/profil', 'Mon profil'],
   ['/hebergeur', 'Mon profil'],
