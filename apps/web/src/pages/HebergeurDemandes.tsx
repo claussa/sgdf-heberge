@@ -3,7 +3,7 @@ import { formatDateRangeLong } from '@repo/event-config'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { driver } from 'driver.js'
 import 'driver.js/dist/driver.css'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ACCESS_CRITERIA_LABELS } from '../lib/access-criteria'
 import { api } from '../lib/api'
 import {
@@ -34,6 +34,28 @@ import {
 import './hebergeur.css'
 
 /**
+ * Institutionnels : la suggestion « Complet » ne doit apparaître qu'une seule
+ * fois par logement — mémorisé en localStorage pour survivre aux rechargements.
+ */
+const fullSuggestedKey = (listingId: string) => `full-suggested:${listingId}`
+
+function wasFullSuggested(listingId: string): boolean {
+  try {
+    return localStorage.getItem(fullSuggestedKey(listingId)) !== null
+  } catch {
+    return false
+  }
+}
+
+function markFullSuggested(listingId: string): void {
+  try {
+    localStorage.setItem(fullSuggestedKey(listingId), '1')
+  } catch {
+    // Stockage indisponible (mode privé…) : tant pis, la suggestion pourra revenir.
+  }
+}
+
+/**
  * /hebergeur/demandes — écran A.8 « Demandes reçues, ». Onglets par effectiveStatus
  * (CANCELLED exclues), cartes actionnables quand c'est à l'hébergeur de répondre
  * (awaitingSide HOST), bloc « Disponibilité de mes logements » sous les onglets.
@@ -48,6 +70,9 @@ export function HebergeurDemandes() {
     requestId: string
     peopleCount: number
   } | null>(null)
+  // Suggestion institutionnelle actuellement affichée (requestId) : permet au
+  // garde « déjà montré » de ne pas fermer le popover qu'il vient d'ouvrir.
+  const shownForRequest = useRef<string | null>(null)
   const requestsQuery = useReceivedRequests()
   const listingsQuery = useMyListings()
   const setStatus = useListingStatus()
@@ -75,15 +100,27 @@ export function HebergeurDemandes() {
         )
         .reduce((sum, item) => sum + item.peopleCount, 0)
     // Institutionnels (hôtels, gymnases gérés par les admins) : gros volumes,
-    // la suggestion n'apparaît qu'à l'approche du plein (≥ 80 % de remplissage).
-    if (listing.category !== 'PRIVATE' && acceptedPeople < listing.capacity * 0.8) {
-      setSuggestion(null)
-      return
+    // la suggestion n'apparaît qu'à l'approche du plein (≥ 90 % de remplissage)
+    // et une seule fois par logement. shownForRequest laisse le popover déjà
+    // ouvert survivre aux re-exécutions de l'effet dues aux refetchs.
+    if (listing.category !== 'PRIVATE') {
+      if (acceptedPeople < listing.capacity * 0.9) {
+        setSuggestion(null)
+        return
+      }
+      if (wasFullSuggested(listing.id) && shownForRequest.current !== suggestion.requestId) {
+        setSuggestion(null)
+        return
+      }
     }
     const element = document.querySelector<HTMLElement>(
       `[data-full-chip="${suggestion.listingId}"]`,
     )
     if (!element) return
+    if (listing.category !== 'PRIVATE') {
+      markFullSuggested(listing.id)
+      shownForRequest.current = suggestion.requestId
+    }
     // Le cleanup détruit la mise en avant à chaque refetch (l'effet la recrée
     // aussitôt) : ne vider l'état que si c'est l'utilisateur qui ferme.
     let cancelled = false
