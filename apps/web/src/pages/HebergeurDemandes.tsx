@@ -51,9 +51,10 @@ export function HebergeurDemandes() {
   useEffect(() => {
     if (suggestFullFor === null) return
     const listing = listings.find((item) => item.id === suggestFullFor)
-    // Rien à suggérer si le logement a disparu ou est déjà complet (le chip
-    // vient d'être cliqué, ou l'était déjà) — on referme la mise en avant.
-    if (!listing || listing.status === 'FULL') {
+    // Rien à suggérer si le logement a disparu, est déjà complet (le chip vient
+    // d'être cliqué, ou l'était déjà), ou est institutionnel — un gymnase de
+    // 120 places n'est pas complet après chaque acceptation.
+    if (!listing || listing.status === 'FULL' || listing.category !== 'PRIVATE') {
       setSuggestFullFor(null)
       return
     }
