@@ -1,11 +1,36 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { driver } from 'driver.js'
+import 'driver.js/dist/driver.css'
+import { useEffect, useRef, useState } from 'react'
 import { api } from '../lib/api'
 import { Badge, Button, Card, EmptyState, HelpText, Loading, PageTitle, Tabs } from '../ui'
 import { JUMELAGE_ADS_KEY, MY_JUMELAGE_KEY, type MyJumelage, useMyJumelage } from './jumelage-data'
 import './jumelage-admin.css'
 
 type Received = MyJumelage['received'][number]
+
+/**
+ * La suggestion « Retirer notre annonce » après une acceptation ne doit
+ * apparaître qu'une seule fois — mémorisé en localStorage pour survivre aux
+ * rechargements.
+ */
+const WITHDRAW_SUGGESTED_KEY = 'jumelage-withdraw-suggested'
+
+function wasWithdrawSuggested(): boolean {
+  try {
+    return localStorage.getItem(WITHDRAW_SUGGESTED_KEY) !== null
+  } catch {
+    return false
+  }
+}
+
+function markWithdrawSuggested(): void {
+  try {
+    localStorage.setItem(WITHDRAW_SUGGESTED_KEY, '1')
+  } catch {
+    // Stockage indisponible (mode privé…) : tant pis, la suggestion pourra revenir.
+  }
+}
 type ReceivedPending = Extract<Received, { status: 'PENDING' }>
 type ReceivedAccepted = Extract<Received, { status: 'ACCEPTED' }>
 
@@ -16,6 +41,12 @@ type ReceivedAccepted = Extract<Received, { status: 'ACCEPTED' }>
  */
 export function UniteRelations() {
   const [tab, setTab] = useState(0)
+  // Demande tout juste acceptée : on suggère de retirer l'annonce si l'unité
+  // n'attend plus d'autre jumelage (mise en avant driver.js, une seule fois).
+  const [suggestWithdraw, setSuggestWithdraw] = useState(false)
+  // true tant que le popover de cette session est ouvert : laisse le garde
+  // « déjà montré » survivre aux re-exécutions de l'effet dues aux refetchs.
+  const shownThisSession = useRef(false)
   const queryClient = useQueryClient()
   const { data, isPending, isError } = useMyJumelage()
 
@@ -28,6 +59,10 @@ export function UniteRelations() {
       const res = await api.jumelage.contacts[':id'].accept.$post({ param: { id } })
       // 409 = déjà acceptée (double clic) : le refetch suffit, pas d'erreur à montrer.
       if (res.status !== 200 && res.status !== 409) throw new Error(`accept : ${res.status}`)
+      return res.status === 200
+    },
+    onSuccess: (justAccepted) => {
+      if (justAccepted) setSuggestWithdraw(true)
     },
     onSettled: invalidate,
   })
@@ -51,6 +86,48 @@ export function UniteRelations() {
       queryClient.invalidateQueries({ queryKey: JUMELAGE_ADS_KEY })
     },
   })
+
+  const adActive = data?.ad?.status === 'ACTIVE'
+
+  useEffect(() => {
+    if (!suggestWithdraw) return
+    // Le bouton « Retirer notre annonce » ne vit que dans l'onglet « Reçues ».
+    if (tab !== 0) return
+    // Rien à suggérer si l'annonce est déjà retirée ; et une seule fois en tout
+    // — sauf pour le popover que cette session vient d'ouvrir, qui doit
+    // survivre aux re-exécutions de l'effet (refetchs, changement d'onglet).
+    if (!adActive || (wasWithdrawSuggested() && !shownThisSession.current)) {
+      setSuggestWithdraw(false)
+      return
+    }
+    const element = document.querySelector<HTMLElement>('[data-withdraw-ad]')
+    if (!element) return
+    markWithdrawSuggested()
+    shownThisSession.current = true
+    // Le cleanup détruit la mise en avant à chaque refetch (l'effet la recrée
+    // aussitôt) : ne vider l'état que si c'est l'utilisateur qui ferme.
+    let cancelled = false
+    const highlight = driver({
+      showButtons: ['close'],
+      stagePadding: 8,
+      onDestroyed: () => {
+        if (!cancelled) setSuggestWithdraw(false)
+      },
+    })
+    highlight.highlight({
+      element,
+      popover: {
+        title: 'Notre annonce est-elle encore utile ?',
+        description:
+          'Demande acceptée, vos coordonnées sont échangées ! Si votre unité n’attend plus d’autre jumelage, retirez l’annonce pour ne plus recevoir de demandes — les mises en relation acceptées restent acquises.',
+        side: 'top',
+      },
+    })
+    return () => {
+      cancelled = true
+      highlight.destroy()
+    }
+  }, [suggestWithdraw, adActive, tab])
 
   if (isPending) return <Loading />
   if (isError || !data) {
@@ -140,6 +217,7 @@ export function UniteRelations() {
                 variant="secondary"
                 size="sm"
                 style={{ alignSelf: 'flex-start' }}
+                data-withdraw-ad
                 onClick={onWithdraw}
                 disabled={busy}
               >
