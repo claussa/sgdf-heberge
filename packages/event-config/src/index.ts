@@ -97,8 +97,8 @@ export const eventConfig = {
     ape: '9329Z',
     address: 'Immeuble le Baudran – Bâtiment D, 21-37 rue de Stalingrad, 94110 Arcueil',
     phone: '01 44 52 37 37',
-    // À désigner avant la mise en production (mention obligatoire, art. 6 III LCEN)
-    publicationDirector: null,
+    // Président de l'association, comme sur sgdf.fr
+    publicationDirector: 'Charles Le Gac',
     contactEmail: 'auservicedupape@sgdf.fr',
     dpoEmail: 'dpo@sgdf.fr',
   },
