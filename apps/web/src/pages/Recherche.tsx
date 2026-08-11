@@ -8,8 +8,7 @@ import {
 } from '@repo/contracts'
 import { eventConfig, type SiteSlug } from '@repo/event-config'
 import { useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { ACCESS_CRITERIA_LABELS } from '../lib/access-criteria'
 import { api } from '../lib/api'
 import { useMe } from '../lib/hooks'
@@ -38,6 +37,15 @@ const CHIPS_TYPE: ReadonlyArray<{ label: string; value: SearchType }> = [
   { label: 'Gymnase', value: 'COLLECTIVE' },
 ]
 
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
+const TYPES_VALIDES = new Set<string>(CHIPS_TYPE.map((chip) => chip.value))
+
+/** Une date depuis l'URL : '' (champ vidé) et ISO acceptés, sinon défaut événement. */
+function dateParam(parametres: URLSearchParams, cle: string, defaut: string): string {
+  const valeur = parametres.get(cle)
+  return valeur !== null && (valeur === '' || ISO_DATE.test(valeur)) ? valeur : defaut
+}
+
 /** Badge unique de la carte : payant (hôtel), collectif (gymnase), sinon 1er critère vrai. */
 function badgeDe(carte: ListingCard): string | null {
   if (carte.category === 'HOTEL') return carte.priceInfo ? `Payant · ${carte.priceInfo}` : 'Payant'
@@ -55,14 +63,57 @@ export function Recherche() {
 }
 
 function RechercheView({ me }: { me: Me }) {
-  const [site, setSite] = useState<SiteSlug>(eventConfig.sites[0].slug)
-  const [dateFrom, setDateFrom] = useState<string>(eventConfig.dates.start)
-  const [dateTo, setDateTo] = useState<string>(eventConfig.dates.end)
-  const [personnes, setPersonnes] = useState(String(me.groupSize ?? 1))
-  const [types, setTypes] = useState<SearchType[]>([])
-  const [besoins, setBesoins] = useState(false)
+  // L'URL est la source de vérité des filtres : le retour depuis une fiche les réapplique.
+  const [parametres, setParametres] = useSearchParams()
+  const defauts = {
+    site: eventConfig.sites[0].slug,
+    from: eventConfig.dates.start,
+    to: eventConfig.dates.end,
+    people: String(me.groupSize ?? 1),
+  }
+
+  const siteBrut = parametres.get('site')
+  const site: SiteSlug = eventConfig.sites.find((s) => s.slug === siteBrut)?.slug ?? defauts.site
+  const dateFrom = dateParam(parametres, 'from', defauts.from)
+  const dateTo = dateParam(parametres, 'to', defauts.to)
+  const personnes = parametres.get('people') ?? defauts.people
+  const types = parametres.getAll('types').filter((t): t is SearchType => TYPES_VALIDES.has(t))
+  const besoins = parametres.get('besoins') === '1'
   /** Facilité de stationnement minimale exigée (null = pas de filtre) */
-  const [parking, setParking] = useState<ParkingEase | null>(null)
+  const parkingBrut = parametres.get('parking')
+  const parking: ParkingEase | null = PARKING_EASE.find((ease) => ease === parkingBrut) ?? null
+
+  const majFiltres = (
+    patch: Partial<{
+      site: SiteSlug
+      from: string
+      to: string
+      people: string
+      types: SearchType[]
+      besoins: boolean
+      parking: ParkingEase | null
+    }>,
+  ) => {
+    const etat = {
+      site,
+      from: dateFrom,
+      to: dateTo,
+      people: personnes,
+      types,
+      besoins,
+      parking,
+      ...patch,
+    }
+    const suivant = new URLSearchParams()
+    if (etat.site !== defauts.site) suivant.set('site', etat.site)
+    if (etat.from !== defauts.from) suivant.set('from', etat.from)
+    if (etat.to !== defauts.to) suivant.set('to', etat.to)
+    if (etat.people !== defauts.people) suivant.set('people', etat.people)
+    for (const t of etat.types) suivant.append('types', t)
+    if (etat.besoins) suivant.set('besoins', '1')
+    if (etat.parking !== null) suivant.set('parking', etat.parking)
+    setParametres(suivant, { replace: true })
+  }
 
   const nbPersonnes = Number(personnes)
   const personnesValide = Number.isInteger(nbPersonnes) && nbPersonnes >= 1
@@ -98,16 +149,13 @@ function RechercheView({ me }: { me: Me }) {
   })
 
   const basculeType = (valeur: SearchType) => {
-    setTypes((actifs) =>
-      actifs.includes(valeur) ? actifs.filter((t) => t !== valeur) : [...actifs, valeur],
-    )
+    majFiltres({
+      types: types.includes(valeur) ? types.filter((t) => t !== valeur) : [...types, valeur],
+    })
   }
 
-  // Les filtres dates/personnes sont reportés sur la fiche (prefill de la demande)
-  const parametres = new URLSearchParams()
-  if (dateFrom) parametres.set('from', dateFrom)
-  if (dateTo) parametres.set('to', dateTo)
-  if (personnesValide) parametres.set('people', personnes)
+  // Toute la recherche est reportée sur la fiche : prefill de la demande (from/to/people)
+  // et retour à la recherche avec les mêmes filtres.
   const lienSuffixe = parametres.toString() === '' ? '' : `?${parametres.toString()}`
 
   const resultats = recherche.data
@@ -120,7 +168,11 @@ function RechercheView({ me }: { me: Me }) {
           <span className="field__label recherche__filtres-libelle">Site</span>
           <span className="recherche__chips">
             {eventConfig.sites.map((s) => (
-              <Chip key={s.slug} active={site === s.slug} onClick={() => setSite(s.slug)}>
+              <Chip
+                key={s.slug}
+                active={site === s.slug}
+                onClick={() => majFiltres({ site: s.slug })}
+              >
                 {s.label}
               </Chip>
             ))}
@@ -133,7 +185,7 @@ function RechercheView({ me }: { me: Me }) {
               min={eventConfig.dates.inputMin}
               max={eventConfig.dates.inputMax}
               value={dateFrom}
-              onChange={(event) => setDateFrom(event.target.value)}
+              onChange={(event) => majFiltres({ from: event.target.value })}
               aria-label="Arrivée"
             />
             <Input
@@ -143,7 +195,7 @@ function RechercheView({ me }: { me: Me }) {
               min={eventConfig.dates.inputMin}
               max={eventConfig.dates.inputMax}
               value={dateTo}
-              onChange={(event) => setDateTo(event.target.value)}
+              onChange={(event) => majFiltres({ to: event.target.value })}
               aria-label="Départ"
             />
             <Input
@@ -153,7 +205,7 @@ function RechercheView({ me }: { me: Me }) {
               min={1}
               max={30}
               value={personnes}
-              onChange={(event) => setPersonnes(event.target.value)}
+              onChange={(event) => majFiltres({ people: event.target.value })}
               aria-label="Nombre de personnes"
             />
             <span className="recherche__suffixe">personnes</span>
@@ -172,7 +224,7 @@ function RechercheView({ me }: { me: Me }) {
               </Chip>
             ))}
             {me.accessibilityNeeds.length > 0 && (
-              <Chip active={besoins} onClick={() => setBesoins((actif) => !actif)}>
+              <Chip active={besoins} onClick={() => majFiltres({ besoins: !besoins })}>
                 Compatibles avec mes besoins
               </Chip>
             )}
@@ -185,7 +237,7 @@ function RechercheView({ me }: { me: Me }) {
               <Chip
                 key={ease}
                 active={parking === ease}
-                onClick={() => setParking((actif) => (actif === ease ? null : ease))}
+                onClick={() => majFiltres({ parking: parking === ease ? null : ease })}
               >
                 <ParkingGauge ease={ease} className="recherche__chip-jauge" />
                 {PARKING_EASE_LABELS[ease]}
