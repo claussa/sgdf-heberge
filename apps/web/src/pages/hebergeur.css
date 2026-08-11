@@ -170,6 +170,10 @@
    Précision (2fr) · retrait — scroll horizontal sous 560px (A.10). */
 .couchages {
   overflow-x: auto;
+  /* le conteneur de scroll rogne les outline : on réserve la place du focus
+     ring orange (2px + offset 2px) et on compense pour ne rien décaler */
+  padding: 4px;
+  margin: -4px;
 }
 
 .couchages__inner {

@@ -42,7 +42,9 @@ export function AddressAutocomplete({
   const [suggestions, setSuggestions] = useState<BanFeature[]>([])
   const [open, setOpen] = useState(false)
   const abortRef = useRef<AbortController | null>(null)
-  const skipNextFetch = useRef(false)
+  // vrai au montage quand le champ est pré-rempli (édition) : la valeur initiale
+  // ne doit pas déclencher la recherche ni ouvrir la liste
+  const skipNextFetch = useRef(Boolean(value?.label ?? initialQuery))
 
   useEffect(() => {
     if (skipNextFetch.current) {
