@@ -2,6 +2,7 @@ import { type ErrorCode, ErrorResponseSchema } from '@repo/contracts'
 import { Prisma } from '@repo/db'
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
+import { captureServerException } from './lib/analytics'
 import { logger } from './lib/logger'
 
 const STATUS_BY_CODE: Record<ErrorCode, 400 | 401 | 403 | 404 | 409 | 429 | 500> = {
@@ -52,11 +53,13 @@ export function handleError(error: Error, c: Context): Response {
         return c.json(errorBody('NOT_FOUND', 'Ressource introuvable'), 404)
       default:
         logger.error({ prismaCode: error.code }, 'erreur Prisma non mappée')
+        captureServerException(error, { path: c.req.path })
         return c.json(errorBody('INTERNAL', 'Erreur interne'), 500)
     }
   }
 
   // Inclut les ZodError d'un Schema.parse avant c.json : bug serveur, réponse générique.
   logger.error({ err: { name: error.name, message: error.message } }, 'erreur non gérée')
+  captureServerException(error, { path: c.req.path })
   return c.json(errorBody('INTERNAL', 'Erreur interne'), 500)
 }

@@ -40,6 +40,9 @@ EMAIL_FROM="Connexion <auth@example.org>"
 # RESEND_WEBHOOK_SECRET=  (signature svix des webhooks Resend)
 APP_ORIGIN=http://localhost:5173
 JOB_SECRET="${jobSecret}"
+# PostHog Cloud EU — optionnel, no-op sans clé
+# POSTHOG_API_KEY=
+# POSTHOG_HOST=https://eu.i.posthog.com
 `,
 }
 

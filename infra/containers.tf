@@ -41,12 +41,17 @@ resource "scaleway_container" "api" {
 
   # PORT est une variable réservée : Scaleway l'injecte lui-même avec la valeur
   # du champ `port` ci-dessus — la définir ici est refusé par l'API.
-  environment_variables = {
-    NODE_ENV     = "production"
-    EMAIL_DRIVER = "resend"
-    EMAIL_FROM   = "Connexion <auth@${var.app_domain}>"
-    APP_ORIGIN   = "https://${var.app_domain}"
-  }
+  # POSTHOG_API_KEY est en env claire à dessein : clé de projet publique (déjà
+  # dans le bundle front), pas un secret. Absente = télémétrie no-op.
+  environment_variables = merge(
+    {
+      NODE_ENV     = "production"
+      EMAIL_DRIVER = "resend"
+      EMAIL_FROM   = "Connexion <auth@${var.app_domain}>"
+      APP_ORIGIN   = "https://${var.app_domain}"
+    },
+    var.posthog_api_key != "" ? { POSTHOG_API_KEY = var.posthog_api_key } : {},
+  )
 
   # Secrets injectés chiffrés — jamais en clair dans le code (§9).
   # PRÉREQUIS : poser les versions AVANT le premier apply (scw secret version create …),

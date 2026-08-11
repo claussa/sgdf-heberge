@@ -1,6 +1,7 @@
 import { serve } from '@hono/node-server'
 import { app } from './app'
 import { getEnv } from './env'
+import { shutdownAnalytics } from './lib/analytics'
 import { logger } from './lib/logger'
 import { getDb } from './lib/prisma'
 
@@ -17,6 +18,8 @@ for (const signal of ['SIGTERM', 'SIGINT'] as const) {
     logger.info({ signal }, 'arrêt en cours')
     setTimeout(() => process.exit(0), 3000).unref()
     server.close(async () => {
+      // Flush PostHog avant de mourir : les events partent par batch, pas à l'unité.
+      await shutdownAnalytics().catch(() => {})
       await getDb().$disconnect()
       process.exit(0)
     })

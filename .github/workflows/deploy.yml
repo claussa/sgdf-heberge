@@ -13,6 +13,8 @@
 # Variables GitHub (outputs Terraform) : SCW_REGISTRY_ENDPOINT, SCW_CONTAINER_ID,
 # SCW_JOB_DEFINITION_ID, SCW_EDGE_PIPELINE_ID, SCW_SPA_BUCKET,
 # SCW_DATABASE_URL_SECRET_ID, APP_DOMAIN.
+# Optionnelle : VITE_POSTHOG_KEY (clé de projet PostHog Cloud EU — publique par
+# nature, donc une variable et non un secret ; absente = télémétrie front no-op).
 
 name: Deploy
 
@@ -64,6 +66,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Build Vite
+        env:
+          # Inlinée dans le bundle au build (import.meta.env). Vide = pas de télémétrie.
+          VITE_POSTHOG_KEY: ${{ vars.VITE_POSTHOG_KEY }}
         run: pnpm --filter @repo/web build
 
       - uses: actions/upload-artifact@v4
