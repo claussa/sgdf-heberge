@@ -1,7 +1,9 @@
 import type { Me } from '@repo/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { api } from './api'
+import { identifyUser, resetAnalyticsIdentity } from './posthog'
 
 export const ME_QUERY_KEY = ['me'] as const
 
@@ -33,6 +35,18 @@ export function useMe() {
   }
 }
 
+/**
+ * Lie l'identité PostHog au compte connecté — ID interne uniquement, jamais de PII
+ * (voir lib/posthog.ts). Monté une seule fois, dans App.
+ */
+export function useAnalyticsIdentity() {
+  const { me } = useMe()
+  const userId = me?.id
+  useEffect(() => {
+    if (userId) identifyUser(userId)
+  }, [userId])
+}
+
 /** Pousse un profil frais (réponse d'onboarding ou de PATCH /me) dans le cache. */
 export function useSetMe() {
   const queryClient = useQueryClient()
@@ -51,6 +65,7 @@ export function useLogout() {
     },
     // Même si la session était déjà morte (401), on repart de l'état anonyme.
     onSettled: () => {
+      resetAnalyticsIdentity()
       queryClient.setQueryData(ME_QUERY_KEY, null)
       queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== 'me' })
       navigate('/connexion')

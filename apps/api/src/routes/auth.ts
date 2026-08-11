@@ -9,6 +9,7 @@ import { normalizeEmail } from '@repo/db'
 import { renderMagicLinkEmail } from '@repo/emails'
 import { deleteCookie, setCookie } from 'hono/cookie'
 import { getEnv } from '../env'
+import { captureServerEvent, captureServerException } from '../lib/analytics'
 import { logger } from '../lib/logger'
 import { getDb } from '../lib/prisma'
 import { type AuthVariables, requireAuth, SESSION_COOKIE } from '../middleware/auth'
@@ -113,6 +114,9 @@ async function issueAndSendMagicLink(emailInput: string): Promise<void> {
       idempotencyKey: `magic-link/${hashToken(issued.token)}`,
     },
   )
+  // Le pendant de magic_link_requested (capturé dans requestMagicLink) : le diff
+  // entre les deux = skips (bounce/throttle) + échecs Resend. Jamais l'email en propriété.
+  captureServerEvent('magic_link_sent', issued.user.id)
 }
 
 export const authRouter = new OpenAPIHono<{ Variables: AuthVariables }>()
@@ -125,6 +129,7 @@ export const authRouter = new OpenAPIHono<{ Variables: AuthVariables }>()
     issueAndSendMagicLink(email).catch((error: Error) => {
       // §7/§8 — on logge l'échec (alerte dispo de l'auth), jamais l'email ni le lien.
       logger.error({ err: { name: error.name, message: error.message } }, 'échec envoi magic link')
+      captureServerException(error, { path: '/auth/magic-link' })
     })
 
     return c.json(

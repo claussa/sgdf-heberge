@@ -17,6 +17,14 @@ const EnvSchema = z.object({
   APP_ORIGIN: z.url().default('http://localhost:5173'),
   /** Secret d'appel de POST /internal/jobs/daily (cron Scaleway) */
   JOB_SECRET: z.string().min(10).optional(),
+  /**
+   * PostHog Cloud EU — événements produit + erreurs serveur. Optionnel : sans clé,
+   * toute la télémétrie est un no-op (dev, tests). La clé de projet n'est pas un
+   * secret au sens strict (elle est de toute façon publique dans le bundle front).
+   */
+  POSTHOG_API_KEY: z.string().optional(),
+  /** Impérativement l'endpoint UE — les données ne doivent pas transiter hors UE */
+  POSTHOG_HOST: z.url().default('https://eu.i.posthog.com'),
 })
 
 export type Env = z.infer<typeof EnvSchema>

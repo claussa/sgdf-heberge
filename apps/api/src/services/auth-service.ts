@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto'
 import { type Db, normalizeEmail, Prisma } from '@repo/db'
+import { captureServerEvent } from '../lib/analytics'
 import { logger } from '../lib/logger'
 
 // ---------------------------------------------------------------------------
@@ -98,9 +99,13 @@ export async function requestMagicLink(
   }
   if (!user) return null
 
+  // Compté AVANT les skips : le diff requested − sent mesure les envois perdus.
+  captureServerEvent('magic_link_requested', user.id)
+
   // Adresse qui bounce ou s'est plainte : plus JAMAIS d'envoi (réputation, §8).
   if (user.emailStatus !== 'OK') {
     logger.info({ userId: user.id }, 'magic link non envoyé : adresse en bounce/plainte')
+    captureServerEvent('magic_link_send_skipped', user.id, { reason: 'email_status' })
     return null
   }
 
@@ -113,6 +118,7 @@ export async function requestMagicLink(
   })
   if (recentTokens >= MAGIC_LINK_EMAIL_MAX_PER_WINDOW) {
     logger.info({ userId: user.id }, 'magic link non envoyé : throttle émission')
+    captureServerEvent('magic_link_send_skipped', user.id, { reason: 'throttled' })
     return null
   }
 

@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router'
 import { RequireAdmin, RequireAuth, RequireOnboarded } from './guards'
 import { AppLayout } from './layout/AppLayout'
+import { useAnalyticsIdentity } from './lib/hooks'
 import { Admin } from './pages/Admin'
 import { AdminLogements } from './pages/AdminLogements'
 import { Connexion } from './pages/Connexion'
@@ -27,6 +28,7 @@ import './pages/pages.css'
  * que se fait l'onboarding (accountType null autorisé).
  */
 export function App() {
+  useAnalyticsIdentity()
   return (
     <Routes>
       <Route element={<AppLayout />}>
