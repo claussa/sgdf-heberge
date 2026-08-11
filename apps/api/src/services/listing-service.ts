@@ -3,6 +3,7 @@ import type {
   ListingSearchQuerySchema,
   ListingUpdateInput,
   ListingUpsertInput,
+  ParkingEase,
   SearchType,
 } from '@repo/contracts'
 import type { Db, ListingStatus, Prisma } from '@repo/db'
@@ -55,6 +56,7 @@ const CARD_SELECT = {
   availableFrom: true,
   availableTo: true,
   priceInfo: true,
+  parkingEase: true,
   ...ACCESS_SELECT,
   beds: { select: BED_SELECT },
 } as const satisfies Prisma.ListingSelect
@@ -64,7 +66,6 @@ const DETAIL_SELECT = {
   ownerId: true,
   description: true,
   accessibilityNotes: true,
-  parkingEase: true,
   bookingUrl: true,
   hiddenAt: true,
   owner: { select: { firstName: true, lastName: true } },
@@ -116,6 +117,7 @@ function toCard(row: CardRow) {
     availableFrom: isoDate(row.availableFrom),
     availableTo: isoDate(row.availableTo),
     access: accessGrid(row),
+    parkingEase: row.parkingEase,
     bedTypes: [...new Set(row.beds.map((bed) => bed.type))],
     priceInfo: row.priceInfo,
   }
@@ -126,7 +128,6 @@ function toDetail(row: DetailRow) {
     ...toCard(row),
     description: row.description,
     accessibilityNotes: row.accessibilityNotes,
-    parkingEase: row.parkingEase,
     // « chez Claire M. » — les institutionnels s'identifient par leur title, pas par
     // le compte admin qui les gère.
     hostDisplayName: row.category === 'PRIVATE' ? hostDisplayName(row.owner) : null,
@@ -377,11 +378,19 @@ const ACCESS_COLUMNS: Record<AccessCriterion, keyof typeof ACCESS_SELECT> = {
   quiet: 'accessQuiet',
 }
 
+/** Filtre stationnement = facilité MINIMALE : MEDIUM accepte EASY et MEDIUM, null exclu. */
+const PARKING_AT_LEAST: Record<ParkingEase, ParkingEase[]> = {
+  EASY: ['EASY'],
+  MEDIUM: ['EASY', 'MEDIUM'],
+  HARD: ['EASY', 'MEDIUM', 'HARD'],
+}
+
 /**
  * Recherche publique : uniquement les logements OPEN et non masqués du site, couvrant
  * les dates demandées (chaque borne appliquée seulement si fournie), de capacité
  * suffisante. Chips « Type » : OR entre types de couchages et catégories
- * institutionnelles ; accessibilité : AND sur chaque critère coché.
+ * institutionnelles ; accessibilité : AND sur chaque critère coché ; stationnement :
+ * facilité minimale (non renseigné = exclu dès qu'un niveau est exigé).
  */
 export async function searchListings(db: Db, query: ListingSearchQuery) {
   const types = query.types ?? []
@@ -405,6 +414,7 @@ export async function searchListings(db: Db, query: ListingSearchQuery) {
     ...(query.to ? { availableTo: { gte: new Date(query.to) } } : {}),
     ...(query.people !== undefined ? { capacity: { gte: query.people } } : {}),
     ...(typeConditions.length > 0 ? { OR: typeConditions } : {}),
+    ...(query.parking ? { parkingEase: { in: PARKING_AT_LEAST[query.parking] } } : {}),
   }
   for (const criterion of query.access ?? []) {
     where[ACCESS_COLUMNS[criterion]] = true

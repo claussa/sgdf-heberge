@@ -401,6 +401,26 @@ describe('recherche', () => {
     expect(ids(tooStrict.items)).not.toContain(coversId) // parking manquant
   })
 
+  it('stationnement : facilité minimale, non renseigné exclu du filtre', async () => {
+    // parkingEase n'est pas chiffré : pose directe en base sur les fixtures.
+    await t.db.listing.update({ where: { id: coversId }, data: { parkingEase: 'EASY' } })
+    await t.db.listing.update({ where: { id: narrowId }, data: { parkingEase: 'HARD' } })
+
+    const easy = await search({ site: 'paris', parking: 'EASY' })
+    expect(ids(easy.items)).toContain(coversId)
+    expect(ids(easy.items)).not.toContain(narrowId) // HARD < minimum exigé
+    expect(ids(easy.items)).not.toContain(hotelId) // null = exclu
+
+    const atLeastHard = await search({ site: 'paris', parking: 'HARD' })
+    expect(ids(atLeastHard.items)).toEqual(expect.arrayContaining([coversId, narrowId]))
+    expect(ids(atLeastHard.items)).not.toContain(hotelId)
+
+    const sansFiltre = await search({ site: 'paris' })
+    expect(ids(sansFiltre.items)).toContain(hotelId) // sans filtre, null visible
+    const carte = sansFiltre.items.find((item) => item.id === coversId)
+    expect(carte?.parkingEase).toBe('EASY') // exposé sur la carte (jauge)
+  })
+
   it('exclut les logements complets (FULL) et masqués (hiddenAt)', async () => {
     const result = await search({ site: 'paris' })
     expect(ids(result.items)).not.toContain(fullId)

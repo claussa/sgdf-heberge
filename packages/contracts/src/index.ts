@@ -226,6 +226,8 @@ export const ListingCardSchema = z.object({
   availableFrom: z.iso.date(),
   availableTo: z.iso.date(),
   access: AccessGridSchema,
+  /** Facilité de stationnement — null = non renseigné (institutionnels notamment) */
+  parkingEase: ParkingEaseSchema.nullable(),
   /** Types de couchages présents (icône + sous-titre carte) */
   bedTypes: z.array(BedTypeSchema),
   /** Institutionnels : « 45 € · code PAPE15 » */
@@ -236,8 +238,6 @@ export type ListingCard = z.infer<typeof ListingCardSchema>
 export const ListingDetailSchema = ListingCardSchema.extend({
   description: z.string().nullable(),
   accessibilityNotes: z.string().nullable(),
-  /** Facilité de stationnement — null = non renseigné (institutionnels notamment) */
-  parkingEase: ParkingEaseSchema.nullable(),
   /** « chez Claire M. » — null pour les institutionnels */
   hostDisplayName: z.string().nullable(),
   beds: z.array(BedSchema),
@@ -302,6 +302,8 @@ export const ListingSearchQuerySchema = z.object({
   types: queryArray(SearchTypeSchema),
   /** Slugs d'accessibilité exigés (filtre « compatibles avec mes besoins ») */
   access: queryArray(AccessCriterionSchema),
+  /** Facilité de stationnement MINIMALE exigée (MEDIUM = facile ou moyen) */
+  parking: ParkingEaseSchema.optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(60).default(24),
 })
