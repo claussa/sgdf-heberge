@@ -295,6 +295,17 @@ describe('création de demande', () => {
     expect(email?.text).toContain('Bonjour, nous cherchons un toit')
     expect(email?.idempotencyKey).toBe(`received/${request.id}`)
   })
+
+  it("filet de sécurité : créer une demande active l'espace volontaire (seekerOnboardedAt)", async () => {
+    await t.db.user.update({ where: { id: marie.id }, data: { seekerOnboardedAt: null } })
+    const res = await createReq(marie.cookie, listing1)
+    expect(res.status).toBe(201)
+    const user = await t.db.user.findUniqueOrThrow({
+      where: { id: marie.id },
+      select: { seekerOnboardedAt: true },
+    })
+    expect(user.seekerOnboardedAt).not.toBeNull()
+  })
 })
 
 describe('quota de sollicitations', () => {

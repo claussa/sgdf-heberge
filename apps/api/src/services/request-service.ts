@@ -255,6 +255,13 @@ export async function createRequest(
         data: { requestId: request.id, senderId: requester.id, body: input.message },
       })
 
+      // Filet de sécurité : émettre une demande active l'espace volontaire (nav),
+      // même si le compte n'est pas passé par le parcours « Je cherche un logement ».
+      await tx.user.updateMany({
+        where: { id: requester.id, seekerOnboardedAt: null },
+        data: { seekerOnboardedAt: now },
+      })
+
       return { requestId: request.id, owner: listing.owner, listingTitle: ownerTitle(listing) }
     })
   } catch (error) {

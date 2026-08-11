@@ -42,6 +42,8 @@ function ProfilVolontaireForm({ me }: { me: Me }) {
         phone: phone.trim(),
         groupSize: groupSize === '' ? undefined : Number(groupSize),
         accessibilityNeeds: needs,
+        // Enregistrer son profil volontaire active l'espace recherche (nav, accueil)
+        seeksAccommodation: true as const,
       }
       const res =
         me.accountType === null

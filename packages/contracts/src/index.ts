@@ -140,6 +140,8 @@ export const MeSchema = z.object({
   onboardedAt: z.iso.datetime().nullable(),
   /** Pilote la fusion de navigation (espace hébergeur visible) */
   hasListings: z.boolean(),
+  /** Espace volontaire (recherche) activé — false = hébergeur pur, nav hébergeur seule */
+  seeksAccommodation: z.boolean(),
   /** Unités : une annonce ACTIVE existe */
   hasActiveAd: z.boolean(),
   createdAt: z.iso.datetime(),
@@ -163,16 +165,27 @@ const UnitProfileFields = {
   phone: z.string().min(6).max(20),
 }
 
+/**
+ * Active l'espace volontaire (nav recherche + demandes). Interrupteur à sens unique :
+ * posé par le parcours « Je cherche un logement », jamais désactivable — le parcours
+ * hébergeur ne l'envoie pas.
+ */
+const SeeksAccommodationField = { seeksAccommodation: z.literal(true).optional() }
+
 /** Onboarding : pose accountType UNE fois (bascule refusée ensuite) + profil initial */
 export const OnboardingSchema = z.discriminatedUnion('accountType', [
-  z.object({ accountType: z.literal('INDIVIDUAL'), ...IndividualProfileFields }),
+  z.object({
+    accountType: z.literal('INDIVIDUAL'),
+    ...IndividualProfileFields,
+    ...SeeksAccommodationField,
+  }),
   z.object({ accountType: z.literal('SCOUT_UNIT'), ...UnitProfileFields }),
 ])
 export type OnboardingInput = z.infer<typeof OnboardingSchema>
 
 /** Mise à jour du profil (sans accountType) — l'API valide les champs selon le type */
 export const ProfileUpdateSchema = z
-  .object({ ...IndividualProfileFields, ...UnitProfileFields })
+  .object({ ...IndividualProfileFields, ...UnitProfileFields, ...SeeksAccommodationField })
   .partial()
 export type ProfileUpdateInput = z.infer<typeof ProfileUpdateSchema>
 

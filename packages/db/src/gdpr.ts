@@ -37,6 +37,7 @@ export async function exportUserData(db: Db, userId: string) {
       unitBranch: true,
       emailStatus: true,
       onboardedAt: true,
+      seekerOnboardedAt: true,
       createdAt: true,
       updatedAt: true,
       sessions: {

@@ -40,6 +40,7 @@ export const USER_DTO_SELECT = {
   unitBranch: true,
   emailStatus: true,
   onboardedAt: true,
+  seekerOnboardedAt: true,
   createdAt: true,
   updatedAt: true,
 } as const satisfies Prisma.UserSelect

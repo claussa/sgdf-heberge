@@ -286,6 +286,53 @@ describe('session, /me et onboarding', () => {
     expect(switchType.status).toBe(409)
   })
 
+  it("espaces opt-in : l'onboarding hébergeur n'active pas la recherche, le profil volontaire oui", async () => {
+    const cookie = await loginAs('hote@example.org')
+
+    // Parcours « Je propose un logement » : pas de seeksAccommodation dans le payload
+    const onboard = await t.app.request('/api/me/onboarding', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({
+        accountType: 'INDIVIDUAL',
+        firstName: 'Paul',
+        lastName: 'Hôte',
+        phone: '06 00 44 55 66',
+      }),
+    })
+    expect(onboard.status).toBe(200)
+    const afterOnboard = (await onboard.json()) as { seeksAccommodation: boolean }
+    expect(afterOnboard.seeksAccommodation).toBe(false)
+
+    // « Chercher aussi un logement, ailleurs » : le profil volontaire active l'espace
+    const patch = await t.app.request('/api/me', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({ seeksAccommodation: true }),
+    })
+    expect(patch.status).toBe(200)
+    expect(((await patch.json()) as { seeksAccommodation: boolean }).seeksAccommodation).toBe(true)
+  })
+
+  it("parcours « Je cherche un logement » : la recherche est active dès l'onboarding", async () => {
+    const cookie = await loginAs('cherche@example.org')
+    const onboard = await t.app.request('/api/me/onboarding', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({
+        accountType: 'INDIVIDUAL',
+        firstName: 'Sam',
+        lastName: 'Cherche',
+        phone: '06 00 77 88 99',
+        seeksAccommodation: true,
+      }),
+    })
+    expect(onboard.status).toBe(200)
+    expect(((await onboard.json()) as { seeksAccommodation: boolean }).seeksAccommodation).toBe(
+      true,
+    )
+  })
+
   it("les routes d'un autre type de compte sont interdites (cloisonnement)", async () => {
     const cookie = await loginAs('unite@example.org')
     await t.app.request('/api/me/onboarding', {
