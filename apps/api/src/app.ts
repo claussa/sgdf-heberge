@@ -64,7 +64,7 @@ api.doc31('/openapi.json', {
     title: 'API plateforme hébergement',
     version: '1.0.0',
     description:
-      "API de mise en relation pour l'hébergement des bénévoles (logements de particuliers, " +
+      "API de mise en relation pour l'hébergement des volontaires et participants (logements de particuliers, " +
       'institutionnels, jumelage entre unités). Authentification par magic link, session en ' +
       'cookie httpOnly.',
   },

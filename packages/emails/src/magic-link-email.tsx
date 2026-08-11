@@ -11,7 +11,7 @@ export interface MagicLinkEmailProps {
 /**
  * Email de connexion (magic link, §9 du CLAUDE.md).
  * ⚠️ Chemin critique : c'est LE mécanisme d'authentification, pas une notification.
- * Registre « vous » : ce mail part à tous les types de comptes (bénévoles comme unités).
+ * Registre « vous » : ce mail part à tous les types de comptes (volontaires et participants comme unités).
  * Le texte avertit explicitement de ne pas transférer le message (risque résiduel accepté §9).
  */
 export function MagicLinkEmail({ firstName, url }: MagicLinkEmailProps) {

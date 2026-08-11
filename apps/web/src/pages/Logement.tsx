@@ -23,8 +23,8 @@ import {
   SuccessPanel,
   Textarea,
 } from '../ui'
-import { prenomDe, signeDe } from './benevole-lib'
-import './benevole.css'
+import { prenomDe, signeDe } from './volontaire-lib'
+import './volontaire.css'
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
@@ -277,7 +277,7 @@ function PanneauDemande({
         <Field label={`Un message pour ${prenomTexte}`}>
           <Textarea
             uiSize="lg"
-            placeholder="Qui vous êtes, sur quel service vous êtes bénévoles…"
+            placeholder="Qui vous êtes, sur quel service vous êtes volontaires…"
             value={message}
             onChange={(event) => setMessage(event.target.value)}
             required

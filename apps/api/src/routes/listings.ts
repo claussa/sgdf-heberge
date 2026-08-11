@@ -36,7 +36,7 @@ const error401 = {
   content: { 'application/json': { schema: ErrorResponseSchema } },
 }
 const error403 = {
-  description: 'Réservé aux comptes bénévoles/hébergeurs onboardés',
+  description: 'Réservé aux comptes volontaires/hébergeurs onboardés',
   content: { 'application/json': { schema: ErrorResponseSchema } },
 }
 const error404 = {
@@ -110,7 +110,7 @@ const createListingRoute = createRoute({
   tags: ['listings'],
   summary: 'Créer un logement',
   description:
-    'Tout compte bénévole peut devenir hébergeur. Catégorie PRIVATE forcée (les logements ' +
+    'Tout compte volontaire peut devenir hébergeur. Catégorie PRIVATE forcée (les logements ' +
     "institutionnels passent par les routes admin). L'adresse est un résultat BAN choisi " +
     'côté client ; capacité = somme des couchages, recalculée en transaction.',
   middleware: [requireAuth, requireAccountType('INDIVIDUAL')] as const,

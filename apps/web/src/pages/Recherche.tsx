@@ -24,8 +24,8 @@ import {
   ParkingGauge,
   SigneImage,
 } from '../ui'
-import { signeDe } from './benevole-lib'
-import './benevole.css'
+import { signeDe } from './volontaire-lib'
+import './volontaire.css'
 
 /** Chips « Type » (A.4) — libellé maquette → valeur de filtre API, en OR. */
 const CHIPS_TYPE: ReadonlyArray<{ label: string; value: SearchType }> = [

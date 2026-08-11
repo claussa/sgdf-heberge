@@ -77,7 +77,7 @@ export function Admin() {
         <div className="ja-metrics">
           <MetricBlock
             rows={[
-              ['Bénévoles & hébergeurs', users.individuals],
+              ['Volontaires, participants & hébergeurs', users.individuals],
               ['Unités', users.units],
               ['Coquilles', users.shells],
             ]}

@@ -8,7 +8,7 @@ import { useMe, useSetMe } from '../lib/hooks'
 import { Button, Field, HelpText, Input, Loading, PageTitle } from '../ui'
 
 /**
- * Profil hébergeur (A.7) — mêmes données /me que le bénévole, sans « Nous serons »
+ * Profil hébergeur (A.7) — mêmes données /me que le volontaire, sans « Nous serons »
  * ni besoins d'accessibilité. Le CTA enregistre le profil (onboarding INDIVIDUAL au
  * premier passage, PATCH ensuite) puis ouvre la création du premier logement.
  */
@@ -54,7 +54,7 @@ function ProfilHebergeurForm({ me }: { me: Me }) {
 
   return (
     <form className="profil fade" onSubmit={onSubmit}>
-      <PageTitle>J’accueille des bénévoles,</PageTitle>
+      <PageTitle>J’accueille des volontaires et participants,</PageTitle>
       <Field label="E-mail" glose="déjà connu par la connexion">
         <Input value={me.email} disabled />
       </Field>
@@ -89,7 +89,9 @@ function ProfilHebergeurForm({ me }: { me: Me }) {
           />
         </Field>
       </div>
-      <HelpText>Ton numéro n’est transmis au bénévole qu’après ton acceptation.</HelpText>
+      <HelpText>
+        Ton numéro n’est transmis au volontaire ou participant qu’après ton acceptation.
+      </HelpText>
       {save.isError && (
         <p className="alert-text">Impossible d’enregistrer. Vérifie les champs, puis réessaie.</p>
       )}
@@ -110,7 +112,7 @@ function ProfilHebergeurForm({ me }: { me: Me }) {
         Chercher aussi un logement, ailleurs
       </Button>
       <HelpText>
-        Ça ouvre ton espace bénévole, en plus de celui-ci — même compte, même connexion.
+        Ça ouvre ton espace volontaire, en plus de celui-ci — même compte, même connexion.
       </HelpText>
       <AccountActions />
     </form>

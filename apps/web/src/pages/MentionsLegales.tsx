@@ -16,8 +16,8 @@ export function MentionsLegales() {
       <section>
         <SectionTitle>Éditeur du site,</SectionTitle>
         <p>
-          Le site <strong>{eventConfig.appName}</strong> — plateforme d'hébergement des bénévoles
-          pour l'événement « {eventConfig.name} » — est édité par :
+          Le site <strong>{eventConfig.appName}</strong> — plateforme d'hébergement des volontaires
+          et participants pour l'événement « {eventConfig.name} » — est édité par :
         </p>
         <p>
           <strong>{legal.legalName}</strong>, {legal.legalForm}
@@ -55,8 +55,8 @@ export function MentionsLegales() {
         <p>
           Le responsable du traitement est l'association {legal.legalName}. Les données sont
           collectées pour le seul fonctionnement de la plateforme : création du compte et connexion
-          par lien email, mise en relation entre bénévoles et hébergeurs, jumelage entre unités, et
-          suivi de l'événement par les organisateurs.
+          par lien email, mise en relation entre volontaires, participants et hébergeurs, jumelage
+          entre unités, et suivi de l'événement par les organisateurs.
         </p>
         <p>
           Données traitées : nom et prénom, adresse email, numéro de téléphone, adresse des

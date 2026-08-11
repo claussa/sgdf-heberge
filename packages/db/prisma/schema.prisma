@@ -1,4 +1,4 @@
-// Schéma Prisma — plateforme de mise en relation hébergement (bénévoles / hébergeurs / unités).
+// Schéma Prisma — plateforme de mise en relation hébergement (volontaires / hébergeurs / unités).
 // Chiffrement applicatif au niveau champ via prisma-field-encryption (§6 du CLAUDE.md) :
 //   - /// @encrypted           → chiffré AES-GCM (clé PRISMA_FIELD_ENCRYPTION_KEY)
 //   - /// @encryption:hash(x)  → blind index (sel PRISMA_FIELD_ENCRYPTION_HASH_SALT, DISTINCT de la clé)
@@ -115,11 +115,11 @@ model User {
   emailHash String? @unique
 
   /// @pii @encrypted — obligatoire à l'onboarding : transmis à l'hébergeur avec chaque
-  /// demande (bénévole), échangé à la mise en relation (unité). Pas de blind index :
+  /// demande (volontaire), échangé à la mise en relation (unité). Pas de blind index :
   /// HMAC sur numéro FR brute-forçable (§6).
   phone String?
 
-  /// Bénévole : « Nous serons N personnes » — simple pré-remplissage des demandes,
+  /// Volontaire : « Nous serons N personnes » — simple pré-remplissage des demandes,
   /// le peopleCount de chaque demande fait foi.
   groupSize Int?
 

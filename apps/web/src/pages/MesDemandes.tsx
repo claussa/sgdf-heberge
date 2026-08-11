@@ -14,8 +14,8 @@ import {
   Tabs,
   Textarea,
 } from '../ui'
-import { personnesLabel } from './benevole-lib'
-import './benevole.css'
+import { personnesLabel } from './volontaire-lib'
+import './volontaire.css'
 
 type DemandeAcceptee = Extract<RequestRequesterView, { effectiveStatus: 'ACCEPTED' }>
 

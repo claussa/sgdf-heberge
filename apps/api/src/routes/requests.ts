@@ -34,7 +34,7 @@ const error401 = {
   content: { 'application/json': { schema: ErrorResponseSchema } },
 }
 const error403 = {
-  description: 'Réservé aux comptes bénévoles onboardés',
+  description: 'Réservé aux comptes volontaires onboardés',
   content: { 'application/json': { schema: ErrorResponseSchema } },
 }
 const error404 = {

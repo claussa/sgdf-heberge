@@ -10,18 +10,18 @@ import { useMe, useSetMe } from '../lib/hooks'
 import { Button, Checkbox, Field, FieldGroup, HelpText, Input, Loading, PageTitle } from '../ui'
 
 /**
- * Profil bénévole (A.3). Premier passage (accountType null) : POST /me/onboarding
+ * Profil volontaire (A.3). Premier passage (accountType null) : POST /me/onboarding
  * (INDIVIDUAL) ; ensuite : PATCH /me. Puis cap sur la recherche.
  */
-export function ProfilBenevole() {
+export function ProfilVolontaire() {
   const { me, isPending } = useMe()
   if (isPending) return <Loading />
   if (!me) return null
   if (me.accountType === 'SCOUT_UNIT') return <Navigate to="/unite" replace />
-  return <ProfilBenevoleForm me={me} />
+  return <ProfilVolontaireForm me={me} />
 }
 
-function ProfilBenevoleForm({ me }: { me: Me }) {
+function ProfilVolontaireForm({ me }: { me: Me }) {
   const navigate = useNavigate()
   const setMe = useSetMe()
   const [firstName, setFirstName] = useState(me.firstName ?? '')
@@ -67,7 +67,7 @@ function ProfilBenevoleForm({ me }: { me: Me }) {
 
   return (
     <form className="profil fade" onSubmit={onSubmit}>
-      <PageTitle>Bénévole individuel,</PageTitle>
+      <PageTitle>Volontaire ou participant,</PageTitle>
       <Field label="E-mail" glose="déjà connu par la connexion">
         <Input value={me.email} disabled />
       </Field>

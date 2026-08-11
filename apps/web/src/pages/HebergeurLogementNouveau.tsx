@@ -308,8 +308,8 @@ function LogementForm({ listing }: { listing: MyListing | null }) {
           />
           <HelpText>
             Adresse choisie dans une liste : ville, code postal et distance au site se remplissent
-            seuls. Seul le quartier est affiché publiquement — l’adresse complète part au bénévole
-            quand tu acceptes sa demande.
+            seuls. Seul le quartier est affiché publiquement — l’adresse complète part au volontaire
+            ou participant quand tu acceptes sa demande.
           </HelpText>
           <Field label="Description libre">
             <Textarea
@@ -382,8 +382,8 @@ function LogementForm({ listing }: { listing: MyListing | null }) {
               ))}
             </div>
             <HelpText>
-              Stationnement dans la rue ou parking proche — une indication pour les bénévoles qui
-              viennent en voiture.
+              Stationnement dans la rue ou parking proche — une indication pour les volontaires et
+              participants qui viennent en voiture.
             </HelpText>
           </FieldGroup>
           <Field label="Autres informations d’accessibilité">
