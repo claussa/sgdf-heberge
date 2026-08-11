@@ -36,6 +36,7 @@ export const USER_DTO_SELECT = {
   phone: true,
   groupSize: true,
   accessibilityNeeds: true,
+  groupName: true,
   unitName: true,
   unitBranch: true,
   emailStatus: true,

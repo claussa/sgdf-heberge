@@ -41,6 +41,7 @@ export function toMe(
     phone: user.phone,
     groupSize: user.groupSize,
     accessibilityNeeds: parseAccessibilityNeeds(user.accessibilityNeeds),
+    groupName: user.groupName,
     unitName: user.unitName,
     unitBranch: user.unitBranch,
     onboardedAt: user.onboardedAt ? user.onboardedAt.toISOString() : null,
@@ -86,6 +87,7 @@ export async function completeOnboarding(
         }
       : {
           accountType: input.accountType,
+          groupName: input.groupName ?? null,
           unitName: input.unitName,
           unitBranch: input.unitBranch,
           firstName: input.firstName,
@@ -119,6 +121,7 @@ export async function updateProfile(
         : null
     }
   } else {
+    if (input.groupName !== undefined) data.groupName = input.groupName
     if (input.unitName !== undefined) data.unitName = input.unitName
     if (input.unitBranch !== undefined) data.unitBranch = input.unitBranch
   }

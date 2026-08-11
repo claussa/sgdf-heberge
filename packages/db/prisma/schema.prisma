@@ -119,6 +119,8 @@ model User {
   /// jamais filtrée en SQL : le filtre recherche s'applique aux booléens du Listing)
   accessibilityNeeds String?
 
+  /// Unités scoutes : groupe SGDF de rattachement (en clair, comme le nom d'unité)
+  groupName  String?
   /// Unités scoutes : nom public de l'unité (affiché sur les cartes jumelage, en clair)
   unitName   String?
   /// Branche SGDF (liste dans @repo/event-config)
