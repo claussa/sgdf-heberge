@@ -2,9 +2,11 @@
 # Manual edits may be lost in future updates.
 
 provider "registry.terraform.io/hashicorp/random" {
-  version = "3.9.0"
+  version     = "3.9.0"
+  constraints = ">= 3.6.0"
   hashes = [
     "h1:OO+IuvQJSPmWdN8AyyIEvPJbLvDQpgX/zbktoa9KsJE=",
+    "h1:UlBuNVuCGJ39tTv2c5gz2NRZnQbXfbIWbTzWcth5o74=",
     "zh:161ad0bd9a75768c82f53fb6e7172a9d8be2d4889b012645a34795031aaf1bf1",
     "zh:19dc9a5b17729725ccfc4f45b0500af0ee5bc6b6b160c7adb8f2bf617d2c80ea",
     "zh:269eda8fe42daa7974d5a34d166c3ba9defe80cde86c01e4dadcfdf2e1f05e5f",
@@ -25,6 +27,7 @@ provider "registry.terraform.io/scaleway/scaleway" {
   version     = "2.80.0"
   constraints = ">= 2.48.0"
   hashes = [
+    "h1:0TaO/rvDAoAeRdaGuPF0JXfoy51vRTElY6TefEpyvYk=",
     "h1:jez/tG7RtI3qdLm8RuWwoCCjGb6K9JfHfYiaK1KsmBo=",
     "zh:190206eddd683045906734af64c1f851173634a6246ba9d93059fd21e7e8d110",
     "zh:2af6f3bd53e744af40ed3adbee0e744a60cebbc799047b63f975fa868629c0b4",

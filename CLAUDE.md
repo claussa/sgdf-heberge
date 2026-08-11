@@ -411,5 +411,7 @@ Restent ouverts :
   messages, annonces, contacts, comptes), puis `terraform destroy`, puis purge explicite
   des snapshots/backups DB, des versions de secrets et des logs Cockpit
   (voir `infra/README.md`).
-- Edge Services (routage `/api` même domaine — condition du SameSite=Lax) : à provisionner
-  au moment de la mise en prod avec le domaine réel.
+- ~~Edge Services~~ — TRANCHÉ : le pipeline complet (routage `/api` même domaine — condition
+  du SameSite=Lax) est dans `infra/frontend.tf`. Reste à la mise en prod : le CNAME chez le
+  registrar (`app_domain` = sous-domaine obligatoire) et le déclenchement du workflow Deploy
+  (`.github/workflows/deploy.yml`) — voir `infra/README.md`.

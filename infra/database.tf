@@ -22,6 +22,22 @@ resource "scaleway_rdb_instance" "main" {
   # Procédure de purge explicite documentée dans infra/README.md — à exécuter.
 }
 
+# Sans ACL déclarée, une instance RDB est ouverte à 0.0.0.0/0 par défaut — on
+# rend cet état EXPLICITE plutôt que d'en hériter silencieusement. Restriction
+# par IP impossible ici : ni les Serverless Containers ni les runners GitHub
+# (migrations de la CI) n'ont d'IP sortante fixe. Défenses réelles : TLS
+# obligatoire (sslmode=require dans l'URL), mot de passe fort de 32 caractères,
+# chiffrement au repos + chiffrement applicatif des champs PII (§6).
+# Durcissement (private network + relais de migration) : hors scope v1.
+resource "scaleway_rdb_acl" "main" {
+  instance_id = scaleway_rdb_instance.main.id
+
+  acl_rules {
+    ip          = "0.0.0.0/0"
+    description = "Containers serverless + runners GitHub (IP non fixes) — TLS + mdp requis"
+  }
+}
+
 resource "scaleway_rdb_database" "app" {
   instance_id = scaleway_rdb_instance.main.id
   name        = "adherents"

@@ -2,29 +2,81 @@
 
 Toutes les ressources sont en région `fr-par` : les PII ne quittent pas l'UE (§1).
 
-## Ordre de mise en route
+## Ordre de mise en route (bootstrap, une seule fois)
 
-1. `terraform init && terraform plan` (renseigner `app_domain`)
-2. `terraform apply` — crée DB, registry, namespace container, buckets, secrets (coquilles)
-3. Renseigner les **valeurs** des secrets hors Terraform (elles ne doivent pas
-   transiter par l'état) :
+> `app_domain` doit être un **sous-domaine** (ex. `heberge.exemple.org`) :
+> l'activation Edge Services passe par un CNAME, impossible sur un apex chez un
+> registrar externe.
+
+1. **Bucket d'état** (hors Terraform, accès strictement restreint — l'état
+   contient des valeurs de secrets) :
    ```sh
-   scw secret version create <encryption-key-id>  data="k1.aesgcm256.$(node -e 'console.log(require("crypto").randomBytes(32).toString("base64url"))')"
-   scw secret version create <hash-salt-id>       data="$(openssl rand -hex 32)"
-   scw secret version create <resend-api-key-id>  data="re_..."
+   scw object bucket create name=sgdf-heberge-terraform-state region=fr-par
    ```
-4. Build + push de l'image API :
+   Puis exporter les credentials de l'opérateur (clé IAM admin, PAS celle de la CI) :
    ```sh
-   docker build -f apps/api/Dockerfile -t <registry>/api:v1 .
-   docker push <registry>/api:v1
+   export AWS_ACCESS_KEY_ID=<access-key> AWS_SECRET_ACCESS_KEY=<secret-key>
+   terraform init
    ```
-5. Migrations : `pnpm --filter @repo/db db:deploy` (depuis un poste autorisé ou un job)
-6. Déployer la SPA : `pnpm --filter @repo/web build` puis sync `apps/web/dist` vers le bucket
-7. Configurer le pipeline Edge Services : `/api/*` → container, le reste → bucket
-   (**même domaine** pour les deux — requis par SameSite=Lax, §9)
+   ⚠️ Pas de verrou d'état : un seul opérateur Terraform à la fois.
+2. **Premier apply ciblé** — les data sources de `secrets.tf` exigent des
+   versions déjà posées, et le container une image déjà poussée ; on crée donc
+   d'abord les coquilles de secrets et le registry :
+   ```sh
+   terraform apply \
+     -target=scaleway_registry_namespace.main \
+     -target=scaleway_secret.encryption_key \
+     -target=scaleway_secret.hash_salt \
+     -target=scaleway_secret.resend_api_key \
+     -target=scaleway_secret.resend_webhook_secret \
+     -target=scaleway_secret.job_secret
+   ```
+3. Renseigner les **valeurs** des secrets hors Terraform (IDs dans
+   `terraform output`) :
+   ```sh
+   scw secret version create $(terraform output -raw secret_encryption_key_id)  data="k1.aesgcm256.$(node -e 'console.log(require("crypto").randomBytes(32).toString("base64url"))')"
+   scw secret version create $(terraform output -raw secret_hash_salt_id)       data="$(openssl rand -hex 32)"
+   scw secret version create $(terraform output -raw secret_resend_api_key_id)  data="re_..."
+   scw secret version create $(terraform output -raw secret_resend_webhook_secret_id) data="whsec_..."
+   scw secret version create $(terraform output -raw secret_job_secret_id)      data="$(openssl rand -hex 32)"
+   ```
+4. Pousser une **image bootstrap** (le container ne démarre pas sans image ;
+   depuis un Mac, forcer l'architecture) :
+   ```sh
+   docker build --platform linux/amd64 -f apps/api/Dockerfile -t $(terraform output -raw registry_endpoint)/api:latest .
+   docker push $(terraform output -raw registry_endpoint)/api:latest
+   ```
+5. `terraform apply` complet — DB, container, job, bucket SPA, pipeline Edge
+   Services, IAM CI. Si la création du certificat TLS managé échoue (CNAME pas
+   encore posé), poser le CNAME (étape 6) puis relancer l'apply.
+6. **CNAME** chez le registrar : `app_domain` → `terraform output -raw edge_cname_target`
+   (`<pipeline-id>.svc.edge.scw.cloud`).
+7. **Configurer GitHub** pour le workflow Deploy :
+   - Secrets : `SCW_ACCESS_KEY` (= `terraform output -raw ci_access_key`),
+     `SCW_SECRET_KEY` (= `terraform output -raw ci_secret_key`),
+     `SCW_DEFAULT_PROJECT_ID`, `SCW_DEFAULT_ORGANIZATION_ID`.
+   - Variables : `SCW_REGISTRY_ENDPOINT`, `SCW_CONTAINER_ID`,
+     `SCW_JOB_DEFINITION_ID`, `SCW_EDGE_PIPELINE_ID`, `SCW_SPA_BUCKET`,
+     `SCW_DATABASE_URL_SECRET_ID` (tous dans `terraform output`) et `APP_DOMAIN`.
 8. DNS emails : SPF, DKIM, DMARC sur le sous-domaine expéditeur **avant** tout envoi (§8).
    Sous-domaines séparés recommandés : `auth.<domaine>` (transactionnel) et `news.<domaine>`.
 9. Webhooks Resend → `https://<domaine>/api/webhooks/resend` (secret svix dans Secret Manager)
+
+## Déployer (à chaque version)
+
+Lancer le workflow **Deploy** (GitHub → Actions → Deploy → Run workflow). Il
+build et pousse l'image `api:<sha>`, build la SPA, joue les migrations
+(`DATABASE_URL` lue dans Secret Manager), bascule le container et le job
+quotidien sur le nouveau SHA, publie la SPA (assets immutables, `index.html`
+no-cache) et purge le cache Edge Services.
+
+- **Migrations additives uniquement** (expand/contract) : elles tournent pendant
+  que l'ancienne image sert le trafic. Un `DROP COLUMN` se fait en deux
+  déploiements (code qui n'utilise plus la colonne, puis migration qui la retire).
+- **Rollback** : relancer le workflow sur le commit précédent, ou à la main
+  `scw container container update <id> registry-image=<registry>/api:<ancien-sha>`.
+- Le premier smoke test suppose le CNAME actif ; avant ça, tester via
+  `terraform output container_endpoint`.
 
 ## Pendant le pic (campagne d'inscription)
 

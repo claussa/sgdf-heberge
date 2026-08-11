@@ -22,7 +22,10 @@ RUN mkdir -p /app/node_modules \
   && STORE_NM=$(dirname "$(dirname "$(readlink -f packages/db/node_modules/@prisma/client)")") \
   && cp -r "$STORE_NM/@prisma" /app/node_modules/@prisma \
   && cp -r "$STORE_NM/.prisma" /app/node_modules/.prisma \
-  && cp -r apps/api/dist /app/dist
+  && cp -r apps/api/dist /app/dist \
+  # Le bundle esbuild est ESM (--format=esm) en extension .js : sans package.json
+  # "type":"module" à la racine de /app, Node l'interpréterait en CJS → SyntaxError au boot.
+  && printf '{"type":"module"}' > /app/package.json
 
 FROM node:22-slim AS runtime
 RUN apt-get update -y \
