@@ -2,7 +2,7 @@ import type { AccessCriterion, Me } from '@repo/contracts'
 import { ACCESS_CRITERIA } from '@repo/contracts'
 import { useMutation } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
-import { Navigate, useNavigate } from 'react-router'
+import { Navigate, useNavigate, useSearchParams } from 'react-router'
 import { AccountActions } from '../components/AccountActions'
 import { ACCESS_CRITERIA_LABELS } from '../lib/access-criteria'
 import { api } from '../lib/api'
@@ -24,6 +24,10 @@ export function ProfilVolontaire() {
 function ProfilVolontaireForm({ me }: { me: Me }) {
   const navigate = useNavigate()
   const setMe = useSetMe()
+  // ?premiere : arrivée depuis le choix d'inscription — on ne propose pas l'autre
+  // parcours tant que celui-ci n'est pas terminé.
+  const [searchParams] = useSearchParams()
+  const isPremiere = searchParams.has('premiere')
   const [firstName, setFirstName] = useState(me.firstName ?? '')
   const [lastName, setLastName] = useState(me.lastName ?? '')
   const [phone, setPhone] = useState(me.phone ?? '')
@@ -146,18 +150,22 @@ function ProfilVolontaireForm({ me }: { me: Me }) {
       >
         Enregistrer et rechercher
       </Button>
-      <hr className="divider" />
-      <span className="field__label">Et si besoin</span>
-      <Button
-        variant="secondary"
-        style={{ alignSelf: 'flex-start' }}
-        onClick={() => navigate('/hebergeur')}
-      >
-        Proposer aussi un logement
-      </Button>
-      <HelpText>
-        Ça ouvre ton espace hébergeur, en plus de celui-ci — même compte, même connexion.
-      </HelpText>
+      {!isPremiere && (
+        <>
+          <hr className="divider" />
+          <span className="field__label">Et si besoin</span>
+          <Button
+            variant="secondary"
+            style={{ alignSelf: 'flex-start' }}
+            onClick={() => navigate('/hebergeur')}
+          >
+            Proposer aussi un logement
+          </Button>
+          <HelpText>
+            Ça ouvre ton espace hébergeur, en plus de celui-ci — même compte, même connexion.
+          </HelpText>
+        </>
+      )}
       <AccountActions />
     </form>
   )
