@@ -68,7 +68,6 @@
 .dispo-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
 }
@@ -76,6 +75,22 @@
 .dispo-row__title {
   font: 700 14px var(--font-courant);
   color: var(--bleu);
+  /* pousse le remplissage + les chips à droite */
+  margin-right: auto;
+}
+
+/* Remplissage « 3/8 places » (Σ demandes acceptées, calculé côté API) */
+.dispo-row__fill {
+  font: 400 13px var(--font-courant);
+  color: var(--texte-secondaire);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Logement plein : orange = accent quota de la charte */
+.dispo-row__fill--full {
+  font-weight: 700;
+  color: var(--orange);
 }
 
 /* Paire de chips Libre / Complet (A.8, A.9) */

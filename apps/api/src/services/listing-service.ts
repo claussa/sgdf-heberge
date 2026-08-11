@@ -141,7 +141,24 @@ function toDetail(row: DetailRow) {
   }
 }
 
-function toMyListing(row: MyListingRow) {
+/**
+ * Remplissage « 3/8 places » : Σ peopleCount des demandes ACCEPTED, agrégée en SQL
+ * (GROUP BY + SUM) — aucune ligne de demande chargée en mémoire.
+ */
+export async function acceptedPeopleByListing(
+  db: Db,
+  listingIds: string[],
+): Promise<Map<string, number>> {
+  if (listingIds.length === 0) return new Map()
+  const groups = await db.lodgingRequest.groupBy({
+    by: ['listingId'],
+    where: { listingId: { in: listingIds }, status: 'ACCEPTED' },
+    _sum: { peopleCount: true },
+  })
+  return new Map(groups.map((group) => [group.listingId, group._sum.peopleCount ?? 0]))
+}
+
+function toMyListing(row: MyListingRow, acceptedPeople: number) {
   return {
     ...toDetail(row),
     title: listingOwnerTitle({
@@ -154,6 +171,7 @@ function toMyListing(row: MyListingRow) {
     hiddenAt: row.hiddenAt ? row.hiddenAt.toISOString() : null,
     addressFull: row.addressFull,
     pendingRequests: row._count.requests,
+    acceptedPeople,
   }
 }
 
@@ -230,7 +248,8 @@ async function getMyListing(db: Db, ownerId: string, listingId: string) {
     select: MY_LISTING_SELECT,
   })
   if (!row) throw new AppError('NOT_FOUND', 'Logement introuvable')
-  return toMyListing(row)
+  const accepted = await acceptedPeopleByListing(db, [row.id])
+  return toMyListing(row, accepted.get(row.id) ?? 0)
 }
 
 /** Tout INDIVIDUAL peut créer un logement (= devenir hébergeur). Catégorie PRIVATE forcée. */
@@ -452,5 +471,9 @@ export async function getMyListings(db: Db, ownerId: string) {
     select: MY_LISTING_SELECT,
     orderBy: { createdAt: 'desc' },
   })
-  return rows.map(toMyListing)
+  const accepted = await acceptedPeopleByListing(
+    db,
+    rows.map((row) => row.id),
+  )
+  return rows.map((row) => toMyListing(row, accepted.get(row.id) ?? 0))
 }

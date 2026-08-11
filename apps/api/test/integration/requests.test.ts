@@ -415,6 +415,13 @@ describe('acceptation', () => {
     })
     expect(my.pendingCount).toBe(0)
     expect(my.pendingLimit).toBe(3)
+
+    // GET /my/listings côté hébergeur : remplissage = Σ peopleCount des acceptées
+    const mine = await getJson<{ items: Array<{ id: string; acceptedPeople: number }> }>(
+      '/api/my/listings',
+      claire.cookie,
+    )
+    expect(mine.items.find((item) => item.id === listing1)?.acceptedPeople).toBe(3)
   })
 
   it('accept vs cancel concurrents : un seul gagnant, l’autre 409, jamais d’état mixte', async () => {

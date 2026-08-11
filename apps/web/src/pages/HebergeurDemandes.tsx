@@ -229,6 +229,14 @@ export function HebergeurDemandes() {
             {listings.map((listing) => (
               <div key={listing.id} className="dispo-row">
                 <span className="dispo-row__title">{listing.title}</span>
+                <span
+                  className={`dispo-row__fill${
+                    listing.acceptedPeople >= listing.capacity ? ' dispo-row__fill--full' : ''
+                  }`}
+                  title={`${listing.acceptedPeople} place${listing.acceptedPeople > 1 ? 's' : ''} acceptée${listing.acceptedPeople > 1 ? 's' : ''} sur ${listing.capacity}`}
+                >
+                  {listing.acceptedPeople}/{listing.capacity} places
+                </span>
                 <span className="chips">
                   <Chip
                     active={listing.status === 'OPEN'}
