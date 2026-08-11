@@ -7,6 +7,7 @@ import { getEnv } from '../env'
 import { AppError } from '../errors'
 import { computeDistanceKm, deriveDisplayArea } from '../lib/geocode'
 import type { SessionUser } from './auth-service'
+import { acceptedPeopleByListing } from './listing-service'
 import { sendToRecipientAsync } from './notify'
 
 /**
@@ -57,8 +58,6 @@ const ADMIN_LISTING_SELECT = {
   accessAssistanceDog: true,
   accessQuiet: true,
   _count: { select: { requests: { where: { status: 'PENDING' } } } },
-  // Remplissage « 12/80 places » — même agrégat que la vue propriétaire.
-  requests: { where: { status: 'ACCEPTED' }, select: { peopleCount: true } },
 } as const satisfies Prisma.ListingSelect
 
 type AdminListingRow = Prisma.ListingGetPayload<{ select: typeof ADMIN_LISTING_SELECT }>
@@ -67,7 +66,7 @@ function isoDate(date: Date): string {
   return date.toISOString().slice(0, 10)
 }
 
-function toAdminListing(row: AdminListingRow) {
+function toAdminListing(row: AdminListingRow, acceptedPeople: number) {
   return {
     id: row.id,
     category: row.category,
@@ -103,7 +102,7 @@ function toAdminListing(row: AdminListingRow) {
     hiddenAt: row.hiddenAt ? row.hiddenAt.toISOString() : null,
     addressFull: row.addressFull,
     pendingRequests: row._count.requests,
-    acceptedPeople: row.requests.reduce((sum, request) => sum + request.peopleCount, 0),
+    acceptedPeople,
   }
 }
 
@@ -147,7 +146,8 @@ async function readInstitutionalListing(db: Db, listingId: string) {
     select: ADMIN_LISTING_SELECT,
   })
   if (!row) throw new AppError('NOT_FOUND', 'Logement institutionnel introuvable')
-  return toAdminListing(row)
+  const accepted = await acceptedPeopleByListing(db, [row.id])
+  return toAdminListing(row, accepted.get(row.id) ?? 0)
 }
 
 // ---------------------------------------------------------------------------
@@ -242,7 +242,11 @@ export async function listInstitutionalListings(db: Db) {
     select: ADMIN_LISTING_SELECT,
     orderBy: { createdAt: 'desc' },
   })
-  return rows.map(toAdminListing)
+  const accepted = await acceptedPeopleByListing(
+    db,
+    rows.map((row) => row.id),
+  )
+  return rows.map((row) => toAdminListing(row, accepted.get(row.id) ?? 0))
 }
 
 // ---------------------------------------------------------------------------
