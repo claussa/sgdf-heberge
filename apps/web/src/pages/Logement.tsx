@@ -2,7 +2,7 @@ import { ACCESS_CRITERIA, type ListingDetail, type Me } from '@repo/contracts'
 import { eventConfig, formatDateRangeLong } from '@repo/event-config'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 import { ACCESS_CRITERIA_LABELS } from '../lib/access-criteria'
 import { api } from '../lib/api'
 import { useMe } from '../lib/hooks'
@@ -42,6 +42,8 @@ function personnesParam(parametres: URLSearchParams, defaut: number): number {
 /** /logements/:id — écran A.5 fiche logement. */
 export function Logement() {
   const { id = '' } = useParams()
+  // La query string porte les filtres de la recherche : le retour les réapplique.
+  const { search } = useLocation()
   const { me, isPending } = useMe()
 
   const fiche = useQuery({
@@ -61,7 +63,7 @@ export function Logement() {
 
   return (
     <div className="fiche-logement fade">
-      <Link to="/recherche" className="fiche-logement__retour">
+      <Link to={`/recherche${search}`} className="fiche-logement__retour">
         ← Retour à la recherche
       </Link>
       {fiche.isError ? (
@@ -75,6 +77,8 @@ export function Logement() {
 
 function FicheLogement({ logement, me }: { logement: ListingDetail; me: Me }) {
   const [parametres] = useSearchParams()
+  const retourRecherche =
+    parametres.toString() === '' ? '/recherche' : `/recherche?${parametres.toString()}`
   const prenom = prenomDe(logement.hostDisplayName)
   const criteres = ACCESS_CRITERIA.filter((slug) => logement.access[slug])
 
@@ -92,7 +96,7 @@ function FicheLogement({ logement, me }: { logement: ListingDetail; me: Me }) {
 
   return (
     <div className="fiche-logement fade">
-      <Link to="/recherche" className="fiche-logement__retour">
+      <Link to={retourRecherche} className="fiche-logement__retour">
         ← Retour à la recherche
       </Link>
       <div className="fiche-logement__grille">
