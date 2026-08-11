@@ -241,6 +241,7 @@ const cases: Record<string, EmailCase> = {
         contactName: 'Paul Girard',
         contactEmail: 'saint.eloy@exemple.fr',
         contactPhone: '06 22 33 44 55',
+        withdrawUrl: `${BASE}/unite/relations`,
       }),
     expectHtml: [
       'Paul Girard',
@@ -248,6 +249,8 @@ const cases: Record<string, EmailCase> = {
       '06 22 33 44 55',
       'arrête là',
       'entre les deux unités',
+      'Retirer notre annonce',
+      `${BASE}/unite/relations`,
     ],
     expectSubject: 'Mise en relation acceptée',
   },
@@ -297,14 +300,30 @@ describe('templates emails', () => {
     }
   })
 
-  it('jumelage-accepted ne contient aucun lien ni bouton', async () => {
+  it('jumelage-accepted sans annonce active : aucun lien ni bouton', async () => {
     const { html } = await renderJumelageAcceptedEmail({
       toUnitName: '1re Nancy',
       otherUnitName: '3e Metz Saint-Éloy',
       contactName: 'Paul Girard',
       contactEmail: 'saint.eloy@exemple.fr',
       contactPhone: '06 22 33 44 55',
+      withdrawUrl: null,
     })
     expect(html).not.toContain('</a>')
+    expect(html).not.toContain('Retirer notre annonce')
+  })
+
+  it('jumelage-accepted avec annonce active : bouton de retrait vers la page (pas de GET à effet de bord)', async () => {
+    const { html, text } = await renderJumelageAcceptedEmail({
+      toUnitName: '1re Nancy',
+      otherUnitName: '3e Metz Saint-Éloy',
+      contactName: 'Paul Girard',
+      contactEmail: 'saint.eloy@exemple.fr',
+      contactPhone: '06 22 33 44 55',
+      withdrawUrl: `${BASE}/unite/relations`,
+    })
+    expect(html).toContain(`href="${BASE}/unite/relations"`)
+    expect(html).toContain('Retirer notre annonce')
+    expect(text).toContain(`${BASE}/unite/relations`)
   })
 })

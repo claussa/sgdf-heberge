@@ -499,6 +499,13 @@ describe('acceptation et mises en relation', () => {
 
     expect(toWoippy?.idempotencyKey).toBe(`jumelage-accepted/${nancyContactId}`)
     expect(toNancy?.idempotencyKey).toBe(`jumelage-accepted-b/${nancyContactId}`)
+
+    // Les deux unités ont encore une annonce ACTIVE : chacune reçoit le lien
+    // « Retirer notre annonce » vers la page relations (jamais de GET à effet de bord).
+    expect(toWoippy?.text).toContain('Retirer notre annonce')
+    expect(toWoippy?.text).toContain('/unite/relations')
+    expect(toNancy?.text).toContain('Retirer notre annonce')
+    expect(toNancy?.text).toContain('/unite/relations')
   })
 
   it('les relations exposent les coordonnées mutuelles DES DEUX CÔTÉS', async () => {
