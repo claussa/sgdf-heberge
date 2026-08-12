@@ -116,6 +116,7 @@ function ProfilHebergeurForm({ me }: { me: Me }) {
           <Button
             variant="secondary"
             style={{ alignSelf: 'flex-start' }}
+            data-tour="open-seeker"
             onClick={() => navigate('/profil')}
           >
             Chercher aussi un logement, ailleurs

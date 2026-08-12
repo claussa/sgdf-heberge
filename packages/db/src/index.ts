@@ -6,6 +6,7 @@ export type {
   CancelActor,
   ContactStatus,
   EmailStatus,
+  HostTourStatus,
   JumelageAd,
   JumelageContact,
   JumelageKind,

@@ -21,6 +21,7 @@ const ME: Me = {
   onboardedAt: '2026-08-01T10:00:00.000Z',
   hasListings: false,
   seeksAccommodation: true,
+  hostTourStatus: null,
   hasActiveAd: false,
   createdAt: '2026-08-01T10:00:00.000Z',
 }

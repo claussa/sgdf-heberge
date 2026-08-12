@@ -31,6 +31,12 @@ import {
   useMyListings,
   useReceivedRequests,
 } from './hebergeur-lib'
+import {
+  acceptTourDemo,
+  buildTourRequest,
+  TOUR_REQUEST_ID,
+  useHebergeurTour,
+} from './hebergeur-tour'
 import './hebergeur.css'
 
 /**
@@ -76,9 +82,22 @@ export function HebergeurDemandes() {
   const requestsQuery = useReceivedRequests()
   const listingsQuery = useMyListings()
   const setStatus = useListingStatus()
+  const tour = useHebergeurTour()
 
   const listings = listingsQuery.data ?? []
   const requests = requestsQuery.data ?? []
+
+  // Tour guidé : la demande d'exemple est injectée en tête d'affichage — les
+  // effets (suggestion « Complet ») continuent de raisonner sur `requests`.
+  const displayRequests = tour.active
+    ? [buildTourRequest(listings[0], tour.demoAccepted), ...requests]
+    : requests
+
+  // Le tour pilote l'onglet : « En attente » tant que l'exemple n'est pas
+  // accepté, « Acceptées » ensuite, pour que la carte suive le popover.
+  useEffect(() => {
+    if (tour.active) setTab(tour.demoAccepted ? 1 : 0)
+  }, [tour.active, tour.demoAccepted])
 
   useEffect(() => {
     if (suggestion === null) return
@@ -152,10 +171,10 @@ export function HebergeurDemandes() {
 
   const capacityById = new Map(listings.map((listing) => [listing.id, listing.capacity]))
 
-  const pending = requests.filter((r) => r.effectiveStatus === 'PENDING')
-  const accepted = requests.filter((r) => r.effectiveStatus === 'ACCEPTED')
-  const declined = requests.filter((r) => r.effectiveStatus === 'DECLINED')
-  const expired = requests.filter((r) => r.effectiveStatus === 'EXPIRED')
+  const pending = displayRequests.filter((r) => r.effectiveStatus === 'PENDING')
+  const accepted = displayRequests.filter((r) => r.effectiveStatus === 'ACCEPTED')
+  const declined = displayRequests.filter((r) => r.effectiveStatus === 'DECLINED')
+  const expired = displayRequests.filter((r) => r.effectiveStatus === 'EXPIRED')
 
   return (
     <div className="demandes fade">
@@ -182,6 +201,7 @@ export function HebergeurDemandes() {
                 key={request.id}
                 request={request}
                 capacity={capacityById.get(request.listingId)}
+                demo={request.id === TOUR_REQUEST_ID}
                 onAccepted={() =>
                   setSuggestion({
                     listingId: request.listingId,
@@ -201,9 +221,16 @@ export function HebergeurDemandes() {
           {accepted.length === 0 && (
             <EmptyState>Aucune demande acceptée pour l’instant.</EmptyState>
           )}
-          {accepted.map((request) => (
-            <AcceptedCard key={request.id} request={request} />
-          ))}
+          {accepted.map((request) =>
+            request.id === TOUR_REQUEST_ID ? (
+              // Wrapper-cible du tour : la carte d'exemple qui vient d'être « acceptée »
+              <div key={request.id} data-tour="demo-accepted">
+                <AcceptedCard request={request} />
+              </div>
+            ) : (
+              <AcceptedCard key={request.id} request={request} />
+            ),
+          )}
         </div>
       )}
       {tab === 2 && (
@@ -225,7 +252,7 @@ export function HebergeurDemandes() {
       {listings.length > 0 && (
         <>
           <hr className="divider" />
-          <FieldGroup label="Disponibilité de mes logements">
+          <FieldGroup label="Disponibilité de mes logements" className="tour-dispo">
             {listings.map((listing) => (
               <div key={listing.id} className="dispo-row">
                 <span className="dispo-row__title">{listing.title}</span>
@@ -293,15 +320,21 @@ function useInvalidateHebergeur() {
   }
 }
 
-/** Carte en attente côté hébergeur : Accepter / Poser une question / Refuser. */
+/**
+ * Carte en attente côté hébergeur : Accepter / Poser une question / Refuser.
+ * `demo` = demande d'exemple du tour guidé : aucun appel API (Accepter avance le
+ * tour, Question/Refuser sont neutralisés) et cibles data-tour pour les popovers.
+ */
 function PendingCard({
   request,
   capacity,
   onAccepted,
+  demo = false,
 }: {
   request: RequestHostView
   capacity: number | undefined
   onAccepted: () => void
+  demo?: boolean
 }) {
   const invalidate = useInvalidateHebergeur()
   const [questionOpen, setQuestionOpen] = useState(false)
@@ -344,19 +377,22 @@ function PendingCard({
   })
 
   const busy = accept.isPending || decline.isPending
+  const onAccept = demo ? acceptTourDemo : () => accept.mutate()
   const onDecline = () => {
+    if (demo) return
     if (window.confirm(`Refuser la demande de ${firstName} ${lastName} ?`)) decline.mutate()
   }
 
   return (
-    <Card className="demande-card">
+    <Card className="demande-card" data-tour={demo ? 'demo-card' : undefined}>
       <RequestHead request={request} />
       {firstMessage && <p className="demande-card__quote">« {firstMessage.body} »</p>}
-      <p className="demande-card__contact">
+      <p className="demande-card__contact" data-tour={demo ? 'demo-contact' : undefined}>
         <b>{phone}</b> — c’est à toi de contacter {firstName} : {firstName} ne peut pas t’écrire en
         dehors de sa demande.
       </p>
       <div className="demande-card__badges">
+        {demo && <Badge variant="warning">Demande d’exemple</Badge>}
         {needs.map((need) => (
           <Badge key={need}>Besoin : {ACCESS_CRITERIA_LABELS[need].label}</Badge>
         ))}
@@ -367,11 +403,20 @@ function PendingCard({
         )}
         <Badge>{expiresLabel(request.expiresAt)}</Badge>
       </div>
-      <div className="demande-card__actions">
-        <Button size="sm" disabled={busy} onClick={() => accept.mutate()}>
+      <div className="demande-card__actions" data-tour={demo ? 'demo-actions' : undefined}>
+        <Button
+          size="sm"
+          disabled={busy}
+          data-tour={demo ? 'demo-accept' : undefined}
+          onClick={onAccept}
+        >
           Accepter
         </Button>
-        <Button variant="secondary" size="sm" onClick={() => setQuestionOpen((open) => !open)}>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => !demo && setQuestionOpen((open) => !open)}
+        >
           Poser une question
         </Button>
         <Button variant="secondary" size="sm" disabled={busy} onClick={onDecline}>
