@@ -137,7 +137,7 @@ export const eventConfig = {
       {
         label: 'Tout savoir sur le rassemblement',
         description: 'Page ressources des Scouts et Guides de France',
-        href: 'https://www.sgdf.fr',
+        href: 'https://chefscadres.sgdf.fr/la-visite-apostolique-du-pape-leon-xiv-en-france-appel-a-mobilisation-des-sgdf/',
         signe: 'etoile',
       },
     ],
