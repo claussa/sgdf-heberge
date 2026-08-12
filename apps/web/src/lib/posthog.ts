@@ -2,7 +2,8 @@ import posthog from 'posthog-js'
 
 /**
  * PostHog Cloud EU — périmètre volontairement minimal, acté après analyse RGPD :
- * - erreurs front (équivalent Sentry) + pageviews + events explicites, RIEN d'autre ;
+ * - erreurs front (équivalent Sentry) + pageviews/pageleaves + Web Vitals (métriques
+ *   techniques : LCP/INP/CLS + URL, aucune PII) + events explicites, RIEN d'autre ;
  * - PAS de session replay (adresses, téléphones et besoins d'accessibilité — donnée
  *   sensible — s'affichent à l'écran ; le chiffrement en base ne protège pas le DOM) ;
  * - PAS d'autocapture (le texte des éléments cliqués peut contenir des PII) ;
@@ -41,8 +42,11 @@ export function initAnalytics(): void {
     autocapture: false,
     rageclick: false,
     capture_pageview: 'history_change',
-    capture_pageleave: false,
-    capture_performance: false,
+    // Pageleave et Web Vitals : mêmes données qu'un pageview (URL + horodatage,
+    // + métriques LCP/INP/CLS), aucune PII — nécessaires au taux de rebond et à
+    // la durée de session dans Web Analytics.
+    capture_pageleave: true,
+    capture_performance: { web_vitals: true },
     disable_session_recording: true,
     disable_surveys: true,
     capture_exceptions: true,
