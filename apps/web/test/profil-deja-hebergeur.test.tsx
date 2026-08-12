@@ -23,6 +23,7 @@ const ME: Me = {
   seeksAccommodation: true,
   hostTourStatus: null,
   seekerTourStatus: 'DONE',
+  unitTourStatus: null,
   hasActiveAd: false,
   createdAt: '2026-08-01T10:00:00.000Z',
 }

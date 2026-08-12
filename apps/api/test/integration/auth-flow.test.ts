@@ -351,7 +351,7 @@ describe('session, /me et onboarding', () => {
     expect(((await me.json()) as { accountType: string }).accountType).toBe('SCOUT_UNIT')
   })
 
-  it('tours guidés (hébergeur, volontaire) : null au départ, puis SKIPPED ou DONE via PATCH /me (INDIVIDUAL seulement)', async () => {
+  it("tours guidés (hébergeur, volontaire, unité) : null au départ, puis SKIPPED ou DONE via PATCH /me — chaque type de compte ignore les champs de l'autre", async () => {
     const cookie = await loginAs('tour@example.org')
     const onboard = await t.app.request('/api/me/onboarding', {
       method: 'POST',
@@ -368,20 +368,32 @@ describe('session, /me et onboarding', () => {
     const onboarded = (await onboard.json()) as {
       hostTourStatus: null
       seekerTourStatus: null
+      unitTourStatus: null
     }
     expect(onboarded.hostTourStatus).toBeNull()
     expect(onboarded.seekerTourStatus).toBeNull()
+    expect(onboarded.unitTourStatus).toBeNull()
 
-    // Refus de la proposition (ou abandon en cours de tour) — chaque tour a son champ
+    // Refus de la proposition (ou abandon en cours de tour) — chaque tour a son champ.
+    // Le champ unité est ignoré pour un compte INDIVIDUAL.
     const skip = await t.app.request('/api/me', {
       method: 'PATCH',
       headers: { 'content-type': 'application/json', cookie },
-      body: JSON.stringify({ hostTourStatus: 'SKIPPED', seekerTourStatus: 'SKIPPED' }),
+      body: JSON.stringify({
+        hostTourStatus: 'SKIPPED',
+        seekerTourStatus: 'SKIPPED',
+        unitTourStatus: 'SKIPPED',
+      }),
     })
     expect(skip.status).toBe(200)
-    const skipped = (await skip.json()) as { hostTourStatus: string; seekerTourStatus: string }
+    const skipped = (await skip.json()) as {
+      hostTourStatus: string
+      seekerTourStatus: string
+      unitTourStatus: null
+    }
     expect(skipped.hostTourStatus).toBe('SKIPPED')
     expect(skipped.seekerTourStatus).toBe('SKIPPED')
+    expect(skipped.unitTourStatus).toBeNull()
 
     // Tour terminé (relancé plus tard) : la valeur avance, jamais de retour à null
     const done = await t.app.request('/api/me', {
@@ -394,7 +406,8 @@ describe('session, /me et onboarding', () => {
     expect(finished.hostTourStatus).toBe('DONE')
     expect(finished.seekerTourStatus).toBe('DONE')
 
-    // Les unités n'ont pas d'espace hébergeur : le champ est ignoré pour elles
+    // Les unités n'ont ni espace hébergeur ni espace volontaire : ces deux champs
+    // sont ignorés pour elles — seul le tour unité s'écrit.
     const unitCookie = await loginAs('unite-tour@example.org')
     await t.app.request('/api/me/onboarding', {
       method: 'POST',
@@ -411,14 +424,29 @@ describe('session, /me et onboarding', () => {
     const unitPatch = await t.app.request('/api/me', {
       method: 'PATCH',
       headers: { 'content-type': 'application/json', cookie: unitCookie },
-      body: JSON.stringify({ hostTourStatus: 'DONE', seekerTourStatus: 'DONE' }),
+      body: JSON.stringify({
+        hostTourStatus: 'DONE',
+        seekerTourStatus: 'DONE',
+        unitTourStatus: 'SKIPPED',
+      }),
     })
     expect(unitPatch.status).toBe(200)
     const unitMe = (await unitPatch.json()) as {
       hostTourStatus: null
       seekerTourStatus: null
+      unitTourStatus: string
     }
     expect(unitMe.hostTourStatus).toBeNull()
     expect(unitMe.seekerTourStatus).toBeNull()
+    expect(unitMe.unitTourStatus).toBe('SKIPPED')
+
+    // Tour unité relancé plus tard : la valeur avance, jamais de retour à null
+    const unitDone = await t.app.request('/api/me', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json', cookie: unitCookie },
+      body: JSON.stringify({ unitTourStatus: 'DONE' }),
+    })
+    expect(unitDone.status).toBe(200)
+    expect(((await unitDone.json()) as { unitTourStatus: string }).unitTourStatus).toBe('DONE')
   })
 })

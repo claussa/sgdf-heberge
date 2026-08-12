@@ -10,9 +10,10 @@ import './tour.css'
 
 /**
  * Infrastructure commune des tours guidés driver.js (hébergeur : hebergeur-tour.tsx,
- * volontaire : volontaire-tour.tsx) : store d'état minimal, persistance du résultat
- * sur /me, centrage des popovers modaux sur le cadre applicatif, configuration
- * driver partagée et popup de proposition « On te fait visiter ? ».
+ * volontaire : volontaire-tour.tsx, unité : unite-tour.tsx) : store d'état minimal,
+ * persistance du résultat sur /me, centrage des popovers modaux sur le cadre
+ * applicatif, configuration driver partagée et popup de proposition
+ * « On te fait visiter ? ».
  *
  * Pièges driver.js 1.8 contournés ici (documentés en commentaires) :
  * - highlight() force showButtons à [] → re-déclarés dans le popover ;
@@ -53,7 +54,7 @@ export function createTourStore<T extends object>(initial: T): TourStore<T> {
 // Persistance du résultat — PATCH /me, à sens unique (jamais remis à null)
 // ---------------------------------------------------------------------------
 
-export type TourStatusField = 'hostTourStatus' | 'seekerTourStatus'
+export type TourStatusField = 'hostTourStatus' | 'seekerTourStatus' | 'unitTourStatus'
 
 export function saveTourStatus(field: TourStatusField, status: TourStatus): void {
   // Optimiste : la proposition ne doit pas réapparaître si l'utilisateur revient
