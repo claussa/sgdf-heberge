@@ -5,6 +5,12 @@ import { useEffect, useRef, useState } from 'react'
 import { api } from '../lib/api'
 import { Badge, Button, Card, EmptyState, HelpText, Loading, PageTitle, Tabs } from '../ui'
 import { JUMELAGE_ADS_KEY, MY_JUMELAGE_KEY, type MyJumelage, useMyJumelage } from './jumelage-data'
+import {
+  acceptUniteTourDemo,
+  buildUniteTourContact,
+  UNITE_TOUR_CONTACT_ID,
+  useUniteTour,
+} from './unite-tour'
 import './jumelage-admin.css'
 
 type Received = MyJumelage['received'][number]
@@ -48,6 +54,7 @@ export function UniteRelations() {
   // « déjà montré » survivre aux re-exécutions de l'effet dues aux refetchs.
   const shownThisSession = useRef(false)
   const queryClient = useQueryClient()
+  const tour = useUniteTour()
   const { data, isPending, isError } = useMyJumelage()
 
   const invalidate = () => {
@@ -136,8 +143,13 @@ export function UniteRelations() {
     )
   }
 
-  const pending = data.received.filter((c): c is ReceivedPending => c.status === 'PENDING')
-  const accepted = data.received.filter((c): c is ReceivedAccepted => c.status === 'ACCEPTED')
+  // Tour guidé : la demande d'exemple est injectée en tête d'affichage — le
+  // wording de l'exemple suit le sens de notre annonce.
+  const received = tour.active
+    ? [buildUniteTourContact(data.ad?.kind ?? 'SEEKING', tour.demoAccepted), ...data.received]
+    : data.received
+  const pending = received.filter((c): c is ReceivedPending => c.status === 'PENDING')
+  const accepted = received.filter((c): c is ReceivedAccepted => c.status === 'ACCEPTED')
   const busy = accept.isPending || dismiss.isPending || withdraw.isPending
   const actionFailed = accept.isError || dismiss.isError || withdraw.isError
 
@@ -149,7 +161,7 @@ export function UniteRelations() {
   }
 
   return (
-    <div className="ja-col ja-col--680 fade">
+    <div className="ja-col ja-col--680 ja-relations fade">
       <PageTitle>Demandes de mise en relation,</PageTitle>
       <Tabs
         tabs={[
@@ -169,22 +181,42 @@ export function UniteRelations() {
           )}
           {pending.map((contact) => {
             const meta = [contact.peopleLabel, contact.dates].filter(Boolean).join(', ')
+            // Demande d'exemple du tour guidé : cibles data-tour pour les popovers,
+            // badge explicite, et jamais d'appel API (le tour bloque de toute façon
+            // les clics en dehors du bouton « Accepter » de l'étape dédiée).
+            const demo = contact.id === UNITE_TOUR_CONTACT_ID
             return (
-              <Card key={contact.id} className="ja-card-stack">
+              <Card
+                key={contact.id}
+                className="ja-card-stack"
+                data-tour={demo ? 'demo-card' : undefined}
+              >
+                {demo && (
+                  <div className="ja-badge-row">
+                    <Badge variant="warning">Demande d’exemple</Badge>
+                  </div>
+                )}
                 <p className="ja-card-line">
                   <b>{contact.unitName}</b>
                   {contact.unitBranch ? ` · ${contact.unitBranch}` : ''}
                   {meta ? ` — ${meta}` : ''}
                 </p>
                 {contact.message && <p className="ja-quote">« {contact.message} »</p>}
-                <div className="ja-actions">
-                  <Button size="sm" onClick={() => accept.mutate(contact.id)} disabled={busy}>
+                <div className="ja-actions" data-tour={demo ? 'demo-actions' : undefined}>
+                  <Button
+                    size="sm"
+                    data-tour={demo ? 'demo-accept' : undefined}
+                    onClick={() => (demo ? acceptUniteTourDemo() : accept.mutate(contact.id))}
+                    disabled={busy}
+                  >
                     Accepter et échanger nos contacts
                   </Button>
                   <Button
                     size="sm"
                     variant="secondary"
-                    onClick={() => dismiss.mutate(contact.id)}
+                    onClick={() => {
+                      if (!demo) dismiss.mutate(contact.id)
+                    }}
                     disabled={busy}
                   >
                     Ignorer
@@ -194,9 +226,17 @@ export function UniteRelations() {
             )
           })}
           {accepted.map((contact) => (
-            <Card key={contact.id} accentTop="success" className="ja-card-stack">
+            <Card
+              key={contact.id}
+              accentTop="success"
+              className="ja-card-stack"
+              data-tour={contact.id === UNITE_TOUR_CONTACT_ID ? 'demo-accepted' : undefined}
+            >
               <div className="ja-badge-row">
                 <Badge variant="success">En relation</Badge>
+                {contact.id === UNITE_TOUR_CONTACT_ID && (
+                  <Badge variant="warning">Demande d’exemple</Badge>
+                )}
               </div>
               <p className="ja-card-line">
                 {contact.unitName} · {contact.contact.name}

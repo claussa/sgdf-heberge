@@ -5,6 +5,12 @@ import { Link, useNavigate } from 'react-router'
 import { api } from '../lib/api'
 import { Button, EmptyState, HelpText, Loading, PageTitle, SigneImage, Tabs } from '../ui'
 import { JUMELAGE_ADS_KEY, useMyJumelage } from './jumelage-data'
+import {
+  buildUniteTourAd,
+  UNITE_TOUR_AD_ID,
+  useUniteTour,
+  useUniteTourProposal,
+} from './unite-tour'
 import './jumelage-admin.css'
 
 /**
@@ -35,11 +41,30 @@ export function Jumelage() {
     )
   }
 
-  return <JumelageList site={ad.site} kind={ad.kind === 'SEEKING' ? 'HOSTING' : 'SEEKING'} />
+  return (
+    <JumelageList
+      site={ad.site}
+      kind={ad.kind === 'SEEKING' ? 'HOSTING' : 'SEEKING'}
+      myKind={ad.kind}
+    />
+  )
 }
 
-function JumelageList({ site, kind }: { site: SiteSlug; kind: JumelageKind }) {
+function JumelageList({
+  site,
+  kind,
+  myKind,
+}: {
+  site: SiteSlug
+  /** Sens des annonces listées — l'OPPOSÉ du nôtre */
+  kind: JumelageKind
+  /** Sens de NOTRE annonce — pilote le wording du tour guidé */
+  myKind: JumelageKind
+}) {
   const navigate = useNavigate()
+  // Tour guidé unité : proposé une seule fois, dès que l'annonce est en ligne.
+  useUniteTourProposal(myKind)
+  const tour = useUniteTour()
   const ads = useQuery({
     queryKey: [...JUMELAGE_ADS_KEY, site, kind],
     queryFn: async () => {
@@ -67,29 +92,50 @@ function JumelageList({ site, kind }: { site: SiteSlug; kind: JumelageKind }) {
         <>
           <p className="ja-count">
             <b>
-              {ads.data.total} {ads.data.total > 1 ? 'unités' : 'unité'}
+              {ads.data.total + (tour.active ? 1 : 0)}{' '}
+              {ads.data.total + (tour.active ? 1 : 0) > 1 ? 'unités' : 'unité'}
             </b>{' '}
             · {siteLabel(site)}, {eventConfig.dates.label}
           </p>
-          <div className="ja-unit-list">
-            {ads.data.items.map((item) => (
-              <Link key={item.id} to={`/jumelage/${item.id}`} className="ja-unit-card">
-                <span className="ja-vignette">
-                  <SigneImage name="paix" size={24} opacity={0.45} />
-                </span>
-                <span className="ja-unit-card__body">
-                  <span className="ja-unit-card__name">{item.unitName}</span>
-                  {item.unitBranch && <span className="ja-unit-card__sub">{item.unitBranch}</span>}
-                  <span className="ja-unit-card__sub">
-                    {item.kind === 'HOSTING'
-                      ? `Peut jumeler jusqu’à ${item.peopleLabel}`
-                      : `Nous serons ${item.peopleLabel}`}{' '}
-                    · {formatDateRangeShort(item.dateFrom, item.dateTo)}
-                  </span>
-                </span>
-                <span className="ja-unit-card__see">Voir →</span>
-              </Link>
-            ))}
+          {/*
+           * Tour guidé : l'annonce d'exemple est injectée en tête d'affichage.
+           * L'ancre `unites` n'est posée QUE pendant le tour : la liste existe avant
+           * l'injection de l'exemple, et une ancre permanente serait mesurée par
+           * driver.js sur ce rectangle périmé (popover posé sur la liste au lieu
+           * d'à côté) — l'attribut apparaît dans le même render que l'exemple.
+           */}
+          <div className="ja-unit-list" data-tour={tour.active ? 'unites' : undefined}>
+            {(tour.active ? [buildUniteTourAd(kind, site), ...ads.data.items] : ads.data.items).map(
+              (item) => {
+                const demo = item.id === UNITE_TOUR_AD_ID
+                return (
+                  <Link
+                    key={item.id}
+                    to={demo ? '/jumelage' : `/jumelage/${item.id}`}
+                    className="ja-unit-card"
+                    data-tour={demo ? 'demo-ad' : undefined}
+                    onClick={demo ? (event) => event.preventDefault() : undefined}
+                  >
+                    <span className="ja-vignette">
+                      <SigneImage name="paix" size={24} opacity={0.45} />
+                    </span>
+                    <span className="ja-unit-card__body">
+                      <span className="ja-unit-card__name">{item.unitName}</span>
+                      {item.unitBranch && (
+                        <span className="ja-unit-card__sub">{item.unitBranch}</span>
+                      )}
+                      <span className="ja-unit-card__sub">
+                        {item.kind === 'HOSTING'
+                          ? `Peut jumeler jusqu’à ${item.peopleLabel}`
+                          : `Nous serons ${item.peopleLabel}`}{' '}
+                        · {formatDateRangeShort(item.dateFrom, item.dateTo)}
+                      </span>
+                    </span>
+                    <span className="ja-unit-card__see">Voir →</span>
+                  </Link>
+                )
+              },
+            )}
           </div>
         </>
       )}

@@ -48,6 +48,7 @@ export function toMe(
     seeksAccommodation: user.seekerOnboardedAt !== null,
     hostTourStatus: user.hostTourStatus,
     seekerTourStatus: user.seekerTourStatus,
+    unitTourStatus: user.unitTourStatus,
     hasActiveAd: extras.hasActiveAd,
     createdAt: user.createdAt.toISOString(),
   }
@@ -131,6 +132,7 @@ export async function updateProfile(
   } else {
     if (input.unitName !== undefined) data.unitName = input.unitName
     if (input.unitBranch !== undefined) data.unitBranch = input.unitBranch
+    if (input.unitTourStatus !== undefined) data.unitTourStatus = input.unitTourStatus
   }
   if (Object.keys(data).length === 0) return
   await db.user.update({ where: { id: user.id }, data })

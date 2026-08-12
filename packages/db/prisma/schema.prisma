@@ -157,6 +157,11 @@ model User {
   /// Mêmes règles que hostTourStatus.
   seekerTourStatus TourStatus?
 
+  /// Tour guidé de l'espace unité (driver.js), proposé sur « Jumelage » dès que
+  /// l'annonce est publiée — un seul tour pour les deux sens d'annonce.
+  /// Mêmes règles que hostTourStatus.
+  unitTourStatus TourStatus?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

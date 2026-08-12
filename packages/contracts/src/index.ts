@@ -150,6 +150,8 @@ export const MeSchema = z.object({
   hostTourStatus: TourStatusSchema.nullable(),
   /** Tour guidé volontaire : null = à proposer (sur la recherche, si l'espace est ouvert) */
   seekerTourStatus: TourStatusSchema.nullable(),
+  /** Tour guidé unité : null = à proposer (sur le jumelage, si une annonce est active) */
+  unitTourStatus: TourStatusSchema.nullable(),
   /** Unités : une annonce ACTIVE existe */
   hasActiveAd: z.boolean(),
   createdAt: z.iso.datetime(),
@@ -192,13 +194,14 @@ export const OnboardingSchema = z.discriminatedUnion('accountType', [
 export type OnboardingInput = z.infer<typeof OnboardingSchema>
 
 /**
- * Résultat des tours guidés (hébergeur, volontaire). À sens unique (jamais remis à
- * null) : SKIPPED à un refus ou un abandon, DONE au bout du parcours — ignorés pour
- * les comptes SCOUT_UNIT.
+ * Résultat des tours guidés. À sens unique (jamais remis à null) : SKIPPED à un refus
+ * ou un abandon, DONE au bout du parcours. host/seeker pour les comptes INDIVIDUAL,
+ * unit pour les SCOUT_UNIT — chaque type ignore les champs de l'autre.
  */
 const TourStatusFields = {
   hostTourStatus: TourStatusSchema.optional(),
   seekerTourStatus: TourStatusSchema.optional(),
+  unitTourStatus: TourStatusSchema.optional(),
 }
 
 /** Mise à jour du profil (sans accountType) — l'API valide les champs selon le type */
@@ -541,6 +544,7 @@ export const JumelageReceivedContactSchema = z.discriminatedUnion('status', [
     createdAt: z.iso.datetime(),
   }),
 ])
+export type JumelageReceivedContact = z.infer<typeof JumelageReceivedContactSchema>
 
 /** Mise en relation aboutie (vue des deux côtés) : coordonnées mutuelles */
 export const JumelageRelationSchema = z.object({
