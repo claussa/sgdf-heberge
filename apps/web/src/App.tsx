@@ -5,6 +5,7 @@ import { AppLayout } from './layout/AppLayout'
 import { useAnalyticsIdentity } from './lib/hooks'
 import { Admin } from './pages/Admin'
 import { AdminLogements } from './pages/AdminLogements'
+import { Aide } from './pages/Aide'
 import { Connexion } from './pages/Connexion'
 import { Dispatcher } from './pages/Dispatcher'
 import { HebergeurDemandes } from './pages/HebergeurDemandes'
@@ -43,6 +44,7 @@ export function App() {
       <Route element={<AppLayout />}>
         <Route path="/connexion" element={<Connexion />} />
         <Route path="/mentions-legales" element={<MentionsLegales />} />
+        <Route path="/aide" element={<Aide />} />
         <Route
           path="/comment-ca-marche"
           element={
