@@ -1,0 +1,64 @@
+/* Styles communs des tours guidés driver.js (hébergeur + volontaire) —
+   importés par tour-lib.tsx. Charte : aucune ombre portée custom, boutons carrés. */
+
+.tour-popover {
+  font-family: var(--font-courant);
+  color: var(--bleu);
+  border-radius: 6px;
+}
+
+.tour-popover .driver-popover-title {
+  font: 700 17px var(--font-titre);
+  color: var(--bleu);
+}
+
+.tour-popover .driver-popover-description {
+  font: 400 14px / 1.5 var(--font-courant);
+  color: var(--bleu);
+}
+
+.tour-popover .driver-popover-progress-text {
+  font: 700 12px var(--font-courant);
+  color: var(--texte-secondaire);
+}
+
+/* Le bouton natif Suivant/Terminer/« Faire le tour » aux couleurs des CTA */
+.tour-popover .driver-popover-next-btn {
+  background: var(--bleu);
+  color: var(--blanc);
+  border: none;
+  border-radius: 0;
+  padding: 8px 14px;
+  font: 700 13px var(--font-courant);
+  text-shadow: none;
+}
+
+.tour-popover .driver-popover-next-btn:hover {
+  background: var(--bleu-hover);
+}
+
+/* Popovers modaux (proposition, étape finale) : driver.js les fige au centre du
+   viewport en styles inline — on reprend la main pour les centrer sur le cadre
+   applicatif (variables posées par centerPopoverOnFrame, tour-lib.tsx) */
+.tour-modal.driver-popover {
+  /* biome-ignore lint/complexity/noImportantStyles: seul moyen de battre le style inline que driver.js repose à chaque (re)positionnement */
+  top: var(--tour-modal-y) !important;
+  /* biome-ignore lint/complexity/noImportantStyles: idem */
+  left: var(--tour-modal-x) !important;
+  transform: translate(-50%, -50%);
+}
+
+/* « Non merci » de la proposition — bouton custom ajouté au footer */
+.tour-invite__decline {
+  background: none;
+  border: 1.5px solid var(--bordure-input);
+  color: var(--bleu);
+  padding: 8px 14px;
+  margin-right: 8px;
+  cursor: pointer;
+  font: 700 13px var(--font-courant);
+}
+
+.tour-invite__decline:hover {
+  background: var(--fond-neutre);
+}

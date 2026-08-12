@@ -3,6 +3,7 @@ import { formatDateRangeShort } from '@repo/event-config'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { api } from '../lib/api'
+import { useMe } from '../lib/hooks'
 import {
   Badge,
   Button,
@@ -15,6 +16,11 @@ import {
   Textarea,
 } from '../ui'
 import { personnesLabel } from './volontaire-lib'
+import {
+  buildSeekerTourRequest,
+  SEEKER_TOUR_REQUEST_ID,
+  useVolontaireTour,
+} from './volontaire-tour'
 import './volontaire.css'
 
 type DemandeAcceptee = Extract<RequestRequesterView, { effectiveStatus: 'ACCEPTED' }>
@@ -61,6 +67,8 @@ function useAnnulation() {
 /** /mes-demandes — écran A.6 « Mes demandes, ». */
 export function MesDemandes() {
   const [onglet, setOnglet] = useState(0)
+  const tour = useVolontaireTour()
+  const { me } = useMe()
 
   const demandes = useQuery({
     queryKey: ['my-requests'],
@@ -83,7 +91,12 @@ export function MesDemandes() {
 
   const { items, pendingCount, pendingLimit } = demandes.data
   // CANCELLED n’apparaît dans aucun onglet (règle B.4)
-  const enAttente = items.filter((demande) => demande.effectiveStatus === 'PENDING')
+  // Tour guidé : la demande d'exemple est injectée en tête d'affichage — le
+  // bandeau quota continue de raisonner sur le pendingCount réel de l'API.
+  const enAttente = [
+    ...(tour.active ? [buildSeekerTourRequest(me?.groupSize ?? null)] : []),
+    ...items.filter((demande) => demande.effectiveStatus === 'PENDING'),
+  ]
   const acceptees = items.filter(
     (demande): demande is DemandeAcceptee => demande.effectiveStatus === 'ACCEPTED',
   )
@@ -143,9 +156,13 @@ function OngletAttente({ demandes }: { demandes: RequestRequesterView[] }) {
 /** En attente côté hébergeur : badges relatifs + annulation. */
 function CarteAttente({ demande }: { demande: RequestRequesterView }) {
   const annulation = useAnnulation()
+  // Demande d'exemple du tour guidé : cibles data-tour pour les popovers, badge
+  // explicite, et jamais d'appel API (le tour bloque de toute façon les clics).
+  const demo = demande.id === SEEKER_TOUR_REQUEST_ID
   return (
-    <Card className="mes-demandes__carte">
+    <Card className="mes-demandes__carte" data-tour={demo ? 'demo-card' : undefined}>
       <div className="mes-demandes__badges">
+        {demo && <Badge variant="warning">Demande d’exemple</Badge>}
         <Badge>{libelleEnvoyee(demande.createdAt)}</Badge>
         <Badge>{libelleExpire(demande.expiresAt)}</Badge>
       </div>
@@ -157,7 +174,9 @@ function CarteAttente({ demande }: { demande: RequestRequesterView }) {
         variant="secondary"
         size="sm"
         disabled={annulation.isPending}
+        data-tour={demo ? 'demo-cancel' : undefined}
         onClick={() => {
+          if (demo) return
           if (window.confirm('Annuler cette demande ?')) annulation.mutate(demande.id)
         }}
       >
