@@ -9,6 +9,7 @@
  *   - journaux d'utilisation restants : 90 jours (contiennent IP + user-agent = PII)
  */
 import { getPrisma } from '@repo/db'
+import { captureServerException, shutdownAnalytics } from '../lib/analytics'
 import { logger } from '../lib/logger'
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -42,8 +43,13 @@ export async function purge(now = new Date()) {
 if (process.argv[1]?.endsWith('purge.ts') || process.argv[1]?.endsWith('purge.js')) {
   purge()
     .then(() => process.exit(0))
-    .catch((error) => {
+    .catch(async (error) => {
       console.error(error)
+      // Processus éphémère : flush obligatoire, voir daily.ts.
+      captureServerException(error instanceof Error ? error : new Error(String(error)), {
+        path: 'job:purge',
+      })
+      await shutdownAnalytics().catch(() => {})
       process.exit(1)
     })
 }

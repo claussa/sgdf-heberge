@@ -18,6 +18,7 @@ import {
   renderRequestReminderEmail,
 } from '@repo/emails'
 import { getEnv } from '../env'
+import { captureServerException, shutdownAnalytics } from '../lib/analytics'
 import type { OutgoingEmail } from '../lib/email'
 import { logger } from '../lib/logger'
 import { getDb } from '../lib/prisma'
@@ -280,8 +281,14 @@ export async function runDailyJob(now = new Date()): Promise<DailyJobSummary> {
 if (process.argv[1]?.endsWith('daily.ts') || process.argv[1]?.endsWith('daily.js')) {
   runDailyJob()
     .then(() => process.exit(0))
-    .catch((error) => {
+    .catch(async (error) => {
       console.error(error)
+      // Le job tourne en processus éphémère (Serverless Job) : sans flush explicite,
+      // l'exception batchée meurt avec le processus et n'atteint jamais PostHog.
+      captureServerException(error instanceof Error ? error : new Error(String(error)), {
+        path: 'job:daily',
+      })
+      await shutdownAnalytics().catch(() => {})
       process.exit(1)
     })
 }
