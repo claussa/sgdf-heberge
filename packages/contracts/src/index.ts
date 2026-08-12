@@ -332,6 +332,18 @@ export const ListingSearchResponseSchema = z.object({
 
 export const MyListingsResponseSchema = z.object({ items: z.array(MyListingSchema) })
 
+/**
+ * Vue admin d'un logement institutionnel — MyListing + compteurs réservés à l'admin.
+ * Jamais servi par les routes /my/listings ni par la fiche publique.
+ */
+export const AdminListingSchema = MyListingSchema.extend({
+  /** Hôtels : clics sur « Réserver sur le site de l'hôtel » (agrégé, 0 pour les gymnases) */
+  bookingClicks: z.number().int(),
+})
+export type AdminListing = z.infer<typeof AdminListingSchema>
+
+export const AdminListingsResponseSchema = z.object({ items: z.array(AdminListingSchema) })
+
 // ---------------------------------------------------------------------------
 // Demandes d'hébergement
 // ---------------------------------------------------------------------------

@@ -464,6 +464,19 @@ export async function getListingDetail(db: Db, listingId: string, viewerId?: str
   return toDetail(row)
 }
 
+/**
+ * Clic sur « Réserver sur le site de l'hôtel » : incrément atomique du compteur
+ * agrégé (pas de trace individuelle). Le WHERE garantit qu'on ne compte que sur
+ * un hôtel avec un lien de réservation — count 0 → 404 côté route.
+ */
+export async function recordBookingClick(db: Db, listingId: string): Promise<boolean> {
+  const updated = await db.listing.updateMany({
+    where: { id: listingId, category: 'HOTEL', bookingUrl: { not: null } },
+    data: { bookingClicks: { increment: 1 } },
+  })
+  return updated.count === 1
+}
+
 /** Liste « Mes logements » — vue propriétaire (addressFull, statut, demandes en attente). */
 export async function getMyListings(db: Db, ownerId: string) {
   const rows = await db.listing.findMany({

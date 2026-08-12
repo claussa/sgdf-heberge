@@ -1,10 +1,10 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
 import {
+  AdminListingSchema,
+  AdminListingsResponseSchema,
   AdminListingUpsertSchema,
   AdminMetricsSchema,
   ErrorResponseSchema,
-  MyListingSchema,
-  MyListingsResponseSchema,
   OkResponseSchema,
 } from '@repo/contracts'
 import { getDb } from '../lib/prisma'
@@ -62,7 +62,7 @@ const listListingsRoute = createRoute({
   responses: {
     200: {
       description: 'Logements institutionnels',
-      content: { 'application/json': { schema: MyListingsResponseSchema } },
+      content: { 'application/json': { schema: AdminListingsResponseSchema } },
     },
     401: error401,
     403: error403,
@@ -85,7 +85,7 @@ const createListingRoute = createRoute({
   responses: {
     201: {
       description: 'Logement créé',
-      content: { 'application/json': { schema: MyListingSchema } },
+      content: { 'application/json': { schema: AdminListingSchema } },
     },
     400: {
       description: 'Dates invalides',
@@ -112,7 +112,7 @@ const updateListingRoute = createRoute({
   responses: {
     200: {
       description: 'Logement mis à jour',
-      content: { 'application/json': { schema: MyListingSchema } },
+      content: { 'application/json': { schema: AdminListingSchema } },
     },
     400: {
       description: 'Dates invalides',
@@ -152,11 +152,11 @@ export const adminRouter = new OpenAPIHono<{ Variables: AuthVariables }>()
   })
   .openapi(listListingsRoute, async (c) => {
     const items = await listInstitutionalListings(getDb())
-    return c.json(MyListingsResponseSchema.parse({ items }), 200)
+    return c.json(AdminListingsResponseSchema.parse({ items }), 200)
   })
   .openapi(createListingRoute, async (c) => {
     const listing = await createInstitutionalListing(getDb(), c.get('user'), c.req.valid('json'))
-    return c.json(MyListingSchema.parse(listing), 201)
+    return c.json(AdminListingSchema.parse(listing), 201)
   })
   .openapi(updateListingRoute, async (c) => {
     const listing = await updateInstitutionalListing(
@@ -164,7 +164,7 @@ export const adminRouter = new OpenAPIHono<{ Variables: AuthVariables }>()
       c.req.valid('param').id,
       c.req.valid('json'),
     )
-    return c.json(MyListingSchema.parse(listing), 200)
+    return c.json(AdminListingSchema.parse(listing), 200)
   })
   .openapi(deleteListingRoute, async (c) => {
     await deleteInstitutionalListing(getDb(), c.req.valid('param').id)

@@ -216,6 +216,9 @@ model Listing {
   priceInfo  String?
   /// Hôtels : URL de la plateforme de réservation (pas de demande in-app)
   bookingUrl String?
+  /// Hôtels : nombre de clics sur le lien de réservation (compteur agrégé,
+  /// affiché à l'admin — aucune trace individuelle de qui a cliqué)
+  bookingClicks Int @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

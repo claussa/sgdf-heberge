@@ -1,4 +1,4 @@
-import { ACCESS_CRITERIA, type AccessGrid, type MyListing } from '@repo/contracts'
+import { ACCESS_CRITERIA, type AccessGrid, type AdminListing } from '@repo/contracts'
 import { eventConfig, type SiteSlug, siteLabel } from '@repo/event-config'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
@@ -32,8 +32,6 @@ async function fetchAdminListings() {
   if (res.status === 200) return res.json()
   throw new Error(`GET /admin/listings : ${res.status}`)
 }
-
-type AdminListing = MyListing
 
 const EMPTY_ACCESS: AccessGrid = {
   pmr: false,
@@ -135,6 +133,9 @@ export function AdminLogements() {
               <p className="ja-card-sub">
                 {siteLabel(listing.site)} · {listing.capacity} personnes
                 {listing.priceInfo ? ` · ${listing.priceInfo}` : ''}
+                {listing.category === 'HOTEL' && listing.bookingUrl
+                  ? ` · ${listing.bookingClicks} clic${listing.bookingClicks > 1 ? 's' : ''} sur le lien de réservation`
+                  : ''}
               </p>
               <p className="ja-address">{listing.addressFull}</p>
               <div className="ja-actions">
