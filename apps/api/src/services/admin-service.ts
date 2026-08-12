@@ -28,7 +28,7 @@ const INSTITUTIONAL_CATEGORIES: ListingCategory[] = ['HOTEL', 'COLLECTIVE']
 // ---------------------------------------------------------------------------
 
 /**
- * Vue admin d'un logement institutionnel — même forme que MyListingSchema
+ * Vue admin d'un logement institutionnel — même forme que AdminListingSchema
  * (l'admin répond comme un hébergeur) : addressFull incluse, beds toujours vide.
  */
 const ADMIN_LISTING_SELECT = {
@@ -43,6 +43,7 @@ const ADMIN_LISTING_SELECT = {
   availableTo: true,
   priceInfo: true,
   bookingUrl: true,
+  bookingClicks: true,
   description: true,
   accessibilityNotes: true,
   parkingEase: true,
@@ -98,6 +99,7 @@ function toAdminListing(row: AdminListingRow, acceptedPeople: number) {
     // Ils s'identifient par leur title, jamais par le compte admin qui les gère.
     hostDisplayName: null,
     bookingUrl: row.bookingUrl,
+    bookingClicks: row.bookingClicks,
     status: row.status,
     hiddenAt: row.hiddenAt ? row.hiddenAt.toISOString() : null,
     addressFull: row.addressFull,

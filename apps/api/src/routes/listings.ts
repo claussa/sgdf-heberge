@@ -19,6 +19,7 @@ import {
   deleteListing,
   getListingDetail,
   getMyListings,
+  recordBookingClick,
   searchListings,
   setListingStatus,
   updateListing,
@@ -81,6 +82,26 @@ const listingDetailRoute = createRoute({
     200: {
       description: 'Fiche du logement',
       content: { 'application/json': { schema: ListingDetailSchema } },
+    },
+    401: error401,
+    404: error404,
+  },
+})
+
+const bookingClickRoute = createRoute({
+  method: 'post',
+  path: '/listings/{id}/booking-click',
+  tags: ['listings'],
+  summary: 'Compter un clic sur le lien de réservation d’un hôtel',
+  description:
+    'Compteur agrégé affiché à l’admin — aucune trace individuelle de qui a cliqué. ' +
+    'N’existe que pour un hôtel avec un lien de réservation.',
+  middleware: [requireAuth] as const,
+  request: { params: idParam },
+  responses: {
+    200: {
+      description: 'Clic compté',
+      content: { 'application/json': { schema: OkResponseSchema } },
     },
     401: error401,
     404: error404,
@@ -210,6 +231,11 @@ export const listingsRouter = new OpenAPIHono<{ Variables: AuthVariables }>()
     const detail = await getListingDetail(getDb(), c.req.valid('param').id, c.get('user').id)
     if (!detail) throw new AppError('NOT_FOUND', 'Logement introuvable')
     return c.json(ListingDetailSchema.parse(detail), 200)
+  })
+  .openapi(bookingClickRoute, async (c) => {
+    const counted = await recordBookingClick(getDb(), c.req.valid('param').id)
+    if (!counted) throw new AppError('NOT_FOUND', 'Logement introuvable')
+    return c.json(OkResponseSchema.parse({ ok: true }), 200)
   })
   .openapi(myListingsRoute, async (c) => {
     const items = await getMyListings(getDb(), c.get('user').id)

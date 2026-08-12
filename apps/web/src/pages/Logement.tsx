@@ -137,6 +137,11 @@ function FicheLogement({ logement, me }: { logement: ListingDetail; me: Me }) {
 
 /** Hôtel : pas de demande — prix en gros et réservation directe (variante v1 actée). */
 function PanneauHotel({ logement }: { logement: ListingDetail }) {
+  // Compteur agrégé pour l'admin — fire-and-forget : la navigation part en
+  // target="_blank", on ne la bloque jamais sur le tracking (échec silencieux).
+  const compterClic = () => {
+    api.listings[':id']['booking-click'].$post({ param: { id: logement.id } }).catch(() => {})
+  }
   return (
     <Card accentTop="brand" className="fiche-logement__panneau">
       <div className="fiche-logement__form">
@@ -150,6 +155,7 @@ function PanneauHotel({ logement }: { logement: ListingDetail }) {
             href={logement.bookingUrl}
             target="_blank"
             rel="noreferrer"
+            onClick={compterClic}
           >
             Réserver sur le site de l’hôtel
           </a>

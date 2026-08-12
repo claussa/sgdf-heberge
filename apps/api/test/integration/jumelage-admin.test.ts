@@ -752,6 +752,7 @@ describe('admin', () => {
       bedTypes: [],
       status: 'OPEN',
       pendingRequests: 0,
+      bookingClicks: 0,
     })
     expect(typeof body.distanceKm).toBe('number')
     hotelId = body.id as string
@@ -781,6 +782,24 @@ describe('admin', () => {
     for (const item of items) {
       expect(item.addressFull.length).toBeGreaterThan(0)
     }
+  })
+
+  it('clics sur le lien de réservation : comptés côté volontaire, visibles côté admin', async () => {
+    // Deux clics d'un volontaire (double-clic, retour sur la fiche…) : chacun compte.
+    for (let i = 0; i < 2; i++) {
+      const click = await req('POST', `/listings/${hotelId}/booking-click`, cookies.marie)
+      expect(click.status).toBe(200)
+    }
+
+    // Le gymnase n'a pas de lien de réservation : la route n'existe pas pour lui.
+    const gymClick = await req('POST', `/listings/${gymId}/booking-click`, cookies.marie)
+    expect(gymClick.status).toBe(404)
+
+    const res = await req('GET', '/admin/listings', cookies.admin)
+    expect(res.status).toBe(200)
+    const items = ((await res.json()) as { items: { id: string; bookingClicks: number }[] }).items
+    expect(items.find((i) => i.id === hotelId)?.bookingClicks).toBe(2)
+    expect(items.find((i) => i.id === gymId)?.bookingClicks).toBe(0)
   })
 
   it('PATCH remplace la fiche (corps complet)', async () => {

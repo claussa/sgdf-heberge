@@ -69,6 +69,7 @@ export async function exportUserData(db: Db, userId: string) {
           accessibilityNotes: true,
           priceInfo: true,
           bookingUrl: true,
+          bookingClicks: true,
           createdAt: true,
           beds: { select: { type: true, count: true, capacityEach: true, note: true } },
           // Demandes reçues : métadonnées seulement, pas les PII des demandeurs
