@@ -719,6 +719,7 @@ const gymBody = {
     assistanceDog: false,
     quiet: false,
   },
+  parkingEase: 'MEDIUM',
 }
 
 describe('admin', () => {
@@ -747,6 +748,8 @@ describe('admin', () => {
       priceInfo: '45 € · code PAPE15',
       bookingUrl: 'https://hotel.example.com/pape',
       addressFull: '18 avenue du Trône, 75012 Paris',
+      // Absent du corps : la jauge de stationnement reste « non renseigné ».
+      parkingEase: null,
       hostDisplayName: null,
       beds: [],
       bedTypes: [],
@@ -769,6 +772,7 @@ describe('admin', () => {
       capacity: 80,
       priceInfo: '5 € / nuit',
       bookingUrl: null,
+      parkingEase: 'MEDIUM',
     })
     gymId = body.id as string
   })
@@ -807,11 +811,26 @@ describe('admin', () => {
       ...hotelBody,
       capacity: 45,
       priceInfo: '39 € · code PAPE15',
+      parkingEase: 'EASY',
     })
     expect(res.status).toBe(200)
-    const body = (await res.json()) as { capacity: number; priceInfo: string }
+    const body = (await res.json()) as {
+      capacity: number
+      priceInfo: string
+      parkingEase: string | null
+    }
     expect(body.capacity).toBe(45)
     expect(body.priceInfo).toBe('39 € · code PAPE15')
+    expect(body.parkingEase).toBe('EASY')
+
+    // Corps complet = remplacement : parkingEase omis repasse à null.
+    const reset = await req('PATCH', `/admin/listings/${hotelId}`, cookies.admin, {
+      ...hotelBody,
+      capacity: 45,
+      priceInfo: '39 € · code PAPE15',
+    })
+    expect(reset.status).toBe(200)
+    expect(((await reset.json()) as { parkingEase: string | null }).parkingEase).toBeNull()
   })
 
   it('un logement PRIVATE n’est ni éditable ni supprimable via /admin/listings (404)', async () => {

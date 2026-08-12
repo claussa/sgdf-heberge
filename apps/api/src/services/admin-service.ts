@@ -94,7 +94,6 @@ function toAdminListing(row: AdminListingRow, acceptedPeople: number) {
     priceInfo: row.priceInfo,
     description: row.description,
     accessibilityNotes: row.accessibilityNotes,
-    // Institutionnels : jamais saisi par l'admin en v1 — la jauge n'apparaît pas.
     parkingEase: row.parkingEase,
     // Ils s'identifient par leur title, jamais par le compte admin qui les gère.
     hostDisplayName: null,
@@ -139,6 +138,8 @@ function institutionalData(input: AdminListingUpsertInput) {
     accessAssistanceDog: input.access.assistanceDog,
     accessQuiet: input.access.quiet,
     accessibilityNotes: input.accessibilityNotes ?? null,
+    // Absent du corps = remis à null : le PATCH admin remplace la fiche entière.
+    parkingEase: input.parkingEase ?? null,
   }
 }
 

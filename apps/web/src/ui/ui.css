@@ -527,3 +527,18 @@
 .parking-gauge--hard .parking-gauge__bar--filled {
   background: var(--rouge);
 }
+
+/* Choix « Se garer à proximité » : radios en ligne, jauge devant le libellé.
+   Partagé par le formulaire hébergeur (A.11) et le formulaire admin. */
+.parking-choix {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  padding-top: 4px;
+}
+
+.parking-choix__option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
