@@ -25,7 +25,8 @@ function ProfilVolontaireForm({ me }: { me: Me }) {
   const navigate = useNavigate()
   const setMe = useSetMe()
   // ?premiere : arrivée depuis le choix d'inscription — on ne propose pas l'autre
-  // parcours tant que celui-ci n'est pas terminé.
+  // parcours tant que celui-ci n'est pas terminé. Idem si l'espace hébergeur est
+  // déjà ouvert (me.hasListings) : proposer de le rejoindre n'a plus de sens.
   const [searchParams] = useSearchParams()
   const isPremiere = searchParams.has('premiere')
   const [firstName, setFirstName] = useState(me.firstName ?? '')
@@ -152,7 +153,7 @@ function ProfilVolontaireForm({ me }: { me: Me }) {
       >
         Enregistrer et rechercher
       </Button>
-      {!isPremiere && (
+      {!isPremiere && !me.hasListings && (
         <>
           <hr className="divider" />
           <span className="field__label">Et si besoin</span>
