@@ -6,7 +6,6 @@ export type {
   CancelActor,
   ContactStatus,
   EmailStatus,
-  HostTourStatus,
   JumelageAd,
   JumelageContact,
   JumelageKind,
@@ -21,6 +20,7 @@ export type {
   RequestStatus,
   Role,
   Session,
+  TourStatus,
   User,
 } from '@prisma/client'
 // Réexports pour que les consommateurs (apps/api) n'importent jamais @prisma/client directement.

@@ -25,6 +25,7 @@ function me(overrides: Partial<Me>): Me {
     hasListings: false,
     seeksAccommodation: false,
     hostTourStatus: null,
+    seekerTourStatus: null,
     hasActiveAd: false,
     createdAt: '2026-08-01T00:00:00.000Z',
     ...overrides,

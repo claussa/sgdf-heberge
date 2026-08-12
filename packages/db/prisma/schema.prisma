@@ -93,7 +93,8 @@ enum ContactStatus {
   ACCEPTED
 }
 
-enum HostTourStatus {
+/// Résultat d'un tour guidé (hébergeur ou volontaire) — null = jamais proposé
+enum TourStatus {
   SKIPPED
   DONE
 }
@@ -150,7 +151,11 @@ model User {
 
   /// Tour guidé de l'espace hébergeur (driver.js), proposé sur « Mes logements ».
   /// Null = jamais proposé ; SKIPPED = refusé ou abandonné en cours ; DONE = terminé.
-  hostTourStatus HostTourStatus?
+  hostTourStatus TourStatus?
+
+  /// Tour guidé de l'espace volontaire (driver.js), proposé sur « Où dormiras-tu ? ».
+  /// Mêmes règles que hostTourStatus.
+  seekerTourStatus TourStatus?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -25,6 +25,7 @@ import {
   SigneImage,
 } from '../ui'
 import { signeDe } from './volontaire-lib'
+import { useVolontaireTourProposal } from './volontaire-tour'
 import './volontaire.css'
 
 /** Chips « Type » (A.4) — libellé maquette → valeur de filtre API, en OR. */
@@ -63,6 +64,8 @@ export function Recherche() {
 }
 
 function RechercheView({ me }: { me: Me }) {
+  // Tour guidé volontaire : proposé une seule fois, à la première visite de la recherche.
+  useVolontaireTourProposal()
   // L'URL est la source de vérité des filtres : le retour depuis une fiche les réapplique.
   const [parametres, setParametres] = useSearchParams()
   const defauts = {
@@ -213,7 +216,7 @@ function RechercheView({ me }: { me: Me }) {
         </div>
         <div className="recherche__filtres-ligne">
           <span className="field__label recherche__filtres-libelle">Type</span>
-          <span className="recherche__chips">
+          <span className="recherche__chips" data-tour="filtres-type">
             {CHIPS_TYPE.map((chip) => (
               <Chip
                 key={chip.value}
@@ -224,7 +227,11 @@ function RechercheView({ me }: { me: Me }) {
               </Chip>
             ))}
             {me.accessibilityNeeds.length > 0 && (
-              <Chip active={besoins} onClick={() => majFiltres({ besoins: !besoins })}>
+              <Chip
+                active={besoins}
+                onClick={() => majFiltres({ besoins: !besoins })}
+                data-tour="filtre-besoins"
+              >
                 Compatibles avec mes besoins
               </Chip>
             )}
@@ -253,7 +260,7 @@ function RechercheView({ me }: { me: Me }) {
         <Loading />
       ) : (
         <>
-          <p className="recherche__compte">
+          <p className="recherche__compte" data-tour="resultats">
             <b>{resultats.total}</b> logement{resultats.total > 1 ? 's' : ''}
           </p>
           {resultats.total === 0 ? (

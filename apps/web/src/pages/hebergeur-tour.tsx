@@ -1,12 +1,15 @@
-import type { HostTourStatus, Me, MyListing, RequestHostView } from '@repo/contracts'
-import { type Driver, type DriveStep, driver, type PopoverDOM } from 'driver.js'
-import 'driver.js/dist/driver.css'
-import { useEffect, useSyncExternalStore } from 'react'
+import type { MyListing, RequestHostView } from '@repo/contracts'
+import type { Driver, DriveStep } from 'driver.js'
 import { type NavigateFunction, useNavigate } from 'react-router'
-import { api } from '../lib/api'
-import { ME_QUERY_KEY, useMe } from '../lib/hooks'
+import { useMe } from '../lib/hooks'
 import { captureEvent } from '../lib/posthog'
-import { queryClient } from '../lib/query'
+import {
+  appCenterAnchor,
+  centerPopoverOnFrame,
+  createTourDriver,
+  createTourStore,
+  useTourInvite,
+} from './tour-lib'
 
 /**
  * Tour guidé de l'espace hébergeur (driver.js), proposé une seule fois sur
@@ -14,10 +17,11 @@ import { queryClient } from '../lib/query'
  * redirige. Le parcours traverse « Demandes reçues » (avec une demande d'exemple
  * injectée côté client, jamais envoyée à l'API) puis le profil. Le résultat est
  * persisté sur User.hostTourStatus : SKIPPED (refus ou abandon) ou DONE.
+ * Infrastructure commune aux deux tours : tour-lib.tsx.
  */
 
 // ---------------------------------------------------------------------------
-// Store minimal (module) — la page Demandes s'y abonne pour injecter l'exemple
+// Store — la page Demandes s'y abonne pour injecter l'exemple
 // ---------------------------------------------------------------------------
 
 type TourState = {
@@ -27,21 +31,10 @@ type TourState = {
   demoAccepted: boolean
 }
 
-let tourState: TourState = { active: false, demoAccepted: false }
-const listeners = new Set<() => void>()
-
-function setTourState(patch: Partial<TourState>): void {
-  tourState = { ...tourState, ...patch }
-  for (const listener of listeners) listener()
-}
-
-function subscribe(listener: () => void): () => void {
-  listeners.add(listener)
-  return () => listeners.delete(listener)
-}
+const store = createTourStore<TourState>({ active: false, demoAccepted: false })
 
 export function useHebergeurTour(): TourState {
-  return useSyncExternalStore(subscribe, () => tourState)
+  return store.useTourState()
 }
 
 // ---------------------------------------------------------------------------
@@ -93,84 +86,15 @@ export function buildTourRequest(
 }
 
 // ---------------------------------------------------------------------------
-// Persistance du résultat — PATCH /me, à sens unique (jamais remis à null)
-// ---------------------------------------------------------------------------
-
-function saveTourStatus(status: HostTourStatus): void {
-  // Optimiste : la proposition ne doit pas réapparaître si l'utilisateur revient
-  // sur « Mes logements » avant la réponse du PATCH.
-  queryClient.setQueryData<Me | null>(ME_QUERY_KEY, (me) =>
-    me ? { ...me, hostTourStatus: status } : me,
-  )
-  api.me
-    .$patch({ json: { hostTourStatus: status } })
-    .then(async (res) => {
-      if (res.status === 200) queryClient.setQueryData(ME_QUERY_KEY, await res.json())
-    })
-    .catch(() => {
-      // Hors ligne : au pire, la proposition reviendra à une prochaine session.
-    })
-}
-
-// ---------------------------------------------------------------------------
 // Le tour lui-même
 // ---------------------------------------------------------------------------
-
-/**
- * Popovers « modaux » (proposition, étape finale) : driver.js les fige au centre
- * du VIEWPORT — sous le cadre applicatif quand la page est peu remplie. Centre de
- * la partie VISIBLE du cadre (.frame), en coordonnées viewport.
- */
-function frameCenter(): { x: number; y: number } {
-  const frame = document.querySelector('.frame')?.getBoundingClientRect()
-  if (!frame) return { x: window.innerWidth / 2, y: window.innerHeight / 2 }
-  const top = Math.max(frame.top, 0)
-  const bottom = Math.min(frame.bottom, window.innerHeight)
-  return {
-    x: (Math.max(frame.left, 0) + Math.min(frame.right, window.innerWidth)) / 2,
-    y: top + (bottom - top) / 2,
-  }
-}
-
-/**
- * Ancre des popovers modaux. Sans élément, driver crée un élément fictif au
- * centre du viewport ; on crée le nôtre (même id : driver le réutilise et garde
- * son rendu sans flèche) au centre du cadre — le trou de l'overlay reste ainsi
- * caché sous la popup repositionnée par centerPopoverOnFrame.
- */
-function appCenterAnchor(): Element {
-  const anchor = document.getElementById('driver-dummy-element') ?? document.createElement('div')
-  anchor.id = 'driver-dummy-element'
-  const center = frameCenter()
-  const style = anchor.style
-  style.width = '0'
-  style.height = '0'
-  style.pointerEvents = 'none'
-  style.opacity = '0'
-  style.position = 'fixed'
-  style.top = `${center.y}px`
-  style.left = `${center.x}px`
-  if (!anchor.isConnected) document.body.appendChild(anchor)
-  return anchor
-}
-
-/**
- * En mode « over », driver positionne le wrapper au centre du viewport en styles
- * inline, sans tenir compte de l'élément. La classe .tour-modal reprend la main
- * avec ces variables (règle !important dans hebergeur.css — survit au resize).
- */
-function centerPopoverOnFrame(popover: PopoverDOM): void {
-  const center = frameCenter()
-  popover.wrapper.style.setProperty('--tour-modal-x', `${center.x}px`)
-  popover.wrapper.style.setProperty('--tour-modal-y', `${center.y}px`)
-}
 
 let activeDriver: Driver | null = null
 
 /** Bouton « Accepter » de la demande d'exemple : avance le tour, aucun appel API. */
 export function acceptTourDemo(): void {
-  if (!tourState.active || tourState.demoAccepted) return
-  setTourState({ demoAccepted: true })
+  if (!store.get().active || store.get().demoAccepted) return
+  store.set({ demoAccepted: true })
   // waitForElement (config) attend la carte « Acceptée » que React va rendre.
   activeDriver?.moveNext()
 }
@@ -181,9 +105,8 @@ export function startHebergeurTour(options: {
   includeSeekerStep: boolean
 }): void {
   const { navigate, includeSeekerStep } = options
-  if (tourState.active) return
-  let finished = false
-  setTourState({ active: true, demoAccepted: false })
+  if (store.get().active) return
+  store.set({ active: true, demoAccepted: false })
   captureEvent('host_tour_started')
 
   const steps: DriveStep[] = [
@@ -281,35 +204,18 @@ export function startHebergeurTour(options: {
           'te préviendra à chaque fois. Bon accueil !',
         popoverClass: 'tour-popover tour-modal',
         onPopoverRender: centerPopoverOnFrame,
-        onNextClick: () => {
-          finished = true
-          tourDriver.destroy()
-        },
+        onNextClick: () => finishTour(),
       },
     },
   ]
 
-  const tourDriver = driver({
+  const { tourDriver, finishTour } = createTourDriver({
     steps,
-    showProgress: true,
-    progressText: '{{current}} / {{total}}',
-    nextBtnText: 'Suivant',
-    doneBtnText: 'Terminer',
-    // Pas de « Précédent » : les étapes traversent des changements d'onglet et de
-    // page, revenir en arrière laisserait des cibles orphelines.
-    showButtons: ['next', 'close'],
-    stagePadding: 8,
-    // Les cibles apparaissent après navigation ou re-render React : attendre.
-    waitForElement: 8000,
-    // L'élément mis en avant n'est cliquable que là où le tour le demande (étape
-    // « Accepter ») — évite un vrai refus ou un « Complet » pendant la visite.
-    disableActiveInteraction: true,
-    popoverClass: 'tour-popover',
-    onDestroyed: () => {
+    statusField: 'hostTourStatus',
+    eventPrefix: 'host_tour',
+    onReset: () => {
       activeDriver = null
-      setTourState({ active: false, demoAccepted: false })
-      saveTourStatus(finished ? 'DONE' : 'SKIPPED')
-      captureEvent(finished ? 'host_tour_completed' : 'host_tour_abandoned')
+      store.set({ active: false, demoAccepted: false })
     },
   })
   activeDriver = tourDriver
@@ -326,67 +232,22 @@ export function startHebergeurTour(options: {
  * Propose le tour quand il n'a jamais été proposé (hostTourStatus null), pour un
  * compte INDIVIDUAL avec au moins un logement. `hasListings` vient de la requête
  * /my/listings de la page — pas de me.hasListings, qui peut être périmé juste
- * après la création du premier logement. « Non merci », la croix ou un clic sur
- * le fond marquent SKIPPED : la proposition ne revient jamais.
+ * après la création du premier logement.
  */
 export function useHebergeurTourProposal(hasListings: boolean): void {
   const navigate = useNavigate()
   const { me } = useMe()
   const { active } = useHebergeurTour()
-  const shouldPropose =
-    hasListings && !active && me?.accountType === 'INDIVIDUAL' && me.hostTourStatus === null
   const includeSeekerStep = me !== null && !me.seeksAccommodation
-
-  useEffect(() => {
-    if (!shouldPropose) return
-    // Le cleanup (StrictMode, navigation) détruit la popup sans la compter
-    // comme un refus : seule une fermeture par l'utilisateur marque SKIPPED.
-    let cancelled = false
-    let accepted = false
-    // Déjà détruite : le cleanup ne doit PAS rappeler destroy() — driver.destroy()
-    // n'est pas idempotent, il retirerait la classe body `driver-active` posée
-    // entre-temps par le tour, dont l'overlay bloquerait alors tous les clics.
-    let closed = false
-    const invite = driver({
-      showButtons: ['next', 'close'],
-      nextBtnText: 'Faire le tour',
-      popoverClass: 'tour-popover tour-modal',
-      onDestroyed: () => {
-        closed = true
-        if (cancelled || accepted) return
-        saveTourStatus('SKIPPED')
-        captureEvent('host_tour_declined')
-      },
-    })
-    invite.highlight({
-      element: appCenterAnchor,
-      popover: {
-        title: 'Ton logement est en ligne !',
-        description:
-          'Merci d’ouvrir ta porte. On te fait visiter ? Deux minutes pour voir comment ' +
-          'les demandes arrivent, et comment y répondre.',
-        // En mode highlight(), driver force showButtons à [] : re-déclarer ici
-        showButtons: ['next', 'close'],
-        onNextClick: () => {
-          accepted = true
-          invite.destroy()
-          startHebergeurTour({ navigate, includeSeekerStep })
-        },
-        onPopoverRender: (popover) => {
-          centerPopoverOnFrame(popover)
-          const decline = document.createElement('button')
-          decline.type = 'button'
-          decline.className = 'tour-invite__decline'
-          decline.textContent = 'Non merci'
-          decline.addEventListener('click', () => invite.destroy())
-          popover.footerButtons.insertBefore(decline, popover.nextButton)
-        },
-      },
-    })
-    captureEvent('host_tour_proposed')
-    return () => {
-      cancelled = true
-      if (!closed) invite.destroy()
-    }
-  }, [shouldPropose, includeSeekerStep, navigate])
+  useTourInvite({
+    enabled:
+      hasListings && !active && me?.accountType === 'INDIVIDUAL' && me.hostTourStatus === null,
+    statusField: 'hostTourStatus',
+    eventPrefix: 'host_tour',
+    title: 'Ton logement est en ligne !',
+    description:
+      'Merci d’ouvrir ta porte. On te fait visiter ? Deux minutes pour voir comment ' +
+      'les demandes arrivent, et comment y répondre.',
+    onAccept: () => startHebergeurTour({ navigate, includeSeekerStep }),
+  })
 }

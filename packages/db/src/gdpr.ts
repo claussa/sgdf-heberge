@@ -39,6 +39,7 @@ export async function exportUserData(db: Db, userId: string) {
       onboardedAt: true,
       seekerOnboardedAt: true,
       hostTourStatus: true,
+      seekerTourStatus: true,
       createdAt: true,
       updatedAt: true,
       sessions: {

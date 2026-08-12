@@ -47,6 +47,7 @@ export function toMe(
     hasListings: extras.hasListings,
     seeksAccommodation: user.seekerOnboardedAt !== null,
     hostTourStatus: user.hostTourStatus,
+    seekerTourStatus: user.seekerTourStatus,
     hasActiveAd: extras.hasActiveAd,
     createdAt: user.createdAt.toISOString(),
   }
@@ -120,6 +121,7 @@ export async function updateProfile(
   if (user.accountType === 'INDIVIDUAL') {
     if (input.seeksAccommodation && !user.seekerOnboardedAt) data.seekerOnboardedAt = new Date()
     if (input.hostTourStatus !== undefined) data.hostTourStatus = input.hostTourStatus
+    if (input.seekerTourStatus !== undefined) data.seekerTourStatus = input.seekerTourStatus
     if (input.groupSize !== undefined) data.groupSize = input.groupSize
     if (input.accessibilityNeeds !== undefined) {
       data.accessibilityNeeds = input.accessibilityNeeds.length
