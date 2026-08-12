@@ -154,6 +154,7 @@ const SCREEN_TITLES: Array<[string, string]> = [
   ['/connexion', 'Connexion'],
   ['/mentions-legales', 'Mentions légales'],
   ['/comment-ca-marche', 'Comment ça marche'],
+  ['/aide', "Besoin d'aide ?"],
   ['/inscription', 'Inscription'],
   ['/profil', 'Mon profil'],
   ['/hebergeur', 'Mon profil'],

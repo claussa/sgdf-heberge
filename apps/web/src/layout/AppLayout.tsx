@@ -87,6 +87,9 @@ export function AppLayout() {
         <Link to="/comment-ca-marche" className="footer__link">
           Comment ça marche
         </Link>
+        <Link to="/aide" className="footer__link">
+          Besoin d'aide ?
+        </Link>
         <Link to="/mentions-legales" className="footer__link">
           Mentions légales
         </Link>

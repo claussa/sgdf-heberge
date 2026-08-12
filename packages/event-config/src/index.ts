@@ -60,6 +60,8 @@ const EventConfigSchema = z.object({
     /** Contact général de la plateforme (distinct du contactEmail des emails) */
     contactEmail: z.email(),
     dpoEmail: z.email(),
+    /** Mis en copie des mailto de la page « Besoin d'aide ? » — null pour désactiver */
+    helpCcEmail: z.email().nullable(),
   }),
   /** Sorties de l'écran de connexion — bloc « Tu cherches autre chose ? » */
   otherRoutes: z.object({
@@ -120,6 +122,7 @@ export const eventConfig = {
     publicationDirector: 'Charles Le Gac',
     contactEmail: 'auservicedupape@sgdf.fr',
     dpoEmail: 'dpo@sgdf.fr',
+    helpCcEmail: 'aclauss@sgdf.fr',
   },
   hero: {
     title: 'Un toit pour chaque volontaire et participant,',

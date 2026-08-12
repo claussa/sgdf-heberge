@@ -429,6 +429,85 @@
   margin-top: 12px;
 }
 
+/* ============ Besoin d'aide ? ============ */
+.aide {
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.aide__intro,
+.aide__note {
+  margin: 0;
+  font: 400 14px / 1.6 var(--font-courant);
+  color: var(--bleu);
+}
+
+.aide__note a {
+  color: var(--bleu);
+}
+
+.aide__choices {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.aide-choice {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 16px;
+  background: var(--blanc);
+  border: 1px solid var(--bordure);
+  text-decoration: none;
+  transition: opacity var(--duree) var(--ease);
+}
+
+.aide-choice:hover {
+  opacity: 0.8;
+}
+
+.aide-choice__signe-box {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bleu);
+  color: var(--blanc);
+}
+
+.aide-choice__signe {
+  width: 22px;
+  height: 22px;
+}
+
+.aide-choice__body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.aide-choice__title {
+  font: 700 15px var(--font-courant);
+  color: var(--bleu);
+}
+
+.aide-choice__desc {
+  font: 400 13px / 1.5 var(--font-courant);
+  color: var(--bleu);
+}
+
+.aide-choice__email {
+  margin-top: 2px;
+  font: 700 13px var(--font-courant);
+  color: var(--orange);
+  text-decoration: underline;
+}
+
 /* ============ Placeholder ============ */
 .placeholder {
   display: flex;
