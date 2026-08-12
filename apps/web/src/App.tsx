@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router'
 import { RequireAdmin, RequireAuth, RequireOnboarded } from './guards'
 import { AppLayout } from './layout/AppLayout'
@@ -21,7 +22,14 @@ import { ProfilVolontaire } from './pages/ProfilVolontaire'
 import { Recherche } from './pages/Recherche'
 import { UniteAnnonce } from './pages/UniteAnnonce'
 import { UniteRelations } from './pages/UniteRelations'
+import { Loading } from './ui'
 import './pages/pages.css'
+
+// Chargée à la demande : la page embarque les templates de packages/emails et le
+// moteur de rendu react-email — inutile dans le bundle critique de la SPA.
+const CommentCaMarche = lazy(() =>
+  import('./pages/CommentCaMarche').then((m) => ({ default: m.CommentCaMarche })),
+)
 
 /**
  * Router de la SPA. Tout passe par AppLayout (chrome A.0). Les écrans profil
@@ -35,6 +43,14 @@ export function App() {
       <Route element={<AppLayout />}>
         <Route path="/connexion" element={<Connexion />} />
         <Route path="/mentions-legales" element={<MentionsLegales />} />
+        <Route
+          path="/comment-ca-marche"
+          element={
+            <Suspense fallback={<Loading />}>
+              <CommentCaMarche />
+            </Suspense>
+          }
+        />
         <Route path="/" element={<Dispatcher />} />
         <Route element={<RequireAuth />}>
           <Route path="/inscription" element={<Inscription />} />

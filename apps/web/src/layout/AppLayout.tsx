@@ -84,6 +84,9 @@ export function AppLayout() {
 
       <footer className="footer">
         <span className="footer__org">© {eventConfig.organizer}</span>
+        <Link to="/comment-ca-marche" className="footer__link">
+          Comment ça marche
+        </Link>
         <Link to="/mentions-legales" className="footer__link">
           Mentions légales
         </Link>

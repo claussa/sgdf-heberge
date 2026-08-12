@@ -1,7 +1,7 @@
 import { eventConfig } from '@repo/event-config'
 import { useMutation } from '@tanstack/react-query'
 import { type FormEvent, useRef, useState } from 'react'
-import { Navigate, useSearchParams } from 'react-router'
+import { Link, Navigate, useSearchParams } from 'react-router'
 import { api } from '../lib/api'
 import { assetUrl } from '../lib/assets'
 import { useMe } from '../lib/hooks'
@@ -148,7 +148,10 @@ export function Connexion() {
               </Button>
             </>
           )}
-          <HelpText>Première visite ? Le lien crée ton compte, tout simplement.</HelpText>
+          <HelpText>
+            Première visite ? Le lien crée ton compte, tout simplement.{' '}
+            <Link to="/comment-ca-marche">Comment ça marche ?</Link>
+          </HelpText>
         </form>
         <div className="connexion__autres">
           <div className="connexion__autres-filet" />

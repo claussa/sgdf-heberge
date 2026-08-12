@@ -1,38 +1,10 @@
 import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router'
+import { ChoiceCard } from '../components/ChoiceCard'
 import { useMe } from '../lib/hooks'
-import { Button, cx, HelpText, Loading, PageTitle } from '../ui'
+import { Button, HelpText, Loading, PageTitle } from '../ui'
 
 type Choice = 'volontaire' | 'unite'
-
-type ChoiceCardProps = {
-  selected: boolean
-  onSelect: () => void
-  title: string
-  text: string
-}
-
-/** Carte radio de l'écran d'inscription : bordure 2px bleue + point plein si choisie. */
-function ChoiceCard({ selected, onSelect, title, text }: ChoiceCardProps) {
-  return (
-    <label className={cx('choice-card', selected && 'choice-card--selected')}>
-      <input
-        type="radio"
-        name="account-type"
-        className="choice-card__input"
-        checked={selected}
-        onChange={onSelect}
-      />
-      <span className="choice-card__dot" aria-hidden="true">
-        {selected && <span className="choice-card__dot-inner" />}
-      </span>
-      <span className="choice-card__body">
-        <span className="choice-card__title">{title}</span>
-        <span className="choice-card__text">{text}</span>
-      </span>
-    </label>
-  )
-}
 
 /**
  * Écran « Je m'inscris comme… » (A.2). Aucun appel API ici : le choix volontaire mène
@@ -52,12 +24,14 @@ export function Inscription() {
       <PageTitle>Je m’inscris comme…</PageTitle>
       <div className="inscription__choices">
         <ChoiceCard
+          name="account-type"
           selected={choice === 'volontaire'}
           onSelect={() => setChoice('volontaire')}
           title="Volontaire ou participant"
           text="Seul ou en petit groupe : je cherche où dormir, ou je propose un logement."
         />
         <ChoiceCard
+          name="account-type"
           selected={choice === 'unite'}
           onSelect={() => setChoice('unite')}
           title="Unité scoute"

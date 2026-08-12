@@ -281,8 +281,11 @@
   border-color: var(--bleu);
 }
 
+/* Bordure 2px compensée par le padding (18+1 = 17+2) :
+   la sélection ne décale pas le contenu d'un pixel. */
 .choice-card--selected {
   border: 2px solid var(--bleu);
+  padding: 17px;
 }
 
 .choice-card__input {
@@ -300,22 +303,26 @@
 }
 
 .choice-card__dot {
+  position: relative;
   width: 18px;
   height: 18px;
   border: 1.5px solid var(--bleu);
   border-radius: 50%;
   flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   margin-top: 2px;
 }
 
+/* Centrage géométrique (translate) : insensible aux arrondis sous-pixel de la
+   bordure 1,5px et des positions fractionnaires — le point ne penche plus. */
 .choice-card__dot-inner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
   width: 9px;
   height: 9px;
   border-radius: 50%;
   background: var(--bleu);
+  transform: translate(-50%, -50%);
 }
 
 .choice-card__body {
