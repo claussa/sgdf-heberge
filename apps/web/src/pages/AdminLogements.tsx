@@ -1,4 +1,10 @@
-import { ACCESS_CRITERIA, type AccessGrid, type AdminListing } from '@repo/contracts'
+import {
+  ACCESS_CRITERIA,
+  type AccessGrid,
+  type AdminListing,
+  PARKING_EASE,
+  type ParkingEase,
+} from '@repo/contracts'
 import { eventConfig, type SiteSlug, siteLabel } from '@repo/event-config'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
@@ -15,9 +21,13 @@ import {
   EmptyState,
   Field,
   FieldGroup,
+  HelpText,
   Input,
   Loading,
+  PARKING_EASE_LABELS,
   PageTitle,
+  ParkingGauge,
+  Radio,
   SectionTitle,
   Select,
   Textarea,
@@ -194,6 +204,7 @@ function AdminListingForm({ listing, onSaved, onCancel }: AdminListingFormProps)
   const [description, setDescription] = useState(listing?.description ?? '')
   const [notes, setNotes] = useState(listing?.accessibilityNotes ?? '')
   const [access, setAccess] = useState<AccessGrid>(listing?.access ?? EMPTY_ACCESS)
+  const [parkingEase, setParkingEase] = useState<ParkingEase | null>(listing?.parkingEase ?? null)
   const [address, setAddress] = useState<AddressValue | null>(null)
   // Édition : l'adresse reste verrouillée tant que « Changer l'adresse » n'est
   // pas activé ; l'activer exige une re-sélection dans l'autocomplete BAN.
@@ -220,6 +231,7 @@ function AdminListingForm({ listing, onSaved, onCancel }: AdminListingFormProps)
         availableTo,
         access,
         accessibilityNotes: notes.trim() === '' ? null : notes.trim(),
+        parkingEase,
       }
       if (listing) {
         const res = await api.admin.listings[':id'].$patch({
@@ -384,6 +396,34 @@ function AdminListingForm({ listing, onSaved, onCancel }: AdminListingFormProps)
               )
             })}
           </div>
+        </FieldGroup>
+        <FieldGroup label="Se garer à proximité">
+          <div className="parking-choix">
+            <Radio
+              name="parkingEase"
+              checked={parkingEase === null}
+              onChange={() => setParkingEase(null)}
+              label="Non renseigné"
+            />
+            {PARKING_EASE.map((ease) => (
+              <Radio
+                key={ease}
+                name="parkingEase"
+                checked={parkingEase === ease}
+                onChange={() => setParkingEase(ease)}
+                label={
+                  <span className="parking-choix__option">
+                    <ParkingGauge ease={ease} />
+                    {PARKING_EASE_LABELS[ease]}
+                  </span>
+                }
+              />
+            ))}
+          </div>
+          <HelpText>
+            Stationnement dans la rue ou parking proche — une indication pour les volontaires et
+            participants qui viennent en voiture.
+          </HelpText>
         </FieldGroup>
         <Field label="Autres informations d’accessibilité">
           <Textarea

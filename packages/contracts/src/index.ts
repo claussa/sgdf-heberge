@@ -239,7 +239,7 @@ export const ListingCardSchema = z.object({
   availableFrom: z.iso.date(),
   availableTo: z.iso.date(),
   access: AccessGridSchema,
-  /** Facilité de stationnement — null = non renseigné (institutionnels notamment) */
+  /** Facilité de stationnement — null = non renseigné (le champ est facultatif) */
   parkingEase: ParkingEaseSchema.nullable(),
   /** Types de couchages présents (icône + sous-titre carte) */
   bedTypes: z.array(BedTypeSchema),
@@ -594,4 +594,5 @@ export const AdminListingUpsertSchema = z.object({
   availableTo: z.iso.date(),
   access: AccessGridSchema,
   accessibilityNotes: z.string().max(1000).nullish(),
+  parkingEase: ParkingEaseSchema.nullish(),
 })
