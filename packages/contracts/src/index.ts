@@ -50,6 +50,10 @@ export type AccountType = z.infer<typeof AccountTypeSchema>
 export const RoleSchema = z.enum(['USER', 'ADMIN'])
 export const EmailStatusSchema = z.enum(['OK', 'BOUNCED', 'COMPLAINED'])
 
+/** Tour guidé de l'espace hébergeur — null = jamais proposé (voir MeSchema) */
+export const HostTourStatusSchema = z.enum(['SKIPPED', 'DONE'])
+export type HostTourStatus = z.infer<typeof HostTourStatusSchema>
+
 export const ListingCategorySchema = z.enum(['PRIVATE', 'HOTEL', 'COLLECTIVE'])
 export type ListingCategory = z.infer<typeof ListingCategorySchema>
 
@@ -142,6 +146,8 @@ export const MeSchema = z.object({
   hasListings: z.boolean(),
   /** Espace volontaire (recherche) activé — false = hébergeur pur, nav hébergeur seule */
   seeksAccommodation: z.boolean(),
+  /** Tour guidé hébergeur : null = à proposer (sur « Mes logements », si un logement existe) */
+  hostTourStatus: HostTourStatusSchema.nullable(),
   /** Unités : une annonce ACTIVE existe */
   hasActiveAd: z.boolean(),
   createdAt: z.iso.datetime(),
@@ -183,9 +189,20 @@ export const OnboardingSchema = z.discriminatedUnion('accountType', [
 ])
 export type OnboardingInput = z.infer<typeof OnboardingSchema>
 
+/**
+ * Résultat du tour guidé hébergeur. À sens unique (jamais remis à null) : SKIPPED à un
+ * refus ou un abandon, DONE au bout du parcours — ignoré pour les comptes SCOUT_UNIT.
+ */
+const HostTourStatusField = { hostTourStatus: HostTourStatusSchema.optional() }
+
 /** Mise à jour du profil (sans accountType) — l'API valide les champs selon le type */
 export const ProfileUpdateSchema = z
-  .object({ ...IndividualProfileFields, ...UnitProfileFields, ...SeeksAccommodationField })
+  .object({
+    ...IndividualProfileFields,
+    ...UnitProfileFields,
+    ...SeeksAccommodationField,
+    ...HostTourStatusField,
+  })
   .partial()
 export type ProfileUpdateInput = z.infer<typeof ProfileUpdateSchema>
 

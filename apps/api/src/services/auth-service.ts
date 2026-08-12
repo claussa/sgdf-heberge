@@ -41,6 +41,7 @@ export const USER_DTO_SELECT = {
   emailStatus: true,
   onboardedAt: true,
   seekerOnboardedAt: true,
+  hostTourStatus: true,
   createdAt: true,
   updatedAt: true,
 } as const satisfies Prisma.UserSelect

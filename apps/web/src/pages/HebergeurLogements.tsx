@@ -2,21 +2,24 @@ import { formatDateRangeLong } from '@repo/event-config'
 import { useNavigate } from 'react-router'
 import { Badge, Button, Card, Chip, HelpText, Loading, PageTitle, SigneImage } from '../ui'
 import { countPersonnes, listingSigne, useListingStatus, useMyListings } from './hebergeur-lib'
+import { useHebergeurTourProposal } from './hebergeur-tour'
 import './hebergeur.css'
 
 /**
  * /hebergeur/logements — écran A.9 « Mes logements, ». Une carte-ligne par logement
  * (vignette signe, méta, chips Libre/Complet, Modifier), bandeau « Réactiver » si le
- * logement a été masqué pour inactivité (hiddenAt).
+ * logement a été masqué pour inactivité (hiddenAt). La création du premier logement
+ * redirige ici : c'est là que le tour guidé est proposé (une seule fois).
  */
 export function HebergeurLogements() {
   const navigate = useNavigate()
   const listingsQuery = useMyListings()
   const setStatus = useListingStatus()
 
-  if (listingsQuery.isPending) return <Loading />
-
   const listings = listingsQuery.data ?? []
+  useHebergeurTourProposal(listings.length > 0)
+
+  if (listingsQuery.isPending) return <Loading />
 
   return (
     <div className="logements fade">

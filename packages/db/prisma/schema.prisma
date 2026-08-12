@@ -93,6 +93,11 @@ enum ContactStatus {
   ACCEPTED
 }
 
+enum HostTourStatus {
+  SKIPPED
+  DONE
+}
+
 model User {
   id String @id @default(cuid())
 
@@ -142,6 +147,10 @@ model User {
   /// Espace volontaire (recherche) activé — parcours « Je cherche un logement » ou
   /// première demande. Null = hébergeur pur : nav et redirections restent côté hébergeur.
   seekerOnboardedAt DateTime?
+
+  /// Tour guidé de l'espace hébergeur (driver.js), proposé sur « Mes logements ».
+  /// Null = jamais proposé ; SKIPPED = refusé ou abandonné en cours ; DONE = terminé.
+  hostTourStatus HostTourStatus?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

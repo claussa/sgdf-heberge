@@ -350,4 +350,61 @@ describe('session, /me et onboarding', () => {
     const me = await t.app.request('/api/me', { headers: { cookie } })
     expect(((await me.json()) as { accountType: string }).accountType).toBe('SCOUT_UNIT')
   })
+
+  it('tour hébergeur : null au départ, puis SKIPPED ou DONE via PATCH /me (INDIVIDUAL seulement)', async () => {
+    const cookie = await loginAs('tour@example.org')
+    const onboard = await t.app.request('/api/me/onboarding', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({
+        accountType: 'INDIVIDUAL',
+        firstName: 'Théo',
+        lastName: 'Tour',
+        phone: '06 00 12 13 14',
+      }),
+    })
+    expect(onboard.status).toBe(200)
+    // Jamais proposé tant que rien n'est écrit : le front s'appuie sur ce null
+    expect(((await onboard.json()) as { hostTourStatus: null }).hostTourStatus).toBeNull()
+
+    // Refus de la proposition (ou abandon en cours de tour)
+    const skip = await t.app.request('/api/me', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({ hostTourStatus: 'SKIPPED' }),
+    })
+    expect(skip.status).toBe(200)
+    expect(((await skip.json()) as { hostTourStatus: string }).hostTourStatus).toBe('SKIPPED')
+
+    // Tour terminé (relancé plus tard) : la valeur avance, jamais de retour à null
+    const done = await t.app.request('/api/me', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({ hostTourStatus: 'DONE' }),
+    })
+    expect(done.status).toBe(200)
+    expect(((await done.json()) as { hostTourStatus: string }).hostTourStatus).toBe('DONE')
+
+    // Les unités n'ont pas d'espace hébergeur : le champ est ignoré pour elles
+    const unitCookie = await loginAs('unite-tour@example.org')
+    await t.app.request('/api/me/onboarding', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie: unitCookie },
+      body: JSON.stringify({
+        accountType: 'SCOUT_UNIT',
+        unitName: '2e Test',
+        unitBranch: 'Compagnons',
+        firstName: 'Uma',
+        lastName: 'Unité',
+        phone: '06 00 15 16 17',
+      }),
+    })
+    const unitPatch = await t.app.request('/api/me', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json', cookie: unitCookie },
+      body: JSON.stringify({ hostTourStatus: 'DONE' }),
+    })
+    expect(unitPatch.status).toBe(200)
+    expect(((await unitPatch.json()) as { hostTourStatus: null }).hostTourStatus).toBeNull()
+  })
 })
