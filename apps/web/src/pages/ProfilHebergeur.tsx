@@ -10,7 +10,8 @@ import { Button, Field, HelpText, Input, Loading, PageTitle } from '../ui'
 /**
  * Profil hébergeur (A.7) — mêmes données /me que le volontaire, sans « Nous serons »
  * ni besoins d'accessibilité. Le CTA enregistre le profil (onboarding INDIVIDUAL au
- * premier passage, PATCH ensuite) puis ouvre la création du premier logement.
+ * premier passage, PATCH ensuite) puis ouvre la création du premier logement — ou,
+ * si l'hébergeur en a déjà un, la liste de ses logements.
  */
 export function ProfilHebergeur() {
   const { me, isPending } = useMe()
@@ -24,7 +25,9 @@ function ProfilHebergeurForm({ me }: { me: Me }) {
   const navigate = useNavigate()
   const setMe = useSetMe()
   // ?premiere : arrivée depuis le choix d'inscription — on ne propose pas l'autre
-  // parcours tant que celui-ci n'est pas terminé.
+  // parcours tant que celui-ci n'est pas terminé. Idem si l'espace volontaire est
+  // déjà ouvert (me.seeksAccommodation) : la nav renvoie alors « Mon profil » vers
+  // /profil, mais l'URL directe reste atteignable.
   const [searchParams] = useSearchParams()
   const isPremiere = searchParams.has('premiere')
   const [firstName, setFirstName] = useState(me.firstName ?? '')
@@ -47,7 +50,7 @@ function ProfilHebergeurForm({ me }: { me: Me }) {
     },
     onSuccess: (fresh) => {
       setMe(fresh)
-      navigate('/hebergeur/logements/nouveau')
+      navigate(me.hasListings ? '/hebergeur/logements' : '/hebergeur/logements/nouveau')
     },
   })
 
@@ -104,9 +107,9 @@ function ProfilHebergeurForm({ me }: { me: Me }) {
         style={{ minWidth: 240, alignSelf: 'flex-start' }}
         disabled={save.isPending}
       >
-        Créer mon premier logement
+        {me.hasListings ? 'Voir mes logements' : 'Créer mon premier logement'}
       </Button>
-      {!isPremiere && (
+      {!isPremiere && !me.seeksAccommodation && (
         <>
           <hr className="divider" />
           <span className="field__label">Et si besoin</span>
