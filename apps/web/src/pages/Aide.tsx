@@ -36,8 +36,8 @@ function Choice({ signe, title, description, to, subject }: ChoiceProps) {
 
 /**
  * Page publique « Besoin d'aide ? » (lien du pied de page, sans connexion) :
- * oriente vers le bon contact — DPO pour les données personnelles, équipe
- * événement pour le reste. Chaque choix ouvre le client mail (mailto).
+ * oriente vers le bon contact — référent données personnelles pour les droits
+ * RGPD, équipe événement pour le reste. Chaque choix ouvre le client mail (mailto).
  */
 export function Aide() {
   return (
@@ -52,7 +52,7 @@ export function Aide() {
         <Choice
           signe="promesse"
           title="Mes données personnelles"
-          description="Accès, rectification, suppression de ton compte ou toute question sur l'usage de tes données : écris au délégué à la protection des données."
+          description="Accès, rectification, suppression de ton compte ou toute question sur l'usage de tes données : écris à l'équipe en charge de la protection des données."
           to={legal.privacyContactEmail}
           subject={`[${eventConfig.appName}] Mes données personnelles`}
         />
