@@ -54,11 +54,10 @@ const EventConfigSchema = z.object({
     contactEmails: z.array(z.email()).min(1),
     /** Date limite de destruction du site et de ses données, ex. « le 31 octobre 2026 » */
     dataDeletionDeadline: z.string().min(1),
-    /** Contact pour l'exercice des droits RGPD */
+    /** Contact pour l'exercice des droits RGPD (mentions légales + page « Besoin d'aide ? ») */
     privacyContactEmail: z.email(),
     /** Contact général de la plateforme (page « Besoin d'aide ? ») */
     contactEmail: z.email(),
-    dpoEmail: z.email(),
     /** Mis en copie des mailto de la page « Besoin d'aide ? » — null pour désactiver */
     helpCcEmail: z.email().nullable(),
   }),
@@ -124,7 +123,6 @@ export const eventConfig = {
     dataDeletionDeadline: 'le 31 octobre 2026',
     privacyContactEmail: 'sfays@sgdf.fr',
     contactEmail: 'auservicedupape@sgdf.fr',
-    dpoEmail: 'dpo@sgdf.fr',
     helpCcEmail: 'aclauss@sgdf.fr',
   },
   hero: {
