@@ -13,6 +13,7 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx --env-file=.env prisma/seed.ts",
     "db:promote-admin": "tsx scripts/promote-admin.ts",
+    "db:purge": "tsx --env-file=.env scripts/purge.ts",
     "check-types": "tsc --noEmit",
     "test:integration": "vitest run"
   },
