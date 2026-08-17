@@ -35,7 +35,7 @@ Contraintes conductrices, par ordre de priorité :
 |---|---|---|
 | Gestionnaire de paquets | pnpm workspaces | `packageManager` figé dans le root `package.json` |
 | Orchestration | Turborepo | cache local suffisant, pas de remote cache |
-| Runtime | Node.js 22 LTS | **pas** de runtime edge — voir §3 |
+| Runtime | Node.js 26 (LTS en oct. 2026) | **pas** de runtime edge — voir §3 |
 | Router HTTP | Hono | adaptateur `@hono/node-server` |
 | OpenAPI | `@hono/zod-openapi` | spec 3.1 exposé sur `/openapi.json` |
 | Validation | Zod v4 | source de vérité unique : types + runtime + OpenAPI |

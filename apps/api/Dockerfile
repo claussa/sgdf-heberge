@@ -2,10 +2,13 @@
 # Build depuis la RACINE du monorepo :
 #   docker build -f apps/api/Dockerfile -t adherents-api .
 
-FROM node:22-slim AS build
-ENV PNPM_HOME=/pnpm PATH=$PNPM_HOME:$PATH
+FROM node:26-slim AS build
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
 # openssl requis par les moteurs Prisma
-RUN corepack enable && apt-get update -y \
+# corepack n'est plus livré avec Node ≥ 25 : on l'installe via npm pour que la
+# version de pnpm reste pilotée par le champ packageManager du package.json racine
+RUN npm install -g corepack && corepack enable && apt-get update -y \
   && apt-get install -y --no-install-recommends openssl ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 WORKDIR /repo
@@ -27,7 +30,7 @@ RUN mkdir -p /app/node_modules \
   # "type":"module" à la racine de /app, Node l'interpréterait en CJS → SyntaxError au boot.
   && printf '{"type":"module"}' > /app/package.json
 
-FROM node:22-slim AS runtime
+FROM node:26-slim AS runtime
 RUN apt-get update -y \
   && apt-get install -y --no-install-recommends openssl ca-certificates \
   && rm -rf /var/lib/apt/lists/*
