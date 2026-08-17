@@ -53,7 +53,7 @@ export function Aide() {
           signe="promesse"
           title="Mes données personnelles"
           description="Accès, rectification, suppression de ton compte ou toute question sur l'usage de tes données : écris au délégué à la protection des données."
-          to={legal.dpoEmail}
+          to={legal.privacyContactEmail}
           subject={`[${eventConfig.appName}] Mes données personnelles`}
         />
         <Choice
