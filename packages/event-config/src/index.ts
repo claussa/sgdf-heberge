@@ -50,11 +50,12 @@ const EventConfigSchema = z.object({
     legalName: z.string().min(1),
     /** Forme juridique, ex. « association loi 1901 reconnue d'utilité publique » */
     legalForm: z.string().min(1),
-    siren: z.string().min(1),
-    ape: z.string().min(1),
+    /** null si l'éditeur ne publie pas la donnée */
+    siren: z.string().min(1).nullable(),
+    ape: z.string().min(1).nullable(),
     /** Adresse du siège social */
     address: z.string().min(1),
-    phone: z.string().min(1),
+    phone: z.string().min(1).nullable(),
     /** Mention légalement obligatoire — null tant que la personne n'est pas désignée */
     publicationDirector: z.string().min(1).nullable(),
     /** Contact général de la plateforme (distinct du contactEmail des emails) */
@@ -111,15 +112,18 @@ export const eventConfig = {
     { slug: 'paris', label: 'Paris', coords: { lat: 48.853, lng: 2.3499 } },
     { slug: 'metz', label: 'Metz', coords: { lat: 49.1203, lng: 6.1778 } },
   ],
+  // Le site est servi sur un sous-domaine de latoilescoute.net : l'éditeur est
+  // l'association LaToileScoute (cf. latoilescoute.net/droits-de-reproduction-et-mentions-1255).
+  // SGDF reste l'organisateur de l'événement et le responsable du traitement (DPO inchangé).
   legal: {
-    legalName: 'Scouts et Guides de France',
-    legalForm: "association loi 1901 reconnue d'utilité publique",
-    siren: '775 682 024',
-    ape: '9329Z',
-    address: 'Immeuble le Baudran – Bâtiment D, 21-37 rue de Stalingrad, 94110 Arcueil',
-    phone: '01 44 52 37 37',
-    // Président de l'association, comme sur sgdf.fr
-    publicationDirector: 'Charles Le Gac',
+    legalName: 'LaToileScoute',
+    legalForm: 'association loi 1901, déclarée le 7 mars 2006',
+    siren: null,
+    ape: null,
+    address: '22 avenue de la République, 78500 Sartrouville',
+    phone: null,
+    // Président de l'association LaToileScoute
+    publicationDirector: "Etienne Ménard, président de l'association LaToileScoute",
     contactEmail: 'auservicedupape@sgdf.fr',
     dpoEmail: 'dpo@sgdf.fr',
     helpCcEmail: 'aclauss@sgdf.fr',

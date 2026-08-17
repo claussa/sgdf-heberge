@@ -17,16 +17,26 @@ export function MentionsLegales() {
         <SectionTitle>Éditeur du site,</SectionTitle>
         <p>
           Le site <strong>{eventConfig.appName}</strong> — plateforme d'hébergement des volontaires
-          et participants pour l'événement « {eventConfig.name} » — est édité par :
+          et participants pour l'événement « {eventConfig.name} », organisé par{' '}
+          {eventConfig.organizer} — est édité par :
         </p>
         <p>
           <strong>{legal.legalName}</strong>, {legal.legalForm}
           <br />
           {legal.address}
-          <br />
-          SIREN : {legal.siren} — Code APE : {legal.ape}
-          <br />
-          Téléphone : {legal.phone}
+          {legal.siren && (
+            <>
+              <br />
+              SIREN : {legal.siren}
+              {legal.ape && <> — Code APE : {legal.ape}</>}
+            </>
+          )}
+          {legal.phone && (
+            <>
+              <br />
+              Téléphone : {legal.phone}
+            </>
+          )}
         </p>
         <p>
           Directeur de la publication : {legal.publicationDirector ?? 'en cours de désignation'}
@@ -53,10 +63,11 @@ export function MentionsLegales() {
       <section>
         <SectionTitle>Données personnelles,</SectionTitle>
         <p>
-          Le responsable du traitement est l'association {legal.legalName}. Les données sont
-          collectées pour le seul fonctionnement de la plateforme : création du compte et connexion
-          par lien email, mise en relation entre volontaires, participants et hébergeurs, jumelage
-          entre unités, et suivi de l'événement par les organisateurs.
+          Le responsable du traitement est l'association {eventConfig.organizer}, organisatrice de
+          l'événement. Les données sont collectées pour le seul fonctionnement de la plateforme :
+          création du compte et connexion par lien email, mise en relation entre volontaires,
+          participants et hébergeurs, jumelage entre unités, et suivi de l'événement par les
+          organisateurs.
         </p>
         <p>
           Données traitées : nom et prénom, adresse email, numéro de téléphone, adresse des
@@ -94,9 +105,9 @@ export function MentionsLegales() {
           Vous disposez d'un droit d'accès, de rectification, d'effacement, de portabilité,
           d'opposition et de limitation. Vous pouvez à tout moment exporter vos données ou supprimer
           votre compte depuis votre page de profil, ou contacter le délégué à la protection des
-          données : <a href={`mailto:${legal.dpoEmail}`}>{legal.dpoEmail}</a> ou par courrier à
-          l'adresse du siège. Vous pouvez également introduire une réclamation auprès de la CNIL
-          (www.cnil.fr).
+          données : <a href={`mailto:${legal.dpoEmail}`}>{legal.dpoEmail}</a> ou par courrier :{' '}
+          {eventConfig.organizer}, {eventConfig.organizerAddress}. Vous pouvez également introduire
+          une réclamation auprès de la CNIL (www.cnil.fr).
         </p>
       </section>
 
@@ -115,8 +126,10 @@ export function MentionsLegales() {
         <SectionTitle>Propriété intellectuelle,</SectionTitle>
         <p>
           L'ensemble du site (structure, textes, illustrations, logos) est protégé par le droit de
-          la propriété intellectuelle. Les marques et logos {legal.legalName} sont la propriété de
-          l'association. Toute reproduction sans autorisation préalable est interdite.
+          la propriété intellectuelle. Les marques et logos {eventConfig.organizer} sont la
+          propriété de l'association {eventConfig.organizer} ; le nom et le logo {legal.legalName}{' '}
+          sont la propriété de l'association {legal.legalName}. Toute reproduction sans autorisation
+          préalable est interdite.
         </p>
       </section>
     </div>
