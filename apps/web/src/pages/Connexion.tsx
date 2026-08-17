@@ -52,7 +52,8 @@ function AutresRoutes({ variant }: { variant: 'hero' | 'panel' }) {
 /**
  * Écran de connexion (A.1) : panneau hero bleu (textes de eventConfig) + formulaire
  * magic link. Desktop = proposition 1c (chemin des autres routes en bas du bleu) ;
- * mobile = proposition 4a (deux écrans aimantés : accroche, puis connexion et chemin).
+ * mobile = proposition 4a (deux écrans aimantés : accroche, puis connexion et chemin) ;
+ * logos = proposition 6a (le logo événement vit dans la barre, aucun logo ici).
  * Gère `?error=lien-invalide` (callback API) et redirige si déjà connecté.
  */
 export function Connexion() {
@@ -81,11 +82,6 @@ export function Connexion() {
   return (
     <div className="connexion fade">
       <div className="connexion__hero">
-        <img
-          src={assetUrl(eventConfig.assets.logoVertical)}
-          alt={eventConfig.organizer}
-          className="connexion__hero-logo"
-        />
         <div className="connexion__hero-spacer" />
         <p className="connexion__hero-title">{eventConfig.hero.title}</p>
         <p className="connexion__hero-text">{eventConfig.hero.text}</p>
@@ -109,11 +105,6 @@ export function Connexion() {
       </div>
       <div className="connexion__panel" ref={panelRef}>
         <form className="connexion__form" onSubmit={onSubmit}>
-          <img
-            src={assetUrl(eventConfig.assets.logoEvent)}
-            alt={eventConfig.name}
-            className="connexion__event-logo"
-          />
           <PageTitle>Connecte-toi en un clic,</PageTitle>
           <p className="text-body">
             On t’envoie un lien de connexion. Pas de mot de passe à retenir, pas de compte à créer

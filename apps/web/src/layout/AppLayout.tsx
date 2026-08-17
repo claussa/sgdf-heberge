@@ -15,8 +15,9 @@ function displayNameOf(me: Me): string | null {
 }
 
 /**
- * Chrome global (A.0) : header desktop (logo, wordmark, nav, avatar), header
- * mobile (symbole, titre d'écran, avatar) et bottom nav mobile. Le contenu de la
+ * Chrome global (A.0, logos — maquette « Connexion - propositions » 6a/6b) :
+ * header desktop (logo événement, wordmark, nav, avatar), header mobile
+ * (logo événement, titre d'écran, avatar) et bottom nav mobile. Le contenu de la
  * route s'affiche dans <Outlet /> ; /connexion est rendu sans padding.
  */
 export function AppLayout() {
@@ -32,8 +33,8 @@ export function AppLayout() {
     <div className="frame">
       <header className="header-desktop">
         <img
-          src={assetUrl(eventConfig.assets.logoHorizontal)}
-          alt={eventConfig.organizer}
+          src={assetUrl(eventConfig.assets.logoEvent)}
+          alt={eventConfig.name}
           className="header-desktop__logo"
         />
         <div className="header-desktop__wordmark">
@@ -70,8 +71,8 @@ export function AppLayout() {
 
       <header className="header-mobile">
         <img
-          src={assetUrl(eventConfig.assets.logoSymbole)}
-          alt={eventConfig.organizer}
+          src={assetUrl(eventConfig.assets.logoEvent)}
+          alt={eventConfig.name}
           className="header-mobile__logo"
         />
         <span className="header-mobile__title">{screenTitle(pathname)}</span>

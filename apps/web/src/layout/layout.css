@@ -26,8 +26,8 @@
 }
 
 .header-desktop__logo {
-  height: 38px;
-  margin: 12px 0;
+  height: 46px;
+  margin: 7px 0;
 }
 
 .header-desktop__wordmark {
@@ -107,8 +107,9 @@
   border-bottom: 1px solid var(--bordure);
 }
 
+/* Logo événement portrait (177 × 336) : 36px de haut pour rester lisible */
 .header-mobile__logo {
-  height: 28px;
+  height: 36px;
 }
 
 .header-mobile__title {

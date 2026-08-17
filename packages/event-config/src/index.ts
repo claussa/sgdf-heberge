@@ -80,11 +80,12 @@ const EventConfigSchema = z.object({
   }),
   /** Branches proposées au profil des unités scoutes (spécifique à l'organisateur) */
   unitBranches: z.array(z.string().min(1)).min(1),
-  /** Noms de fichiers dans apps/web/src/assets/ */
+  /**
+   * Noms de fichiers dans apps/web/src/assets/. Seule marque visible : le logo
+   * de l'événement (maquette « Connexion - propositions » 6a/6b — aucun logo de
+   * mouvement à l'écran, l'organisateur n'est cité qu'en toutes lettres en pied).
+   */
   assets: z.object({
-    logoHorizontal: z.string(),
-    logoSymbole: z.string(),
-    logoVertical: z.string(),
     logoEvent: z.string(),
     favicon: z.string(),
   }),
@@ -155,9 +156,6 @@ export const eventConfig = {
     'Groupe',
   ],
   assets: {
-    logoHorizontal: 'sgdf-horizontal-blue.png',
-    logoSymbole: 'sgdf-symbole-blue.png',
-    logoVertical: 'sgdf-vertical-white.png',
     logoEvent: 'pape-leon-xiv-france-2026.png',
     favicon: 'favicon.svg',
   },
