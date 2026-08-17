@@ -10,7 +10,7 @@ Les décisions techniques sont dans [CLAUDE.md](./CLAUDE.md) — le lire avant t
 modification. Le cadrage fonctionnel et la maquette de référence sont dans
 [docs/design/](./docs/design/) (rapport écran par écran + maquette hi-fi).
 
-**Stack** : pnpm workspaces + Turborepo · Node 22 · Hono + `@hono/zod-openapi` (spec 3.1) ·
+**Stack** : pnpm workspaces + Turborepo · Node 26 · Hono + `@hono/zod-openapi` (spec 3.1) ·
 Zod v4 · Prisma 6 + chiffrement champ (`prisma-field-encryption`) · PostgreSQL 16 ·
 React + Vite + react-router + TanStack Query (RPC Hono typé, zéro codegen) ·
 Vitest + Testcontainers · Biome · Terraform (Scaleway).
@@ -26,7 +26,9 @@ Pour un autre événement : modifier ce fichier, remplacer les images de
 
 ## Démarrage local
 
-Prérequis : Node 22, pnpm 10 (`corepack enable`), Docker.
+Prérequis : Node 26, pnpm 10, Docker. Corepack n'est plus livré avec Node ≥ 25 :
+`npm install -g corepack && corepack enable` (la version de pnpm reste pilotée par
+le champ `packageManager` du `package.json` racine).
 
 ```bash
 pnpm install
