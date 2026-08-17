@@ -408,3 +408,22 @@ export async function promoteAdmin(db: Db, emailInput: string) {
   })
   return toAdminUser(row)
 }
+
+/**
+ * Rétrogradation (role → USER). Se rétrograder soi-même est interdit — ça
+ * garantit au passage qu'il reste toujours au moins un admin. CAS sur le rôle :
+ * cible inconnue ou déjà rétrogradée → 404. Une coquille rétrogradée redevient
+ * une coquille ordinaire, purgée à 7 j par le job quotidien.
+ */
+export async function demoteAdmin(db: Db, currentAdminId: string, targetId: string): Promise<void> {
+  if (targetId === currentAdminId) {
+    throw new AppError('CONFLICT', 'Impossible de se retirer ses propres droits administrateur')
+  }
+  const demoted = await db.user.updateMany({
+    where: { id: targetId, role: 'ADMIN' },
+    data: { role: 'USER' },
+  })
+  if (demoted.count === 0) {
+    throw new AppError('NOT_FOUND', 'Administrateur introuvable')
+  }
+}

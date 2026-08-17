@@ -15,6 +15,7 @@ import { type AuthVariables, requireAdmin, requireAuth } from '../middleware/aut
 import {
   createInstitutionalListing,
   deleteInstitutionalListing,
+  demoteAdmin,
   getMetrics,
   listAdmins,
   listInstitutionalListings,
@@ -189,6 +190,34 @@ const promoteAdminRoute = createRoute({
   },
 })
 
+const demoteAdminRoute = createRoute({
+  method: 'delete',
+  path: '/admin/admins/{id}',
+  tags: ['admin'],
+  summary: 'Retirer les droits administrateur (role → USER)',
+  description:
+    'Se rétrograder soi-même est refusé (409) — il reste donc toujours au moins ' +
+    'un admin. Le compte redevient un compte ordinaire, il n’est pas supprimé.',
+  middleware: [requireAuth, requireAdmin] as const,
+  request: { params: idParam },
+  responses: {
+    200: {
+      description: 'Droits retirés',
+      content: { 'application/json': { schema: OkResponseSchema } },
+    },
+    401: error401,
+    403: error403,
+    404: {
+      description: 'Administrateur introuvable',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    409: {
+      description: 'Auto-rétrogradation refusée',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+})
+
 export const adminRouter = new OpenAPIHono<{ Variables: AuthVariables }>()
   .openapi(metricsRoute, async (c) => {
     const metrics = await getMetrics(getDb())
@@ -221,4 +250,8 @@ export const adminRouter = new OpenAPIHono<{ Variables: AuthVariables }>()
   .openapi(promoteAdminRoute, async (c) => {
     const admin = await promoteAdmin(getDb(), c.req.valid('json').email)
     return c.json(AdminUserSchema.parse(admin), 200)
+  })
+  .openapi(demoteAdminRoute, async (c) => {
+    await demoteAdmin(getDb(), c.get('user').id, c.req.valid('param').id)
+    return c.json(OkResponseSchema.parse({ ok: true }), 200)
   })

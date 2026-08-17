@@ -1136,4 +1136,22 @@ describe('Gestion des administrateurs', () => {
     })
     expect(remaining.map((u) => u.id)).toEqual([promotedId])
   })
+
+  it('rétrogradation : 403 non-admin, 409 sur soi-même, effective sinon, 404 ensuite', async () => {
+    expect((await req('DELETE', `/admin/admins/${ids.marie}`, cookies.nancy)).status).toBe(403)
+
+    // Se retirer ses propres droits est refusé — il reste toujours un admin.
+    const self = await req('DELETE', `/admin/admins/${ids.admin}`, cookies.admin)
+    expect(self.status).toBe(409)
+    expect(await errorCode(self)).toBe('CONFLICT')
+
+    // Marie (promue plus haut) perd ses droits : sa session ouverte ne suffit plus.
+    expect((await req('GET', '/admin/metrics', cookies.marie)).status).toBe(200)
+    expect((await req('DELETE', `/admin/admins/${ids.marie}`, cookies.admin)).status).toBe(200)
+    expect((await req('GET', '/admin/metrics', cookies.marie)).status).toBe(403)
+
+    // Déjà rétrogradée → 404 (CAS sur le rôle), idem id inconnu.
+    expect((await req('DELETE', `/admin/admins/${ids.marie}`, cookies.admin)).status).toBe(404)
+    expect((await req('DELETE', '/admin/admins/inconnu', cookies.admin)).status).toBe(404)
+  })
 })
