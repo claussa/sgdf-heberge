@@ -11,6 +11,7 @@
  * logements PRIVATE inaccessibles par ces routes.
  */
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { runDailyJob } from '../../src/jobs/daily'
 import { contactLimiter } from '../../src/routes/jumelage'
 import {
   extractToken,
@@ -1045,5 +1046,94 @@ describe('admin', () => {
 
     // Comptes : 2 individuels (Marie, l'admin), 5 unités, aucune coquille.
     expect(body.users).toEqual({ individuals: 2, units: 5, shells: 0 })
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Gestion des administrateurs — /admin/admins (page /admin/administrateurs)
+// ---------------------------------------------------------------------------
+
+describe('Gestion des administrateurs', () => {
+  it('routes refusées aux non-admins (403 FORBIDDEN)', async () => {
+    for (const res of [
+      await req('GET', '/admin/admins', cookies.nancy),
+      await req('POST', '/admin/admins', cookies.nancy, { email: 'x@example.org' }),
+    ]) {
+      expect(res.status).toBe(403)
+      expect(await errorCode(res)).toBe('FORBIDDEN')
+    }
+  })
+
+  it("liste l'admin seedé, avec nom et e-mail déchiffré", async () => {
+    const res = await req('GET', '/admin/admins', cookies.admin)
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as { items: Array<Record<string, unknown>> }
+    expect(body.items).toHaveLength(1)
+    expect(body.items[0]).toMatchObject({
+      id: ids.admin,
+      email: 'admin@example.org',
+      firstName: 'Ana',
+      lastName: 'Dupont',
+      accountType: 'INDIVIDUAL',
+    })
+  })
+
+  it('promeut un compte existant (e-mail normalisé), accès admin immédiat sur sa session ouverte', async () => {
+    expect((await req('GET', '/admin/metrics', cookies.marie)).status).toBe(403)
+
+    // Casse normalisée par le service (le trim, lui, est fait par le front : z.email() le refuse)
+    const res = await req('POST', '/admin/admins', cookies.admin, { email: 'Marie@Example.org' })
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as { id: string; accountType: string | null }
+    expect(body.id).toBe(ids.marie)
+    expect(body.accountType).toBe('INDIVIDUAL')
+
+    // Le rôle est relu à chaque requête : la session existante suffit.
+    expect((await req('GET', '/admin/metrics', cookies.marie)).status).toBe(200)
+  })
+
+  it('e-mail inconnu : coquille ADMIN sans doublon, admin dès la première connexion', async () => {
+    const res = await req('POST', '/admin/admins', cookies.admin, { email: 'futur@example.org' })
+    expect(res.status).toBe(200)
+    const created = (await res.json()) as { id: string; email: string; accountType: string | null }
+    expect(created.email).toBe('futur@example.org')
+    expect(created.accountType).toBeNull()
+
+    // Idempotent : re-promouvoir renvoie le même compte, sans doublon en liste.
+    const again = await req('POST', '/admin/admins', cookies.admin, { email: 'futur@example.org' })
+    expect(again.status).toBe(200)
+    expect(((await again.json()) as { id: string }).id).toBe(created.id)
+    const list = (await (await req('GET', '/admin/admins', cookies.admin)).json()) as {
+      items: Array<{ id: string }>
+    }
+    expect(list.items.filter((a) => a.id === created.id)).toHaveLength(1)
+
+    const cookie = await loginAs('futur@example.org')
+    expect((await req('GET', '/admin/metrics', cookie)).status).toBe(200)
+  })
+
+  it('la purge des coquilles épargne un admin promu jamais connecté', async () => {
+    const res = await req('POST', '/admin/admins', cookies.admin, {
+      email: 'purge-admin@example.org',
+    })
+    const promotedId = ((await res.json()) as { id: string }).id
+    // Coquille USER témoin de même ancienneté : elle doit partir, pas l'admin.
+    const witness = await t.db.user.create({
+      data: { email: 'purge-user@example.org' },
+      select: { id: true },
+    })
+    const backdated = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000)
+    await t.db.user.updateMany({
+      where: { id: { in: [promotedId, witness.id] } },
+      data: { createdAt: backdated },
+    })
+
+    const summary = await runDailyJob()
+    expect(summary.shellsPurged).toBe(1)
+    const remaining = await t.db.user.findMany({
+      where: { id: { in: [promotedId, witness.id] } },
+      select: { id: true },
+    })
+    expect(remaining.map((u) => u.id)).toEqual([promotedId])
   })
 })

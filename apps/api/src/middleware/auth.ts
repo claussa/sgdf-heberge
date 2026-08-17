@@ -51,7 +51,7 @@ export function requireAccountType(type: AccountType) {
   })
 }
 
-/** À empiler APRÈS requireAuth. role=ADMIN posé en seed/SQL uniquement (plan v1). */
+/** À empiler APRÈS requireAuth. Premier admin en seed/SQL, puis promotion par e-mail (/admin/admins). */
 export const requireAdmin = createMiddleware<{ Variables: AuthVariables }>(async (c, next) => {
   if (c.get('user').role !== 'ADMIN') {
     throw new AppError('FORBIDDEN', 'Réservé aux administrateurs')

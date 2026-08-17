@@ -37,6 +37,9 @@ export function Admin() {
       <Link to="/admin/logements" className="ja-link">
         Gérer les logements institutionnels →
       </Link>
+      <Link to="/admin/administrateurs" className="ja-link">
+        Gérer les administrateurs →
+      </Link>
       {sites.map((site) => (
         <Card key={site.site} className="ja-card-stack">
           <SectionTitle>{siteLabel(site.site)},</SectionTitle>
