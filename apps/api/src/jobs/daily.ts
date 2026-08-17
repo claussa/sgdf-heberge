@@ -243,8 +243,11 @@ export async function runDailyJob(now = new Date()): Promise<DailyJobSummary> {
   // (3) PURGE DES COQUILLES (arbitrage 13) — magic link demandé mais onboarding jamais
   // fait ET aucune session (un clic sur le lien crée une session → conservé). La
   // suppression libère le slot emailHash ; cascade sur tokens/usages.
+  // role=USER : une coquille promue admin (promoteAdmin) attend sa première
+  // connexion et ne doit pas être purgée.
   const shells = await db.user.deleteMany({
     where: {
+      role: 'USER',
       accountType: null,
       sessions: { none: {} },
       createdAt: { lt: new Date(now.getTime() - SHELL_RETENTION_MS) },

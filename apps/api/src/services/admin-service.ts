@@ -1,5 +1,6 @@
 import type { AdminListingUpsertSchema } from '@repo/contracts'
-import type { Db, ListingCategory, Prisma, RequestStatus } from '@repo/db'
+import type { Db, ListingCategory, RequestStatus } from '@repo/db'
+import { normalizeEmail, Prisma } from '@repo/db'
 import { renderRequestCancelledEmail } from '@repo/emails'
 import { eventConfig } from '@repo/event-config'
 import type { z } from 'zod'
@@ -339,5 +340,90 @@ export async function getMetrics(db: Db) {
       // Coquilles : magic link demandé, onboarding jamais terminé.
       shells: users(null),
     },
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Gestion des administrateurs (page /admin/administrateurs)
+// ---------------------------------------------------------------------------
+
+/** Select explicite (§5) — l'e-mail n'est servi qu'aux admins, route protégée. */
+const ADMIN_USER_SELECT = {
+  id: true,
+  email: true,
+  firstName: true,
+  lastName: true,
+  accountType: true,
+  createdAt: true,
+} as const satisfies Prisma.UserSelect
+
+type AdminUserRow = Prisma.UserGetPayload<{ select: typeof ADMIN_USER_SELECT }>
+
+function toAdminUser(row: AdminUserRow) {
+  return { ...row, createdAt: row.createdAt.toISOString() }
+}
+
+export async function listAdmins(db: Db) {
+  const rows = await db.user.findMany({
+    where: { role: 'ADMIN' },
+    select: ADMIN_USER_SELECT,
+    orderBy: { createdAt: 'asc' },
+  })
+  return rows.map(toAdminUser)
+}
+
+/**
+ * Promotion par e-mail. Si l'adresse est inconnue, crée une coquille role=ADMIN
+ * (accountType null) : la personne devient admin dès sa première connexion par
+ * magic link — même schéma de création que requestMagicLink (findFirst → create →
+ * re-findFirst sur course P2002 emailHash ; pas d'upsert avec l'extension de
+ * chiffrement). Idempotent : re-promouvoir un admin renvoie simplement sa fiche.
+ * NB : une coquille promue n'est pas purgée à 7 j (le job ne purge que role=USER).
+ */
+export async function promoteAdmin(db: Db, emailInput: string) {
+  const email = normalizeEmail(emailInput)
+  const select = { id: true, role: true } as const
+
+  let user = await db.user.findFirst({ where: { email }, select })
+  if (!user) {
+    try {
+      user = await db.user.create({ data: { email, role: 'ADMIN' }, select })
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        user = await db.user.findFirst({ where: { email }, select })
+      } else {
+        throw error
+      }
+    }
+  }
+  if (!user) throw new AppError('INTERNAL', 'Création du compte impossible')
+
+  if (user.role !== 'ADMIN') {
+    await db.user.update({ where: { id: user.id }, data: { role: 'ADMIN' } })
+  }
+
+  const row = await db.user.findUniqueOrThrow({
+    where: { id: user.id },
+    select: ADMIN_USER_SELECT,
+  })
+  return toAdminUser(row)
+}
+
+/**
+ * Rétrogradation (role → USER). Se rétrograder soi-même est interdit — ça
+ * garantit au passage qu'il reste toujours au moins un admin. CAS sur le rôle :
+ * cible inconnue ou déjà rétrogradée → 404. Une coquille rétrogradée redevient
+ * une coquille ordinaire, purgée à 7 j par le job quotidien.
+ */
+export async function demoteAdmin(db: Db, currentAdminId: string, targetId: string): Promise<void> {
+  if (targetId === currentAdminId) {
+    throw new AppError('CONFLICT', 'Impossible de se retirer ses propres droits administrateur')
+  }
+  const demoted = await db.user.updateMany({
+    where: { id: targetId, role: 'ADMIN' },
+    data: { role: 'USER' },
+  })
+  if (demoted.count === 0) {
+    throw new AppError('NOT_FOUND', 'Administrateur introuvable')
   }
 }

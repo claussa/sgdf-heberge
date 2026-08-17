@@ -623,3 +623,22 @@ export const AdminListingUpsertSchema = z.object({
   accessibilityNotes: z.string().max(1000).nullish(),
   parkingEase: ParkingEaseSchema.nullish(),
 })
+
+/**
+ * Compte administrateur vu par la page /admin/administrateurs. L'e-mail n'est
+ * servi qu'aux admins (route protégée) — jamais sur une réponse publique.
+ */
+export const AdminUserSchema = z.object({
+  id: z.string(),
+  email: z.email(),
+  firstName: z.string().nullable(),
+  lastName: z.string().nullable(),
+  /** null = coquille : promu avant sa première connexion */
+  accountType: AccountTypeSchema.nullable(),
+  createdAt: z.iso.datetime(),
+})
+export type AdminUser = z.infer<typeof AdminUserSchema>
+
+export const AdminUsersResponseSchema = z.object({ items: z.array(AdminUserSchema) })
+
+export const AdminPromoteSchema = z.object({ email: z.email().max(320) })

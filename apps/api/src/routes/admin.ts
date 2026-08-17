@@ -4,6 +4,9 @@ import {
   AdminListingsResponseSchema,
   AdminListingUpsertSchema,
   AdminMetricsSchema,
+  AdminPromoteSchema,
+  AdminUserSchema,
+  AdminUsersResponseSchema,
   ErrorResponseSchema,
   OkResponseSchema,
 } from '@repo/contracts'
@@ -12,14 +15,18 @@ import { type AuthVariables, requireAdmin, requireAuth } from '../middleware/aut
 import {
   createInstitutionalListing,
   deleteInstitutionalListing,
+  demoteAdmin,
   getMetrics,
+  listAdmins,
   listInstitutionalListings,
+  promoteAdmin,
   updateInstitutionalListing,
 } from '../services/admin-service'
 
 /**
- * Espace admin (arbitrage 8 du plan v1) : métriques par site + CRUD des logements
- * institutionnels. role=ADMIN posé en seed/SQL uniquement, aucune UI de promotion.
+ * Espace admin (arbitrage 8 du plan v1) : métriques par site, CRUD des logements
+ * institutionnels, et gestion des administrateurs (le premier admin est posé en
+ * seed/SQL ; les suivants sont promus par e-mail depuis /admin/administrateurs).
  */
 
 const error401 = {
@@ -145,6 +152,72 @@ const deleteListingRoute = createRoute({
   },
 })
 
+const listAdminsRoute = createRoute({
+  method: 'get',
+  path: '/admin/admins',
+  tags: ['admin'],
+  summary: 'Liste des administrateurs',
+  middleware: [requireAuth, requireAdmin] as const,
+  responses: {
+    200: {
+      description: 'Administrateurs',
+      content: { 'application/json': { schema: AdminUsersResponseSchema } },
+    },
+    401: error401,
+    403: error403,
+  },
+})
+
+const promoteAdminRoute = createRoute({
+  method: 'post',
+  path: '/admin/admins',
+  tags: ['admin'],
+  summary: 'Promouvoir un compte administrateur par e-mail',
+  description:
+    'Compte existant : passe role=ADMIN. E-mail inconnu : crée une coquille ADMIN, ' +
+    'la personne devient admin à sa première connexion par magic link. Idempotent.',
+  middleware: [requireAuth, requireAdmin] as const,
+  request: {
+    body: { content: { 'application/json': { schema: AdminPromoteSchema } }, required: true },
+  },
+  responses: {
+    200: {
+      description: 'Compte administrateur (promu ou déjà admin)',
+      content: { 'application/json': { schema: AdminUserSchema } },
+    },
+    401: error401,
+    403: error403,
+  },
+})
+
+const demoteAdminRoute = createRoute({
+  method: 'delete',
+  path: '/admin/admins/{id}',
+  tags: ['admin'],
+  summary: 'Retirer les droits administrateur (role → USER)',
+  description:
+    'Se rétrograder soi-même est refusé (409) — il reste donc toujours au moins ' +
+    'un admin. Le compte redevient un compte ordinaire, il n’est pas supprimé.',
+  middleware: [requireAuth, requireAdmin] as const,
+  request: { params: idParam },
+  responses: {
+    200: {
+      description: 'Droits retirés',
+      content: { 'application/json': { schema: OkResponseSchema } },
+    },
+    401: error401,
+    403: error403,
+    404: {
+      description: 'Administrateur introuvable',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    409: {
+      description: 'Auto-rétrogradation refusée',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+})
+
 export const adminRouter = new OpenAPIHono<{ Variables: AuthVariables }>()
   .openapi(metricsRoute, async (c) => {
     const metrics = await getMetrics(getDb())
@@ -168,5 +241,17 @@ export const adminRouter = new OpenAPIHono<{ Variables: AuthVariables }>()
   })
   .openapi(deleteListingRoute, async (c) => {
     await deleteInstitutionalListing(getDb(), c.req.valid('param').id)
+    return c.json(OkResponseSchema.parse({ ok: true }), 200)
+  })
+  .openapi(listAdminsRoute, async (c) => {
+    const items = await listAdmins(getDb())
+    return c.json(AdminUsersResponseSchema.parse({ items }), 200)
+  })
+  .openapi(promoteAdminRoute, async (c) => {
+    const admin = await promoteAdmin(getDb(), c.req.valid('json').email)
+    return c.json(AdminUserSchema.parse(admin), 200)
+  })
+  .openapi(demoteAdminRoute, async (c) => {
+    await demoteAdmin(getDb(), c.get('user').id, c.req.valid('param').id)
     return c.json(OkResponseSchema.parse({ ok: true }), 200)
   })

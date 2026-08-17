@@ -106,7 +106,8 @@ model User {
   /// le type est choisi à la première connexion (écran Inscription). Purgé à 7 j
   /// par le job quotidien s'il n'a ni type ni session.
   accountType AccountType?
-  /// ADMIN posé en seed/SQL uniquement — aucune UI de promotion (décision plan v1)
+  /// Premier ADMIN posé en seed/SQL ; les suivants promus par e-mail depuis
+  /// /admin/administrateurs (une coquille promue n'est pas purgée à 7 j)
   role        Role         @default(USER)
 
   /// @pii — en clair : tri alphabétique et recherche « commence par » du back-office (§6)

@@ -4,6 +4,7 @@ import { RequireAdmin, RequireAuth, RequireOnboarded } from './guards'
 import { AppLayout } from './layout/AppLayout'
 import { useAnalyticsIdentity } from './lib/hooks'
 import { Admin } from './pages/Admin'
+import { AdminAdmins } from './pages/AdminAdmins'
 import { AdminLogements } from './pages/AdminLogements'
 import { Aide } from './pages/Aide'
 import { Connexion } from './pages/Connexion'
@@ -78,6 +79,7 @@ export function App() {
           <Route element={<RequireAdmin />}>
             <Route path="/admin" element={<Admin />} />
             <Route path="/admin/logements" element={<AdminLogements />} />
+            <Route path="/admin/administrateurs" element={<AdminAdmins />} />
           </Route>
         </Route>
         {/* Chemin inconnu : le dispatcher renvoie vers l'écran pertinent */}
