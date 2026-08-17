@@ -4,9 +4,10 @@ import { PageTitle, SectionTitle } from '../ui'
 const { legal } = eventConfig
 
 /**
- * Mentions légales (LCEN art. 6 III) + information RGPD (art. 12-14) sur une
- * seule page — pas de politique de confidentialité séparée pour un run de
- * 2 mois. Tout ce qui est propre à l'organisme vient de eventConfig.legal.
+ * Mentions légales + information RGPD (art. 12-14) sur une seule page — pas de
+ * politique de confidentialité séparée pour un run de 2 mois. Textes issus de la
+ * « Proposition mentions légales » de la coordination ; tout ce qui est propre à
+ * l'événement vient de eventConfig.legal.
  */
 export function MentionsLegales() {
   return (
@@ -17,32 +18,19 @@ export function MentionsLegales() {
         <SectionTitle>Éditeur du site,</SectionTitle>
         <p>
           Le site <strong>{eventConfig.appName}</strong> — plateforme d'hébergement des volontaires
-          et participants pour l'événement « {eventConfig.name} », organisé par{' '}
-          {eventConfig.organizer} — est édité par :
+          et participants pour l'événement « {eventConfig.name} » — {legal.editorIntro}
         </p>
+        {legal.editorParagraphs.map((paragraph) => (
+          <p key={paragraph}>{paragraph}</p>
+        ))}
         <p>
-          <strong>{legal.legalName}</strong>, {legal.legalForm}
-          <br />
-          {legal.address}
-          {legal.siren && (
-            <>
-              <br />
-              SIREN : {legal.siren}
-              {legal.ape && <> — Code APE : {legal.ape}</>}
-            </>
-          )}
-          {legal.phone && (
-            <>
-              <br />
-              Téléphone : {legal.phone}
-            </>
-          )}
-        </p>
-        <p>
-          Directeur de la publication : {legal.publicationDirector ?? 'en cours de désignation'}
-        </p>
-        <p>
-          Contact : <a href={`mailto:${legal.contactEmail}`}>{legal.contactEmail}</a>
+          Contacts :{' '}
+          {legal.contactEmails.map((email, i) => (
+            <span key={email}>
+              {i > 0 && ' — '}
+              <a href={`mailto:${email}`}>{email}</a>
+            </span>
+          ))}
         </p>
       </section>
 
@@ -63,11 +51,9 @@ export function MentionsLegales() {
       <section>
         <SectionTitle>Données personnelles,</SectionTitle>
         <p>
-          Le responsable du traitement est l'association {eventConfig.organizer}, organisatrice de
-          l'événement. Les données sont collectées pour le seul fonctionnement de la plateforme :
-          création du compte et connexion par lien email, mise en relation entre volontaires,
-          participants et hébergeurs, jumelage entre unités, et suivi de l'événement par les
-          organisateurs.
+          Les données sont collectées pour le seul fonctionnement de la plateforme : création du
+          compte et connexion par lien email, mise en relation entre volontaires, participants et
+          hébergeurs, jumelage entre unités, et suivi de l'événement par les organisateurs.
         </p>
         <p>
           Données traitées : nom et prénom, adresse email, numéro de téléphone, adresse des
@@ -99,15 +85,14 @@ export function MentionsLegales() {
         <p>
           Durées de conservation : les demandes sans réponse expirent au bout de 7 jours ; les
           comptes jamais activés sont supprimés après 7 jours ; l'ensemble des données de la
-          plateforme est définitivement supprimé au plus tard 30 jours après la fin de l'événement.
+          plateforme est définitivement supprimé au plus tard {legal.dataDeletionDeadline}.
         </p>
         <p>
           Vous disposez d'un droit d'accès, de rectification, d'effacement, de portabilité,
           d'opposition et de limitation. Vous pouvez à tout moment exporter vos données ou supprimer
-          votre compte depuis votre page de profil, ou contacter le délégué à la protection des
-          données : <a href={`mailto:${legal.dpoEmail}`}>{legal.dpoEmail}</a> ou par courrier :{' '}
-          {eventConfig.organizer}, {eventConfig.organizerAddress}. Vous pouvez également introduire
-          une réclamation auprès de la CNIL (www.cnil.fr).
+          votre compte depuis votre page de profil, ou contacter :{' '}
+          <a href={`mailto:${legal.privacyContactEmail}`}>{legal.privacyContactEmail}</a>. Vous
+          pouvez également introduire une réclamation auprès de la CNIL (www.cnil.fr).
         </p>
       </section>
 
@@ -127,9 +112,7 @@ export function MentionsLegales() {
         <p>
           L'ensemble du site (structure, textes, illustrations, logos) est protégé par le droit de
           la propriété intellectuelle. Les marques et logos {eventConfig.organizer} sont la
-          propriété de l'association {eventConfig.organizer} ; le nom et le logo {legal.legalName}{' '}
-          sont la propriété de l'association {legal.legalName}. Toute reproduction sans autorisation
-          préalable est interdite.
+          propriété de l'association. Toute reproduction sans autorisation préalable est interdite.
         </p>
       </section>
     </div>

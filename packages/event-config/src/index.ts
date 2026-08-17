@@ -44,21 +44,19 @@ const EventConfigSchema = z.object({
   /** Adresse postale de l'organisateur — pied de page des emails (délivrabilité/anti-spam) */
   organizerAddress: z.string().min(1),
   hero: z.object({ title: z.string().min(1), text: z.string().min(1) }),
-  /** Mentions légales (page /mentions-legales) — propre à l'organisme éditeur */
+  /** Mentions légales (page /mentions-legales) — textes propres à l'événement */
   legal: z.object({
-    /** Raison sociale de l'éditeur */
-    legalName: z.string().min(1),
-    /** Forme juridique, ex. « association loi 1901 reconnue d'utilité publique » */
-    legalForm: z.string().min(1),
-    /** null si l'éditeur ne publie pas la donnée */
-    siren: z.string().min(1).nullable(),
-    ape: z.string().min(1).nullable(),
-    /** Adresse du siège social */
-    address: z.string().min(1),
-    phone: z.string().min(1).nullable(),
-    /** Mention légalement obligatoire — null tant que la personne n'est pas désignée */
-    publicationDirector: z.string().min(1).nullable(),
-    /** Contact général de la plateforme (distinct du contactEmail des emails) */
+    /** Fin de la 1re phrase du bloc « Éditeur du site », après « — » (l'intro appName/événement est dans la page) */
+    editorIntro: z.string().min(1),
+    /** Paragraphes suivants du bloc « Éditeur du site » (pilotage, site jetable, DNS…) */
+    editorParagraphs: z.array(z.string().min(1)).min(1),
+    /** Emails listés en « Contacts : » sur la page mentions légales */
+    contactEmails: z.array(z.email()).min(1),
+    /** Date limite de destruction du site et de ses données, ex. « le 31 octobre 2026 » */
+    dataDeletionDeadline: z.string().min(1),
+    /** Contact pour l'exercice des droits RGPD */
+    privacyContactEmail: z.email(),
+    /** Contact général de la plateforme (page « Besoin d'aide ? ») */
     contactEmail: z.email(),
     dpoEmail: z.email(),
     /** Mis en copie des mailto de la page « Besoin d'aide ? » — null pour désactiver */
@@ -112,18 +110,19 @@ export const eventConfig = {
     { slug: 'paris', label: 'Paris', coords: { lat: 48.853, lng: 2.3499 } },
     { slug: 'metz', label: 'Metz', coords: { lat: 49.1203, lng: 6.1778 } },
   ],
-  // Le site est servi sur un sous-domaine de latoilescoute.net : l'éditeur est
-  // l'association LaToileScoute (cf. latoilescoute.net/droits-de-reproduction-et-mentions-1255).
-  // SGDF reste l'organisateur de l'événement et le responsable du traitement (DPO inchangé).
+  // Textes repris de la « Proposition mentions légales » validée par la coordination :
+  // pas d'éditeur juridique classique — site jetable piloté par la coordination nationale
+  // Au Service du Pape (SGDF), DNS fournies par LaToileScoute.
   legal: {
-    legalName: 'LaToileScoute',
-    legalForm: 'association loi 1901, déclarée le 7 mars 2006',
-    siren: null,
-    ape: null,
-    address: '22 avenue de la République, 78500 Sartrouville',
-    phone: null,
-    // Président de l'association LaToileScoute
-    publicationDirector: "Etienne Ménard, président de l'association LaToileScoute",
+    editorIntro: "est mis en œuvre dans le cadre de l'événement de la venue du Pape à Paris.",
+    editorParagraphs: [
+      'Il est piloté par la coordination nationale Au Service du Pape des Scouts et Guides de France dans le cadre de la visite apostolique entre les 25 et 28 septembre 2026.',
+      "C'est un site « jetable » : produit rapidement, pour être détruit, ainsi que l'ensemble de ses données associées, au plus tard le 31 octobre 2026, dans le seul but de faciliter l'hébergement aux participants et volontaires de cet événement, par la commission chargée du sujet, coordonnée par Sébastien FAYS.",
+      "Les DNS sont fournies par l'association LaToileScoute qui apporte gracieusement son soutien technique dans cette mise en œuvre rapide et provisoire.",
+    ],
+    contactEmails: ['auservicedupape@sgdf.fr', 'contact@latoilescoute.net', 'sfays@sgdf.fr'],
+    dataDeletionDeadline: 'le 31 octobre 2026',
+    privacyContactEmail: 'sfays@sgdf.fr',
     contactEmail: 'auservicedupape@sgdf.fr',
     dpoEmail: 'dpo@sgdf.fr',
     helpCcEmail: 'aclauss@sgdf.fr',
