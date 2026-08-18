@@ -74,12 +74,14 @@ describe('Profil volontaire — « Et si besoin »', () => {
     expect(await screen.findByRole('button', { name: 'Proposer aussi un logement' })).toBeTruthy()
   })
 
-  it('ne le propose plus quand l’hébergeur a déjà un logement', async () => {
+  it('ne le propose plus quand l’hébergeur a déjà un logement — la carte transport reste', async () => {
     profil = { ...ME, hasListings: true }
     rendre('/profil', <ProfilVolontaire />)
     await screen.findByRole('button', { name: 'Enregistrer et rechercher' })
-    expect(screen.queryByText('Et si besoin')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Proposer aussi un logement' })).toBeNull()
+    // La section « Et si besoin » reste : elle porte la carte vers /transport
+    expect(screen.getByText('Et si besoin')).toBeTruthy()
+    expect(screen.getByRole('link', { name: /Le transport, c’est par ici/ })).toBeTruthy()
   })
 })
 
@@ -111,12 +113,14 @@ describe('Profil hébergeur — « Et si besoin »', () => {
     ).toBeTruthy()
   })
 
-  it('ne le propose plus quand l’espace volontaire est déjà ouvert', async () => {
+  it('ne le propose plus quand l’espace volontaire est déjà ouvert — la carte transport reste', async () => {
     rendre('/hebergeur', <ProfilHebergeur />)
     await screen.findByRole('button', { name: 'Créer mon premier logement' })
-    expect(screen.queryByText('Et si besoin')).toBeNull()
     expect(
       screen.queryByRole('button', { name: 'Chercher aussi un logement, ailleurs' }),
     ).toBeNull()
+    // La section « Et si besoin » reste : elle porte la carte vers /transport
+    expect(screen.getByText('Et si besoin')).toBeTruthy()
+    expect(screen.getByRole('link', { name: /Le transport, c’est par ici/ })).toBeTruthy()
   })
 })
