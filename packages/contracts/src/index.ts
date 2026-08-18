@@ -338,7 +338,14 @@ export const MyListingSchema = ListingDetailSchema.extend({
 })
 export type MyListing = z.infer<typeof MyListingSchema>
 
-export const ListingUpsertSchema = z.object({
+/**
+ * Au moins une nuit : la fin doit être STRICTEMENT après le début (from === to serait
+ * un séjour de zéro nuit). Comparaison lexicographique, correcte pour l'ISO.
+ * Appliqué aux schémas d'ENTRÉE uniquement — jamais aux schémas de réponse.
+ */
+const NUIT_MINIMUM = 'La date de fin doit être après la date de début (au moins une nuit).'
+
+const listingUpsertFields = z.object({
   site: SiteSchema,
   availableFrom: z.iso.date(),
   availableTo: z.iso.date(),
@@ -349,6 +356,11 @@ export const ListingUpsertSchema = z.object({
   accessibilityNotes: z.string().max(INPUT_LIMITS.accessibilityNotes).nullish(),
   parkingEase: ParkingEaseSchema.nullish(),
 })
+
+export const ListingUpsertSchema = listingUpsertFields.refine(
+  (v) => v.availableFrom < v.availableTo,
+  { error: NUIT_MINIMUM, path: ['availableTo'] },
+)
 export type ListingUpsertInput = z.infer<typeof ListingUpsertSchema>
 
 /**
@@ -357,7 +369,9 @@ export type ListingUpsertInput = z.infer<typeof ListingUpsertSchema>
  * une description). Si le site change sans nouvelle adresse, la distance est remise à
  * null (les coordonnées ne sont pas stockées).
  */
-export const ListingUpdateSchema = ListingUpsertSchema.partial({ address: true })
+export const ListingUpdateSchema = listingUpsertFields
+  .partial({ address: true })
+  .refine((v) => v.availableFrom < v.availableTo, { error: NUIT_MINIMUM, path: ['availableTo'] })
 export type ListingUpdateInput = z.infer<typeof ListingUpdateSchema>
 
 export const ListingStatusUpdateSchema = z.object({ status: ListingStatusSchema })
@@ -377,25 +391,30 @@ export type SearchType = z.infer<typeof SearchTypeSchema>
 const queryArray = <T extends z.ZodType>(item: T) =>
   z.preprocess((v) => (typeof v === 'string' ? [v] : v), z.array(item)).optional()
 
-export const ListingSearchQuerySchema = z.object({
-  site: SiteSchema,
-  from: z.iso.date().optional(),
-  to: z.iso.date().optional(),
-  /** Filtre `capacity >= people` — même borne que `RequestCreateSchema.peopleCount`. */
-  people: z.coerce
-    .number()
-    .int()
-    .min(INPUT_LIMITS.people.min)
-    .max(INPUT_LIMITS.people.max)
-    .optional(),
-  types: queryArray(SearchTypeSchema),
-  /** Slugs d'accessibilité exigés (filtre « compatibles avec mes besoins ») */
-  access: queryArray(AccessCriterionSchema),
-  /** Facilité de stationnement MINIMALE exigée (MEDIUM = facile ou moyen) */
-  parking: ParkingEaseSchema.optional(),
-  page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce.number().int().min(1).max(60).default(24),
-})
+export const ListingSearchQuerySchema = z
+  .object({
+    site: SiteSchema,
+    from: z.iso.date().optional(),
+    to: z.iso.date().optional(),
+    /** Filtre `capacity >= people` — même borne que `RequestCreateSchema.peopleCount`. */
+    people: z.coerce
+      .number()
+      .int()
+      .min(INPUT_LIMITS.people.min)
+      .max(INPUT_LIMITS.people.max)
+      .optional(),
+    types: queryArray(SearchTypeSchema),
+    /** Slugs d'accessibilité exigés (filtre « compatibles avec mes besoins ») */
+    access: queryArray(AccessCriterionSchema),
+    /** Facilité de stationnement MINIMALE exigée (MEDIUM = facile ou moyen) */
+    parking: ParkingEaseSchema.optional(),
+    page: z.coerce.number().int().min(1).default(1),
+    pageSize: z.coerce.number().int().min(1).max(60).default(24),
+  })
+  .refine((v) => v.from === undefined || v.to === undefined || v.from < v.to, {
+    error: NUIT_MINIMUM,
+    path: ['to'],
+  })
 
 export const ListingSearchResponseSchema = z.object({
   items: z.array(ListingCardSchema),
@@ -422,12 +441,14 @@ export const AdminListingsResponseSchema = z.object({ items: z.array(AdminListin
 // Demandes d'hébergement
 // ---------------------------------------------------------------------------
 
-export const RequestCreateSchema = z.object({
-  dateFrom: z.iso.date(),
-  dateTo: z.iso.date(),
-  peopleCount: z.number().int().min(INPUT_LIMITS.people.min).max(INPUT_LIMITS.people.max),
-  message: z.string().min(INPUT_LIMITS.requestMessage.min).max(INPUT_LIMITS.requestMessage.max),
-})
+export const RequestCreateSchema = z
+  .object({
+    dateFrom: z.iso.date(),
+    dateTo: z.iso.date(),
+    peopleCount: z.number().int().min(INPUT_LIMITS.people.min).max(INPUT_LIMITS.people.max),
+    message: z.string().min(INPUT_LIMITS.requestMessage.min).max(INPUT_LIMITS.requestMessage.max),
+  })
+  .refine((v) => v.dateFrom < v.dateTo, { error: NUIT_MINIMUM, path: ['dateTo'] })
 export type RequestCreateInput = z.infer<typeof RequestCreateSchema>
 
 export const RequestMessageCreateSchema = z.object({
@@ -546,17 +567,19 @@ export const JumelageAdSchema = z.object({
 })
 export type JumelageAd = z.infer<typeof JumelageAdSchema>
 
-export const JumelageAdUpsertSchema = z.object({
-  kind: JumelageKindSchema,
-  site: SiteSchema,
-  dateFrom: z.iso.date(),
-  dateTo: z.iso.date(),
-  peopleLabel: z
-    .string()
-    .min(INPUT_LIMITS.jumelagePeopleLabel.min)
-    .max(INPUT_LIMITS.jumelagePeopleLabel.max),
-  description: z.string().max(INPUT_LIMITS.jumelageDescription).nullish(),
-})
+export const JumelageAdUpsertSchema = z
+  .object({
+    kind: JumelageKindSchema,
+    site: SiteSchema,
+    dateFrom: z.iso.date(),
+    dateTo: z.iso.date(),
+    peopleLabel: z
+      .string()
+      .min(INPUT_LIMITS.jumelagePeopleLabel.min)
+      .max(INPUT_LIMITS.jumelagePeopleLabel.max),
+    description: z.string().max(INPUT_LIMITS.jumelageDescription).nullish(),
+  })
+  .refine((v) => v.dateFrom < v.dateTo, { error: NUIT_MINIMUM, path: ['dateTo'] })
 
 export const MyJumelageAdSchema = JumelageAdSchema.extend({
   status: z.enum(['ACTIVE', 'WITHDRAWN']),
@@ -660,27 +683,29 @@ export const AdminMetricsSchema = z.object({
   }),
 })
 
-export const AdminListingUpsertSchema = z.object({
-  category: z.enum(['HOTEL', 'COLLECTIVE', 'SCOUT_BASE']),
-  site: SiteSchema,
-  title: z.string().min(INPUT_LIMITS.adminTitle.min).max(INPUT_LIMITS.adminTitle.max),
-  description: z.string().max(INPUT_LIMITS.description).nullish(),
-  address: AddressInputSchema,
-  capacity: z
-    .number()
-    .int()
-    .min(INPUT_LIMITS.adminCapacity.min)
-    .max(INPUT_LIMITS.adminCapacity.max),
-  priceInfo: z.string().max(INPUT_LIMITS.adminPriceInfo).nullish(),
-  /** Badge « Payant » sur la carte de recherche — même sans priceInfo */
-  isPaid: z.boolean().default(false),
-  bookingUrl: z.url().max(INPUT_LIMITS.adminBookingUrl).nullish(),
-  availableFrom: z.iso.date(),
-  availableTo: z.iso.date(),
-  access: AccessGridSchema,
-  accessibilityNotes: z.string().max(INPUT_LIMITS.accessibilityNotes).nullish(),
-  parkingEase: ParkingEaseSchema.nullish(),
-})
+export const AdminListingUpsertSchema = z
+  .object({
+    category: z.enum(['HOTEL', 'COLLECTIVE', 'SCOUT_BASE']),
+    site: SiteSchema,
+    title: z.string().min(INPUT_LIMITS.adminTitle.min).max(INPUT_LIMITS.adminTitle.max),
+    description: z.string().max(INPUT_LIMITS.description).nullish(),
+    address: AddressInputSchema,
+    capacity: z
+      .number()
+      .int()
+      .min(INPUT_LIMITS.adminCapacity.min)
+      .max(INPUT_LIMITS.adminCapacity.max),
+    priceInfo: z.string().max(INPUT_LIMITS.adminPriceInfo).nullish(),
+    /** Badge « Payant » sur la carte de recherche — même sans priceInfo */
+    isPaid: z.boolean().default(false),
+    bookingUrl: z.url().max(INPUT_LIMITS.adminBookingUrl).nullish(),
+    availableFrom: z.iso.date(),
+    availableTo: z.iso.date(),
+    access: AccessGridSchema,
+    accessibilityNotes: z.string().max(INPUT_LIMITS.accessibilityNotes).nullish(),
+    parkingEase: ParkingEaseSchema.nullish(),
+  })
+  .refine((v) => v.availableFrom < v.availableTo, { error: NUIT_MINIMUM, path: ['availableTo'] })
 
 /**
  * Compte administrateur vu par la page /admin/administrateurs. L'e-mail n'est

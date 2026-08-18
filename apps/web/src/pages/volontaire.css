@@ -53,8 +53,8 @@
   flex-wrap: wrap;
 }
 
-.recherche__date {
-  width: 150px;
+.recherche__dates {
+  min-width: 150px;
 }
 
 .recherche__nombre {

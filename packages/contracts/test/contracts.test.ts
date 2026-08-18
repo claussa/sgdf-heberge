@@ -176,6 +176,31 @@ describe('requêtes', () => {
     ).toThrow()
   })
 
+  it('au moins une nuit : from === to ou inversé est rejeté sur les schémas d’entrée', () => {
+    const demande = { peopleCount: 2, message: 'Bonjour !' }
+    // Séjour d'un jour
+    expect(() =>
+      RequestCreateSchema.parse({ ...demande, dateFrom: '2026-09-26', dateTo: '2026-09-26' }),
+    ).toThrow()
+    // Dates inversées
+    expect(() =>
+      RequestCreateSchema.parse({ ...demande, dateFrom: '2026-09-28', dateTo: '2026-09-26' }),
+    ).toThrow()
+    // Une nuit : valide
+    expect(
+      RequestCreateSchema.parse({ ...demande, dateFrom: '2026-09-26', dateTo: '2026-09-27' })
+        .dateTo,
+    ).toBe('2026-09-27')
+
+    // Recherche : rejet seulement si les deux bornes sont présentes et incohérentes
+    expect(() =>
+      ListingSearchQuerySchema.parse({ site: 'paris', from: '2026-09-26', to: '2026-09-26' }),
+    ).toThrow()
+    expect(ListingSearchQuerySchema.parse({ site: 'paris', from: '2026-09-26' }).from).toBe(
+      '2026-09-26',
+    )
+  })
+
   it('admin : un logement institutionnel exige une catégorie non PRIVATE', () => {
     expect(() =>
       AdminListingUpsertSchema.parse({

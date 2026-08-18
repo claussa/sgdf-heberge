@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router'
 import { api } from '../lib/api'
 import {
   Button,
+  DateRangePicker,
   Field,
   FieldGroup,
   HelpText,
@@ -118,26 +119,17 @@ function UniteAnnonceForm({ ad }: { ad: MyJumelage['ad'] }) {
           </Select>
         </Field>
         <Field label="Dates">
-          <span className="field__pair">
-            <Input
-              type="date"
-              value={dateFrom}
-              onChange={(event) => setDateFrom(event.target.value)}
-              min={eventConfig.dates.inputMin}
-              max={eventConfig.dates.inputMax}
-              aria-label="Du"
-              required
-            />
-            <Input
-              type="date"
-              value={dateTo}
-              onChange={(event) => setDateTo(event.target.value)}
-              min={eventConfig.dates.inputMin}
-              max={eventConfig.dates.inputMax}
-              aria-label="Au"
-              required
-            />
-          </span>
+          <DateRangePicker
+            min={eventConfig.dates.inputMin}
+            max={eventConfig.dates.inputMax}
+            from={dateFrom}
+            to={dateTo}
+            onChange={({ from, to }) => {
+              setDateFrom(from)
+              setDateTo(to)
+            }}
+            ariaLabel="Dates du jumelage"
+          />
         </Field>
       </div>
       <Field label={seeking ? 'Nous serons' : 'Jusqu’à'}>

@@ -1,0 +1,100 @@
+/* DateRangePicker — bouton au look champ + popover react-day-picker habillé
+   aux tokens SGDF. Les défauts de la lib (style.css, scopé .rdp-root) sont
+   surchargés uniquement sous .drp. */
+
+.drp {
+  position: relative;
+  display: block;
+}
+
+.drp__trigger {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+  padding-right: 32px; /* place du chevron, comme .select */
+}
+
+.drp__trigger::after {
+  content: "▾";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--texte-secondaire);
+  pointer-events: none;
+  font: 400 14px var(--font-courant);
+}
+
+.drp__trigger:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+.drp__popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 30;
+  background: var(--blanc);
+  border: 1px solid var(--bordure-input);
+  padding: 8px;
+  max-width: calc(100vw - 32px);
+}
+
+/* Calendrier : charte SGDF (radius 0, bleu/orange, Sarabun) */
+.drp .rdp-root {
+  --rdp-accent-color: var(--bleu);
+  --rdp-accent-background-color: var(--fond-neutre);
+  --rdp-today-color: var(--orange);
+  --rdp-day-width: 36px;
+  --rdp-day-height: 36px;
+  --rdp-day_button-width: 34px;
+  --rdp-day_button-height: 34px;
+  --rdp-day_button-border-radius: 0;
+  --rdp-day_button-border: none;
+  --rdp-selected-border: none;
+  --rdp-nav_button-width: 28px;
+  --rdp-nav_button-height: 28px;
+  --rdp-nav-height: 32px;
+  font: 400 13px var(--font-courant);
+  color: var(--bleu);
+}
+
+/* La lib grossit les jours sélectionnés (font-size: large) — on garde la grille stable */
+.drp .rdp-selected {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+/* Bornes du range ET premier jour d'une sélection en cours (lone `from` : la lib ne
+   lui pose que .rdp-selected, sans .rdp-range_start) : carré bleu plein */
+.drp .rdp-selected:not(.rdp-range_middle) .rdp-day_button {
+  background: var(--bleu);
+  color: var(--blanc);
+}
+
+.drp .rdp-month_caption {
+  font: 700 13px var(--font-courant);
+  color: var(--bleu);
+  text-transform: capitalize;
+}
+
+.drp .rdp-weekday {
+  font: 700 11px var(--font-courant);
+  color: var(--label);
+  text-transform: uppercase;
+}
+
+.drp .rdp-disabled:not(.rdp-selected) {
+  opacity: 1;
+  color: var(--placeholder);
+}
+
+.drp .rdp-day_button:focus-visible,
+.drp .rdp-button_previous:focus-visible,
+.drp .rdp-button_next:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: calc(-1 * var(--focus-offset));
+}

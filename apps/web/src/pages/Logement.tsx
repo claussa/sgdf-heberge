@@ -11,11 +11,13 @@ import { type FormEvent, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 import { ACCESS_CRITERIA_LABELS } from '../lib/access-criteria'
 import { api } from '../lib/api'
+import { dateParamBorne } from '../lib/dates'
 import { useMe } from '../lib/hooks'
 import {
   Badge,
   Button,
   Card,
+  DateRangePicker,
   EmptyState,
   Field,
   HelpText,
@@ -31,14 +33,6 @@ import {
 } from '../ui'
 import { prenomDe, signeDe } from './volontaire-lib'
 import './volontaire.css'
-
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
-
-/** Prefill reporté par la recherche (?from&to&people), sinon défauts de l’événement. */
-function dateParam(parametres: URLSearchParams, cle: string, defaut: string): string {
-  const valeur = parametres.get(cle)
-  return valeur !== null && ISO_DATE.test(valeur) ? valeur : defaut
-}
 
 /** Prefill `?people=` reporté par la recherche ; hors bornes, on retombe sur le défaut. */
 function personnesParam(parametres: URLSearchParams, defaut: number): number {
@@ -96,10 +90,16 @@ function FicheLogement({ logement, me }: { logement: ListingDetail; me: Me }) {
     ...(logement.hostDisplayName === null ? [] : [`chez ${logement.hostDisplayName}`]),
   ].join(' · ')
 
+  const { inputMin, inputMax } = eventConfig.dates
   const prefill = {
-    dateFrom: dateParam(parametres, 'from', eventConfig.dates.start),
-    dateTo: dateParam(parametres, 'to', eventConfig.dates.end),
+    dateFrom: dateParamBorne(parametres, 'from', eventConfig.dates.start, inputMin, inputMax),
+    dateTo: dateParamBorne(parametres, 'to', eventConfig.dates.end, inputMin, inputMax),
     personnes: personnesParam(parametres, me.groupSize ?? 1),
+  }
+  // Au moins une nuit : from === to (séjour d'un jour) est invalide aussi
+  if (prefill.dateFrom >= prefill.dateTo) {
+    prefill.dateFrom = eventConfig.dates.start
+    prefill.dateTo = eventConfig.dates.end
   }
 
   return (
@@ -273,26 +273,17 @@ function PanneauDemande({
           <p className="fiche-logement__prix">{logement.priceInfo}</p>
         )}
         <Field label="Dates et personnes">
-          <span className="field__pair">
-            <Input
-              type="date"
-              min={eventConfig.dates.inputMin}
-              max={eventConfig.dates.inputMax}
-              value={dateFrom}
-              onChange={(event) => setDateFrom(event.target.value)}
-              aria-label="Arrivée"
-              required
-            />
-            <Input
-              type="date"
-              min={eventConfig.dates.inputMin}
-              max={eventConfig.dates.inputMax}
-              value={dateTo}
-              onChange={(event) => setDateTo(event.target.value)}
-              aria-label="Départ"
-              required
-            />
-          </span>
+          <DateRangePicker
+            min={eventConfig.dates.inputMin}
+            max={eventConfig.dates.inputMax}
+            from={dateFrom}
+            to={dateTo}
+            onChange={({ from, to }) => {
+              setDateFrom(from)
+              setDateTo(to)
+            }}
+            ariaLabel="Dates du séjour"
+          />
           <span className="fiche-logement__personnes">
             <Input
               type="number"
