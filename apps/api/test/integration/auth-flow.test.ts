@@ -3,7 +3,7 @@
  * expiration 10 min, plafond d'utilisations, invalidation des tokens précédents,
  * 302 vers une URL sans token, réponse identique pour un email inexistant,
  * rate limiting par email, comptes coquilles (« le lien crée ton compte »),
- * garde bounce et throttle d'émission en base, onboarding.
+ * garde bounce, throttle d'émission et cooldown de renvoi en base, onboarding.
  */
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
@@ -105,11 +105,25 @@ describe('demande de lien', () => {
 
   it("throttle d'émission en base : ≥ 3 tokens en 15 min → émission sautée (§8)", async () => {
     // Appel direct du service : le limiteur HTTP mémoire est par instance,
-    // ce throttle-ci est le plafond PARTAGÉ entre instances.
+    // ce throttle-ci est le plafond PARTAGÉ entre instances. Les `now` injectés
+    // sont espacés de 6 min pour franchir le cooldown de renvoi (les createdAt
+    // réels des tokens restent tous « à l'instant », donc dans la fenêtre de 15 min).
+    const t0 = Date.now()
+    const at = (min: number) => new Date(t0 + min * 60 * 1000)
     for (let i = 0; i < MAGIC_LINK_EMAIL_MAX_PER_WINDOW; i++) {
-      expect(await requestMagicLink(t.db, 'throttle@example.org')).not.toBeNull()
+      expect(await requestMagicLink(t.db, 'throttle@example.org', at(i * 6))).not.toBeNull()
     }
-    expect(await requestMagicLink(t.db, 'throttle@example.org')).toBeNull()
+    expect(await requestMagicLink(t.db, 'throttle@example.org', at(14))).toBeNull()
+  })
+
+  it('cooldown de renvoi : < 5 min après le précédent → émission sautée, ≥ 5 min → renvoi', async () => {
+    // Validation SERVEUR du compte à rebours affiché sur l'écran de connexion :
+    // même si le front est contourné, aucun second mail ne part avant 5 min.
+    const t0 = Date.now()
+    const at = (min: number) => new Date(t0 + min * 60 * 1000)
+    expect(await requestMagicLink(t.db, 'cooldown@example.org', at(0))).not.toBeNull()
+    expect(await requestMagicLink(t.db, 'cooldown@example.org', at(4))).toBeNull()
+    expect(await requestMagicLink(t.db, 'cooldown@example.org', at(6))).not.toBeNull()
   })
 
   it('adresse en bounce : plus AUCUN envoi (réputation, §8)', async () => {
@@ -195,6 +209,10 @@ describe('callback', () => {
   it('invalide les tokens précédents à chaque nouvelle demande (§9)', async () => {
     await requestLink('alice@example.org')
     const first = await lastEmailToken()
+    // Vieillit le premier token en base pour franchir le cooldown de renvoi (5 min)
+    await t.db.magicLinkToken.updateMany({
+      data: { createdAt: new Date(Date.now() - 6 * 60 * 1000) },
+    })
     await requestLink('alice@example.org')
     await vi.waitFor(() => expect(t.outbox.length).toBe(2))
     const second = await lastEmailToken()

@@ -64,6 +64,23 @@
   gap: 16px;
 }
 
+/* « Essayer avec un autre e-mail » (après le 2e envoi) — bouton nu stylé en lien */
+.connexion__autre-mail {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  align-self: center;
+  font: 400 14px / 1.5 var(--font-courant);
+  color: var(--lien);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.connexion__autre-mail:hover {
+  color: var(--bleu);
+}
+
 /* ---- Chemin des autres routes (maquette « Connexion - propositions », 1c/4a) ----
    Deux traitements du même contenu : --hero sur le panneau bleu (desktop),
    --panel sur fond blanc (mobile). Jalons posés sur un tracé pointillé vertical. */

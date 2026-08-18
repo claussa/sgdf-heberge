@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto'
+import { MAGIC_LINK_RESEND_COOLDOWN_SECONDS } from '@repo/contracts'
 import { type Db, normalizeEmail, Prisma } from '@repo/db'
 import { captureServerEvent } from '../lib/analytics'
 import { logger } from '../lib/logger'
@@ -18,6 +19,13 @@ export const MAGIC_LINK_MAX_USES = 5
  */
 export const MAGIC_LINK_EMAIL_WINDOW_MS = 15 * 60 * 1000
 export const MAGIC_LINK_EMAIL_MAX_PER_WINDOW = 3
+/**
+ * Cooldown de renvoi par email, adossé à la base : aucun nouveau lien tant que le
+ * précédent a moins de 5 min. C'est la validation côté serveur du compte à rebours
+ * affiché sur l'écran de connexion (constante partagée via @repo/contracts) — le
+ * timer front est cosmétique, cette garde-ci fait foi. Skip silencieux (§9).
+ */
+export const MAGIC_LINK_RESEND_COOLDOWN_MS = MAGIC_LINK_RESEND_COOLDOWN_SECONDS * 1000
 /** Session glissante : 90 jours d'inactivité. */
 export const SESSION_SLIDING_MS = 90 * 24 * 60 * 60 * 1000
 /** Plafond absolu : 6 mois après création, jamais repoussé. */
@@ -110,6 +118,19 @@ export async function requestMagicLink(
   if (user.emailStatus !== 'OK') {
     logger.info({ userId: user.id }, 'magic link non envoyé : adresse en bounce/plainte')
     captureServerEvent('magic_link_send_skipped', user.id, { reason: 'email_status' })
+    return null
+  }
+
+  // Cooldown de renvoi : le dernier lien doit avoir ≥ 5 min (validation serveur du
+  // compte à rebours affiché côté front). En base, donc cross-instance et infalsifiable.
+  const lastToken = await db.magicLinkToken.findFirst({
+    where: { userId: user.id },
+    orderBy: { createdAt: 'desc' },
+    select: { createdAt: true },
+  })
+  if (lastToken && now.getTime() - lastToken.createdAt.getTime() < MAGIC_LINK_RESEND_COOLDOWN_MS) {
+    logger.info({ userId: user.id }, 'magic link non envoyé : cooldown de renvoi')
+    captureServerEvent('magic_link_send_skipped', user.id, { reason: 'cooldown' })
     return null
   }
 

@@ -39,7 +39,8 @@ const requestMagicLinkRoute = createRoute({
   description:
     "Le lien crée le compte s'il n'existe pas (« coquille » : le type est choisi à la " +
     "première connexion). Réponse strictement identique que l'email existe ou non " +
-    '(anti-énumération). Le lien est valable 10 minutes.',
+    '(anti-énumération). Le lien est valable 10 minutes. Un renvoi demandé moins de ' +
+    '5 minutes après le précédent est ignoré silencieusement (cooldown côté serveur).',
   request: {
     body: {
       content: { 'application/json': { schema: MagicLinkRequestSchema } },
@@ -135,7 +136,8 @@ export const authRouter = new OpenAPIHono<{ Variables: AuthVariables }>()
     return c.json(
       MagicLinkRequestResponseSchema.parse({
         ok: true,
-        message: 'Le lien est parti ! Vérifie ta boîte mail : il est valable 10 minutes.',
+        message:
+          'Le lien est parti ! Vérifie ta boîte mail (et tes spams) : il est valable 10 minutes.',
       }),
       202,
     )
