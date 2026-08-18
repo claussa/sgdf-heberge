@@ -15,6 +15,31 @@ import { z } from 'zod'
 export { SiteSchema }
 
 // ---------------------------------------------------------------------------
+// Bornes de saisie
+// ---------------------------------------------------------------------------
+
+/** Bornes de saisie, partagées entre les schémas et les attributs des formulaires SPA. */
+export const INPUT_LIMITS = {
+  email: 320,
+  bedCount: { min: 1, max: 50 },
+  bedCapacity: { min: 1, max: 20 },
+  bedNote: 200,
+  beds: { min: 1, max: 20 },
+  description: 2000,
+  accessibilityNotes: 1000,
+  /** Profil (`groupSize`), filtre de recherche (`?people=`) et demande (`peopleCount`). */
+  people: { min: 1, max: 600 },
+  requestMessage: { min: 1, max: 2000 },
+  jumelagePeopleLabel: { min: 1, max: 80 },
+  jumelageDescription: 1000,
+  jumelageContactMessage: 1000,
+  adminTitle: { min: 1, max: 200 },
+  adminCapacity: { min: 1, max: 10000 },
+  adminPriceInfo: 120,
+  adminBookingUrl: 500,
+} as const
+
+// ---------------------------------------------------------------------------
 // Erreurs — format unique, déclaré dans le spec OpenAPI (§5)
 // ---------------------------------------------------------------------------
 
@@ -115,7 +140,7 @@ export type ParkingEase = z.infer<typeof ParkingEaseSchema>
 // ---------------------------------------------------------------------------
 
 export const MagicLinkRequestSchema = z.object({
-  email: z.email().max(320),
+  email: z.email().max(INPUT_LIMITS.email),
 })
 
 /**
@@ -172,7 +197,7 @@ const IndividualProfileFields = {
   firstName: z.string().min(1).max(100),
   lastName: z.string().min(1).max(100),
   phone: z.string().min(6).max(20),
-  groupSize: z.number().int().min(1).max(30).nullish(),
+  groupSize: z.number().int().min(INPUT_LIMITS.people.min).max(INPUT_LIMITS.people.max).nullish(),
   accessibilityNeeds: z.array(AccessCriterionSchema).max(8).optional(),
 }
 
@@ -237,9 +262,13 @@ export const UserExportSchema = z.object({
 
 export const BedInputSchema = z.object({
   type: BedTypeSchema,
-  count: z.number().int().min(1).max(50),
-  capacityEach: z.number().int().min(1).max(20),
-  note: z.string().max(200).nullish(),
+  count: z.number().int().min(INPUT_LIMITS.bedCount.min).max(INPUT_LIMITS.bedCount.max),
+  capacityEach: z
+    .number()
+    .int()
+    .min(INPUT_LIMITS.bedCapacity.min)
+    .max(INPUT_LIMITS.bedCapacity.max),
+  note: z.string().max(INPUT_LIMITS.bedNote).nullish(),
 })
 
 export const BedSchema = z.object({
@@ -313,11 +342,11 @@ export const ListingUpsertSchema = z.object({
   site: SiteSchema,
   availableFrom: z.iso.date(),
   availableTo: z.iso.date(),
-  description: z.string().max(2000).nullish(),
+  description: z.string().max(INPUT_LIMITS.description).nullish(),
   address: AddressInputSchema,
-  beds: z.array(BedInputSchema).min(1).max(20),
+  beds: z.array(BedInputSchema).min(INPUT_LIMITS.beds.min).max(INPUT_LIMITS.beds.max),
   access: AccessGridSchema,
-  accessibilityNotes: z.string().max(1000).nullish(),
+  accessibilityNotes: z.string().max(INPUT_LIMITS.accessibilityNotes).nullish(),
   parkingEase: ParkingEaseSchema.nullish(),
 })
 export type ListingUpsertInput = z.infer<typeof ListingUpsertSchema>
@@ -352,7 +381,13 @@ export const ListingSearchQuerySchema = z.object({
   site: SiteSchema,
   from: z.iso.date().optional(),
   to: z.iso.date().optional(),
-  people: z.coerce.number().int().min(1).max(30).optional(),
+  /** Filtre `capacity >= people` — même borne que `RequestCreateSchema.peopleCount`. */
+  people: z.coerce
+    .number()
+    .int()
+    .min(INPUT_LIMITS.people.min)
+    .max(INPUT_LIMITS.people.max)
+    .optional(),
   types: queryArray(SearchTypeSchema),
   /** Slugs d'accessibilité exigés (filtre « compatibles avec mes besoins ») */
   access: queryArray(AccessCriterionSchema),
@@ -390,13 +425,13 @@ export const AdminListingsResponseSchema = z.object({ items: z.array(AdminListin
 export const RequestCreateSchema = z.object({
   dateFrom: z.iso.date(),
   dateTo: z.iso.date(),
-  peopleCount: z.number().int().min(1).max(30),
-  message: z.string().min(1).max(2000),
+  peopleCount: z.number().int().min(INPUT_LIMITS.people.min).max(INPUT_LIMITS.people.max),
+  message: z.string().min(INPUT_LIMITS.requestMessage.min).max(INPUT_LIMITS.requestMessage.max),
 })
 export type RequestCreateInput = z.infer<typeof RequestCreateSchema>
 
 export const RequestMessageCreateSchema = z.object({
-  body: z.string().min(1).max(2000),
+  body: z.string().min(INPUT_LIMITS.requestMessage.min).max(INPUT_LIMITS.requestMessage.max),
 })
 
 export const RequestMessageSchema = z.object({
@@ -516,8 +551,11 @@ export const JumelageAdUpsertSchema = z.object({
   site: SiteSchema,
   dateFrom: z.iso.date(),
   dateTo: z.iso.date(),
-  peopleLabel: z.string().min(1).max(80),
-  description: z.string().max(1000).nullish(),
+  peopleLabel: z
+    .string()
+    .min(INPUT_LIMITS.jumelagePeopleLabel.min)
+    .max(INPUT_LIMITS.jumelagePeopleLabel.max),
+  description: z.string().max(INPUT_LIMITS.jumelageDescription).nullish(),
 })
 
 export const MyJumelageAdSchema = JumelageAdSchema.extend({
@@ -530,7 +568,7 @@ export const JumelageAdsResponseSchema = z.object({
 })
 
 export const JumelageContactCreateSchema = z.object({
-  message: z.string().max(1000).nullish(),
+  message: z.string().max(INPUT_LIMITS.jumelageContactMessage).nullish(),
 })
 
 /** Contact reçu sur notre annonce — coordonnées seulement si ACCEPTED */
@@ -625,18 +663,22 @@ export const AdminMetricsSchema = z.object({
 export const AdminListingUpsertSchema = z.object({
   category: z.enum(['HOTEL', 'COLLECTIVE', 'SCOUT_BASE']),
   site: SiteSchema,
-  title: z.string().min(1).max(200),
-  description: z.string().max(2000).nullish(),
+  title: z.string().min(INPUT_LIMITS.adminTitle.min).max(INPUT_LIMITS.adminTitle.max),
+  description: z.string().max(INPUT_LIMITS.description).nullish(),
   address: AddressInputSchema,
-  capacity: z.number().int().min(1).max(10000),
-  priceInfo: z.string().max(120).nullish(),
+  capacity: z
+    .number()
+    .int()
+    .min(INPUT_LIMITS.adminCapacity.min)
+    .max(INPUT_LIMITS.adminCapacity.max),
+  priceInfo: z.string().max(INPUT_LIMITS.adminPriceInfo).nullish(),
   /** Badge « Payant » sur la carte de recherche — même sans priceInfo */
   isPaid: z.boolean().default(false),
-  bookingUrl: z.url().max(500).nullish(),
+  bookingUrl: z.url().max(INPUT_LIMITS.adminBookingUrl).nullish(),
   availableFrom: z.iso.date(),
   availableTo: z.iso.date(),
   access: AccessGridSchema,
-  accessibilityNotes: z.string().max(1000).nullish(),
+  accessibilityNotes: z.string().max(INPUT_LIMITS.accessibilityNotes).nullish(),
   parkingEase: ParkingEaseSchema.nullish(),
 })
 
@@ -657,4 +699,4 @@ export type AdminUser = z.infer<typeof AdminUserSchema>
 
 export const AdminUsersResponseSchema = z.object({ items: z.array(AdminUserSchema) })
 
-export const AdminPromoteSchema = z.object({ email: z.email().max(320) })
+export const AdminPromoteSchema = z.object({ email: z.email().max(INPUT_LIMITS.email) })

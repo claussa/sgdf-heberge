@@ -1,4 +1,4 @@
-import type { JumelageKind } from '@repo/contracts'
+import { INPUT_LIMITS, JumelageAdUpsertSchema, type JumelageKind } from '@repo/contracts'
 import { eventConfig, type SiteSlug } from '@repo/event-config'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
@@ -45,23 +45,25 @@ function UniteAnnonceForm({ ad }: { ad: MyJumelage['ad'] }) {
   const [dateTo, setDateTo] = useState(ad?.dateTo ?? eventConfig.dates.end)
   const [peopleLabel, setPeopleLabel] = useState(ad?.peopleLabel ?? '')
   const [description, setDescription] = useState(ad?.description ?? '')
+  const [tenteEnvoi, setTenteEnvoi] = useState(false)
 
   // Édition = une annonce en ligne. Une annonce retirée se re-publie (même PUT).
   const isEdition = ad?.status === 'ACTIVE'
   const seeking = kind === 'SEEKING'
 
+  const corps = {
+    kind,
+    site,
+    dateFrom,
+    dateTo,
+    peopleLabel: peopleLabel.trim(),
+    description: description.trim() === '' ? null : description.trim(),
+  }
+  const annonce = JumelageAdUpsertSchema.safeParse(corps)
+
   const save = useMutation({
     mutationFn: async () => {
-      const res = await api.my.jumelage.ad.$put({
-        json: {
-          kind,
-          site,
-          dateFrom,
-          dateTo,
-          peopleLabel: peopleLabel.trim(),
-          description: description.trim() === '' ? null : description.trim(),
-        },
-      })
+      const res = await api.my.jumelage.ad.$put({ json: corps })
       if (res.status !== 200) throw new Error(`PUT /my/jumelage/ad : ${res.status}`)
     },
     onSuccess: () => {
@@ -73,8 +75,12 @@ function UniteAnnonceForm({ ad }: { ad: MyJumelage['ad'] }) {
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (!save.isPending) save.mutate()
+    setTenteEnvoi(true)
+    if (!save.isPending && annonce.success) save.mutate()
   }
+
+  const erreurSaisie =
+    tenteEnvoi && !annonce.success ? 'Vérifie les informations saisies avant de publier.' : null
 
   return (
     <form className="ja-col ja-col--560 fade" onSubmit={onSubmit}>
@@ -139,7 +145,7 @@ function UniteAnnonceForm({ ad }: { ad: MyJumelage['ad'] }) {
           value={peopleLabel}
           onChange={(event) => setPeopleLabel(event.target.value)}
           placeholder={seeking ? '18 jeunes + 3 chefs' : '30 personnes'}
-          maxLength={80}
+          maxLength={INPUT_LIMITS.jumelagePeopleLabel.max}
           required
         />
       </Field>
@@ -152,9 +158,10 @@ function UniteAnnonceForm({ ad }: { ad: MyJumelage['ad'] }) {
               ? 'Quelques lignes libres : notre service, notre tranche d’âge, ce que nous cherchons…'
               : 'Quelques lignes libres : notre local, notre tranche d’âge, ce que nous proposons…'
           }
-          maxLength={1000}
+          maxLength={INPUT_LIMITS.jumelageDescription}
         />
       </Field>
+      {erreurSaisie && <p className="alert-text">{erreurSaisie}</p>}
       {save.isError && (
         <p className="alert-text">
           Impossible d’enregistrer l’annonce. Vérifiez les dates, puis réessayez.

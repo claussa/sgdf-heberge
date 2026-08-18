@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
   AdminListingUpsertSchema,
+  INPUT_LIMITS,
   ListingCardSchema,
   ListingSearchQuerySchema,
   MagicLinkRequestSchema,
   OnboardingSchema,
+  ProfileUpdateSchema,
   RequestCreateSchema,
   RequestRequesterViewSchema,
   SiteSchema,
@@ -194,4 +196,25 @@ describe('requêtes', () => {
       }),
     ).toThrow()
   })
+})
+
+describe('profil, recherche et demande partagent la borne « nombre de personnes »', () => {
+  const { min, max } = INPUT_LIMITS.people
+  const points: [string, (v: number) => boolean][] = [
+    ['profil (groupSize)', (v) => ProfileUpdateSchema.safeParse({ groupSize: v }).success],
+    [
+      'recherche (people)',
+      (v) => ListingSearchQuerySchema.shape.people.safeParse(String(v)).success,
+    ],
+    ['demande (peopleCount)', (v) => RequestCreateSchema.shape.peopleCount.safeParse(v).success],
+  ]
+
+  for (const [nom, accepte] of points) {
+    it(`${nom} : accepte ${min}, accepte le plafond, refuse au-delà et en deçà`, () => {
+      expect(accepte(min)).toBe(true)
+      expect(accepte(max)).toBe(true)
+      expect(accepte(max + 1)).toBe(false)
+      expect(accepte(min - 1)).toBe(false)
+    })
+  }
 })

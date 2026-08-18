@@ -1,6 +1,8 @@
 import {
   ACCESS_CRITERIA,
+  INPUT_LIMITS,
   type ListingCard,
+  ListingSearchQuerySchema,
   type Me,
   PARKING_EASE,
   type ParkingEase,
@@ -134,33 +136,29 @@ function RechercheView({ me }: { me: Me }) {
     setParametres(suivant, { replace: true })
   }
 
-  const nbPersonnes = Number(personnes)
-  const personnesValide = Number.isInteger(nbPersonnes) && nbPersonnes >= 1
+  // Validée ici et non dans `majFiltres` : une URL partagée ne passe pas par le formulaire.
+  const query = {
+    site,
+    from: dateFrom || undefined,
+    to: dateTo || undefined,
+    people: personnes.trim() === '' ? undefined : personnes,
+    types: types.length > 0 ? types : undefined,
+    access: besoins && me.accessibilityNeeds.length > 0 ? me.accessibilityNeeds : undefined,
+    parking: parking ?? undefined,
+    pageSize: '60',
+  }
+  const filtres = ListingSearchQuerySchema.safeParse(query)
+  const erreurFiltres = filtres.success
+    ? null
+    : filtres.error.issues.some((issue) => issue.path[0] === 'people')
+      ? `Indique un nombre entier de personnes, entre ${INPUT_LIMITS.people.min} et ${INPUT_LIMITS.people.max}.`
+      : 'Ces filtres ne sont pas valides.'
 
   const recherche = useQuery({
-    queryKey: [
-      'listings',
-      site,
-      dateFrom,
-      dateTo,
-      personnes,
-      [...types].sort().join('+'),
-      besoins ? me.accessibilityNeeds.join('+') : '',
-      parking ?? '',
-    ],
+    queryKey: ['listings', query],
+    enabled: filtres.success,
     queryFn: async () => {
-      const res = await api.listings.$get({
-        query: {
-          site,
-          from: dateFrom || undefined,
-          to: dateTo || undefined,
-          people: personnesValide ? personnes : undefined,
-          types: types.length > 0 ? types : undefined,
-          access: besoins && me.accessibilityNeeds.length > 0 ? me.accessibilityNeeds : undefined,
-          parking: parking ?? undefined,
-          pageSize: '60',
-        },
-      })
+      const res = await api.listings.$get({ query })
       if (res.status !== 200) throw new Error(`GET /listings : ${res.status}`)
       return res.json()
     },
@@ -221,8 +219,8 @@ function RechercheView({ me }: { me: Me }) {
               type="number"
               uiSize="xs"
               className="recherche__nombre"
-              min={1}
-              max={30}
+              min={INPUT_LIMITS.people.min}
+              max={INPUT_LIMITS.people.max}
               value={personnes}
               onChange={(event) => majFiltres({ people: event.target.value })}
               aria-label="Nombre de personnes"
@@ -270,7 +268,9 @@ function RechercheView({ me }: { me: Me }) {
           </span>
         </div>
       </div>
-      {recherche.isError ? (
+      {erreurFiltres ? (
+        <p className="alert-text">{erreurFiltres}</p>
+      ) : recherche.isError ? (
         <p className="alert-text">La recherche a échoué. Réessaie dans un instant.</p>
       ) : resultats === undefined ? (
         <Loading />
