@@ -414,7 +414,7 @@ describe('recherche', () => {
     expect(ids(hotels.items)).not.toContain(scoutBaseId)
 
     const bases = await search({ site: 'paris', types: ['SCOUT_BASE'] })
-    expect(ids(bases.items)).toContain(scoutBaseId) // chip Base scout → catégorie
+    expect(ids(bases.items)).toContain(scoutBaseId) // chip Base scoute → catégorie
     expect(ids(bases.items)).not.toContain(hotelId)
     expect(ids(bases.items)).not.toContain(coversId)
 

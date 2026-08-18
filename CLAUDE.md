@@ -13,7 +13,7 @@ public potentiel ~100 000 personnes). Trois parcours : volontaire ou participant
 demandes, max 3 en attente, expiration 7 j), hébergeur (offres à couchages typés, grille
 accessibilité, accepter/question/refuser), unité scoute (jumelage : pure mise en relation,
 échange de coordonnées). Admin : métriques par site + logements institutionnels
-(hôtels → lien externe ; gymnases → flux de demande standard ; bases scout →
+(hôtels → lien externe ; gymnases → flux de demande standard ; bases scoutes →
 lien de réservation optionnel : avec lien, comportement hôtel, sans lien, comportement gymnase).
 Durée de run prévue : **2 mois**, avec un pic de trafic prévisible.
 

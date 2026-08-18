@@ -316,6 +316,7 @@ async function main() {
       availableTo: d('2026-09-29'),
       capacity: 40,
       priceInfo: '45 € · code PAPE15',
+      isPaid: true,
       bookingUrl: 'https://ibis.example.com/nation',
       accessPmr: true,
       accessTransport: true,
@@ -358,6 +359,8 @@ async function main() {
       availableTo: d('2026-09-29'),
       capacity: 80,
       priceInfo: '5 € la nuit',
+      // Payante sans lien ni code : le badge « Payant » vient de la checkbox admin.
+      isPaid: true,
       accessFewSteps: true,
       accessQuiet: true,
     },

@@ -56,6 +56,7 @@ const CARD_SELECT = {
   availableFrom: true,
   availableTo: true,
   priceInfo: true,
+  isPaid: true,
   parkingEase: true,
   ...ACCESS_SELECT,
   beds: { select: BED_SELECT },
@@ -120,6 +121,7 @@ function toCard(row: CardRow) {
     parkingEase: row.parkingEase,
     bedTypes: [...new Set(row.beds.map((bed) => bed.type))],
     priceInfo: row.priceInfo,
+    isPaid: row.isPaid,
   }
 }
 

@@ -724,7 +724,7 @@ const gymBody = {
   parkingEase: 'MEDIUM',
 }
 
-// Base scout SANS lien de réservation — le lien est optionnel pour cette catégorie.
+// Base scoute SANS lien de réservation — le lien est optionnel pour cette catégorie.
 const scoutBaseBody = {
   category: 'SCOUT_BASE',
   site: 'paris',
@@ -739,6 +739,8 @@ const scoutBaseBody = {
   },
   capacity: 60,
   priceInfo: '5 € / nuit',
+  // Payante sans lien ni code : le badge « Payant » vient de la checkbox admin.
+  isPaid: true,
   availableFrom: '2026-09-25',
   availableTo: '2026-09-28',
   access: {
@@ -777,6 +779,8 @@ describe('admin', () => {
       displayArea: 'Paris 12e', // dérivée du code postal BAN
       capacity: 40,
       priceInfo: '45 € · code PAPE15',
+      // Absent du corps : le badge « Payant » n'est pas déduit de la catégorie.
+      isPaid: false,
       bookingUrl: 'https://hotel.example.com/pape',
       addressFull: '18 avenue du Trône, 75012 Paris',
       // Absent du corps : la jauge de stationnement reste « non renseigné ».
@@ -864,7 +868,7 @@ describe('admin', () => {
     expect(((await reset.json()) as { parkingEase: string | null }).parkingEase).toBeNull()
   })
 
-  it('création d’une base scout SANS lien : flux de demande standard, pas de booking-click', async () => {
+  it('création d’une base scoute SANS lien : flux de demande standard, pas de booking-click', async () => {
     const res = await req('POST', '/admin/listings', cookies.admin, scoutBaseBody)
     expect(res.status).toBe(201)
     const body = (await res.json()) as Record<string, unknown>
@@ -872,6 +876,7 @@ describe('admin', () => {
       category: 'SCOUT_BASE',
       title: 'Base scoute de Vincennes',
       capacity: 60,
+      isPaid: true,
       bookingUrl: null,
       bookingClicks: 0,
     })
@@ -882,7 +887,7 @@ describe('admin', () => {
     expect(click.status).toBe(404)
   })
 
-  it('base scout AVEC lien (ajouté au PATCH) : comportement hôtel, clics comptés', async () => {
+  it('base scoute AVEC lien (ajouté au PATCH) : comportement hôtel, clics comptés', async () => {
     const patch = await req('PATCH', `/admin/listings/${scoutBaseId}`, cookies.admin, {
       ...scoutBaseBody,
       bookingUrl: 'https://base.example.com/reservation',
