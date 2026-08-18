@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { Navigate, useNavigate, useSearchParams } from 'react-router'
 import { AccountActions } from '../components/AccountActions'
+import { TransportLink } from '../components/TransportLink'
 import { ACCESS_CRITERIA_LABELS } from '../lib/access-criteria'
 import { api } from '../lib/api'
 import { useMe, useSetMe } from '../lib/hooks'
@@ -153,10 +154,10 @@ function ProfilVolontaireForm({ me }: { me: Me }) {
       >
         Enregistrer et rechercher
       </Button>
+      <hr className="divider" />
+      <span className="field__label">Et si besoin</span>
       {!isPremiere && !me.hasListings && (
         <>
-          <hr className="divider" />
-          <span className="field__label">Et si besoin</span>
           <Button
             variant="secondary"
             style={{ alignSelf: 'flex-start' }}
@@ -169,6 +170,7 @@ function ProfilVolontaireForm({ me }: { me: Me }) {
           </HelpText>
         </>
       )}
+      <TransportLink />
       <AccountActions />
     </form>
   )

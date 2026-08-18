@@ -19,32 +19,45 @@ import {
 } from '../ui'
 
 /**
- * Chemin des autres routes (« Tu cherches autre chose ? ») — liens externes de
- * eventConfig.otherRoutes. Deux traitements (maquette Connexion - propositions) :
- * `hero` sur le panneau bleu (desktop, 1c) et `panel` sur fond blanc (mobile, 4a).
+ * Chemin des autres routes (« Tu cherches autre chose ? ») — liens de
+ * eventConfig.otherRoutes : externes (nouvel onglet) ou internes à la SPA
+ * (chemin commençant par « / », ex. /transport). Deux traitements (maquette
+ * Connexion - propositions) : `hero` sur le panneau bleu (desktop, 1c) et
+ * `panel` sur fond blanc (mobile, 4a).
  */
 function AutresRoutes({ variant }: { variant: 'hero' | 'panel' }) {
   return (
     <div className={`routes routes--${variant}`}>
       <p className="routes__title">{eventConfig.otherRoutes.title}</p>
       <div className="routes__chemin">
-        {eventConfig.otherRoutes.links.map((link) => (
-          <a
-            key={link.href}
-            href={link.href}
-            target="_blank"
-            rel="noopener"
-            className="routes__link"
-          >
-            <span className="routes__signe-box">
-              <SigneMask name={link.signe as SigneName} className="routes__signe" />
-            </span>
-            <span className="routes__text">
-              <span className="routes__label">{link.label}</span>
-              <span className="routes__desc">{link.description}</span>
-            </span>
-          </a>
-        ))}
+        {eventConfig.otherRoutes.links.map((link) => {
+          const content = (
+            <>
+              <span className="routes__signe-box">
+                <SigneMask name={link.signe as SigneName} className="routes__signe" />
+              </span>
+              <span className="routes__text">
+                <span className="routes__label">{link.label}</span>
+                <span className="routes__desc">{link.description}</span>
+              </span>
+            </>
+          )
+          return link.href.startsWith('/') ? (
+            <Link key={link.href} to={link.href} className="routes__link">
+              {content}
+            </Link>
+          ) : (
+            <a
+              key={link.href}
+              href={link.href}
+              target="_blank"
+              rel="noopener"
+              className="routes__link"
+            >
+              {content}
+            </a>
+          )
+        })}
       </div>
     </div>
   )

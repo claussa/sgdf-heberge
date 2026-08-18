@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router'
 import { AccountActions } from '../components/AccountActions'
+import { TransportLink } from '../components/TransportLink'
 import { api } from '../lib/api'
 import { useMe, useSetMe } from '../lib/hooks'
 import { Button, Field, HelpText, Input, Loading, PageTitle, Select } from '../ui'
@@ -127,6 +128,9 @@ function ProfilUniteForm({ me }: { me: Me }) {
         Pas de réservation dans ce parcours : uniquement une mise en relation. E-mail et téléphone
         sont échangés après acceptation.
       </HelpText>
+      <hr className="divider" />
+      <span className="field__label">Et si besoin</span>
+      <TransportLink />
       <AccountActions />
     </form>
   )
