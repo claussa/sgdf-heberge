@@ -13,10 +13,12 @@ import { useQuery } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router'
 import { ACCESS_CRITERIA_LABELS } from '../lib/access-criteria'
 import { api } from '../lib/api'
+import { dateParamBorne } from '../lib/dates'
 import { useMe } from '../lib/hooks'
 import {
   Badge,
   Chip,
+  DateRangePicker,
   HelpText,
   Input,
   Loading,
@@ -40,14 +42,7 @@ const CHIPS_TYPE: ReadonlyArray<{ label: string; value: SearchType }> = [
   { label: 'Base scoute', value: 'SCOUT_BASE' },
 ]
 
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 const TYPES_VALIDES = new Set<string>(CHIPS_TYPE.map((chip) => chip.value))
-
-/** Une date depuis l'URL : '' (champ vidé) et ISO acceptés, sinon défaut événement. */
-function dateParam(parametres: URLSearchParams, cle: string, defaut: string): string {
-  const valeur = parametres.get(cle)
-  return valeur !== null && (valeur === '' || ISO_DATE.test(valeur)) ? valeur : defaut
-}
 
 /** Badges d'accessibilité affichés sur une carte privée avant le « … » de débordement. */
 const MAX_BADGES_PRIVES = 2
@@ -95,8 +90,14 @@ function RechercheView({ me }: { me: Me }) {
 
   const siteBrut = parametres.get('site')
   const site: SiteSlug = eventConfig.sites.find((s) => s.slug === siteBrut)?.slug ?? defauts.site
-  const dateFrom = dateParam(parametres, 'from', defauts.from)
-  const dateTo = dateParam(parametres, 'to', defauts.to)
+  const { inputMin, inputMax } = eventConfig.dates
+  let dateFrom = dateParamBorne(parametres, 'from', defauts.from, inputMin, inputMax)
+  let dateTo = dateParamBorne(parametres, 'to', defauts.to, inputMin, inputMax)
+  // Au moins une nuit : from === to (séjour d'un jour) est invalide aussi
+  if (dateFrom >= dateTo) {
+    dateFrom = defauts.from
+    dateTo = defauts.to
+  }
   const personnes = parametres.get('people') ?? defauts.people
   const types = parametres.getAll('types').filter((t): t is SearchType => TYPES_VALIDES.has(t))
   const besoins = parametres.get('besoins') === '1'
@@ -195,25 +196,15 @@ function RechercheView({ me }: { me: Me }) {
             ))}
           </span>
           <span className="recherche__criteres">
-            <Input
-              type="date"
+            <DateRangePicker
               uiSize="xs"
-              className="recherche__date"
+              className="recherche__dates"
               min={eventConfig.dates.inputMin}
               max={eventConfig.dates.inputMax}
-              value={dateFrom}
-              onChange={(event) => majFiltres({ from: event.target.value })}
-              aria-label="Arrivée"
-            />
-            <Input
-              type="date"
-              uiSize="xs"
-              className="recherche__date"
-              min={eventConfig.dates.inputMin}
-              max={eventConfig.dates.inputMax}
-              value={dateTo}
-              onChange={(event) => majFiltres({ to: event.target.value })}
-              aria-label="Départ"
+              from={dateFrom}
+              to={dateTo}
+              onChange={({ from, to }) => majFiltres({ from, to })}
+              ariaLabel="Dates du séjour"
             />
             <Input
               type="number"

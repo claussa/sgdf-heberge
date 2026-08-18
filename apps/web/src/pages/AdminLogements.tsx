@@ -20,6 +20,7 @@ import {
   Button,
   Card,
   Checkbox,
+  DateRangePicker,
   EmptyState,
   Field,
   FieldGroup,
@@ -328,26 +329,17 @@ function AdminListingForm({ listing, onSaved, onCancel }: AdminListingFormProps)
             </Select>
           </Field>
           <Field label="Dates">
-            <span className="field__pair">
-              <Input
-                type="date"
-                value={availableFrom}
-                onChange={(event) => setAvailableFrom(event.target.value)}
-                min={eventConfig.dates.inputMin}
-                max={eventConfig.dates.inputMax}
-                aria-label="Du"
-                required
-              />
-              <Input
-                type="date"
-                value={availableTo}
-                onChange={(event) => setAvailableTo(event.target.value)}
-                min={eventConfig.dates.inputMin}
-                max={eventConfig.dates.inputMax}
-                aria-label="Au"
-                required
-              />
-            </span>
+            <DateRangePicker
+              min={eventConfig.dates.inputMin}
+              max={eventConfig.dates.inputMax}
+              from={availableFrom}
+              to={availableTo}
+              onChange={({ from, to }) => {
+                setAvailableFrom(from)
+                setAvailableTo(to)
+              }}
+              ariaLabel="Dates de disponibilité"
+            />
           </Field>
         </div>
         <div className="ja-grid2">

@@ -18,6 +18,7 @@ import {
   type AddressValue,
   Button,
   Checkbox,
+  DateRangePicker,
   Field,
   FieldGroup,
   HelpText,
@@ -177,9 +178,9 @@ function LogementForm({ listing }: { listing: MyListing | null }) {
       )
       return
     }
-    // Le schéma ne relie pas les deux dates entre elles.
-    if (availableFrom === '' || availableTo === '' || availableFrom > availableTo) {
-      setStepError('Vérifie les dates : le début doit précéder la fin.')
+    // Le refine du schéma couvre aussi from < to ; vérifié ici pour un message ciblé dès l'étape 1.
+    if (availableFrom === '' || availableTo === '' || availableFrom >= availableTo) {
+      setStepError('Vérifie les dates : le début doit précéder la fin (au moins une nuit).')
       return
     }
     if (!isEdit && address === null) {
@@ -229,26 +230,17 @@ function LogementForm({ listing }: { listing: MyListing | null }) {
               <Input value={countPersonnes(capacity)} disabled />
             </Field>
             <Field label="Disponible">
-              <span className="field__pair">
-                <Input
-                  type="date"
-                  required
-                  value={availableFrom}
-                  min={eventConfig.dates.inputMin}
-                  max={eventConfig.dates.inputMax}
-                  aria-label="Du"
-                  onChange={(event) => setAvailableFrom(event.target.value)}
-                />
-                <Input
-                  type="date"
-                  required
-                  value={availableTo}
-                  min={eventConfig.dates.inputMin}
-                  max={eventConfig.dates.inputMax}
-                  aria-label="Au"
-                  onChange={(event) => setAvailableTo(event.target.value)}
-                />
-              </span>
+              <DateRangePicker
+                min={eventConfig.dates.inputMin}
+                max={eventConfig.dates.inputMax}
+                from={availableFrom}
+                to={availableTo}
+                onChange={({ from, to }) => {
+                  setAvailableFrom(from)
+                  setAvailableTo(to)
+                }}
+                ariaLabel="Dates de disponibilité"
+              />
             </Field>
           </div>
           <SectionTitle>Mes couchages,</SectionTitle>

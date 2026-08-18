@@ -104,6 +104,18 @@ function chip(nom: string | RegExp): HTMLElement {
   return screen.getByRole('button', { name: nom })
 }
 
+/** Le bouton du range picker de dates (libellé « 25 → 28 sept. » par défaut). */
+function boutonDates(): HTMLElement {
+  return screen.getByRole('button', { name: 'Dates du séjour' })
+}
+
+/** Ouvre le popover puis clique arrivée et départ (noms accessibles des jours, ex. /26 septembre/). */
+function choisirDates(arrivee: RegExp, depart: RegExp) {
+  fireEvent.click(boutonDates())
+  fireEvent.click(screen.getByRole('button', { name: arrivee }))
+  fireEvent.click(screen.getByRole('button', { name: depart }))
+}
+
 beforeEach(() => {
   urlsListings = []
   fetchMock.mockClear()
@@ -126,7 +138,7 @@ describe('Recherche — les filtres choisis sont persistés dans l’URL', () =>
     fireEvent.click(chip('Compatibles avec mes besoins'))
     fireEvent.click(chip(/^Facile$/))
     fireEvent.change(screen.getByLabelText('Nombre de personnes'), { target: { value: '4' } })
-    fireEvent.change(screen.getByLabelText('Arrivée'), { target: { value: '2026-09-26' } })
+    choisirDates(/26 septembre/, /28 septembre/)
 
     const parametres = new URLSearchParams(screen.getByTestId('sonde-search').textContent ?? '')
     expect(parametres.get('site')).toBe('paris')
@@ -135,6 +147,8 @@ describe('Recherche — les filtres choisis sont persistés dans l’URL', () =>
     expect(parametres.get('parking')).toBe('EASY')
     expect(parametres.get('people')).toBe('4')
     expect(parametres.get('from')).toBe('2026-09-26')
+    // Le 28 est le départ par défaut : il ne figure pas dans l'URL
+    expect(parametres.get('to')).toBeNull()
 
     // La carte emporte toute la recherche : le « Retour » de la fiche pourra la restaurer
     const lien = await screen.findByRole('link', { name: /Chambre privée/ })
@@ -175,8 +189,7 @@ describe('Recherche — les filtres de l’URL sont réappliqués (retour depuis
     expect(chip('Compatibles avec mes besoins').getAttribute('aria-pressed')).toBe('true')
     expect(chip(/Moyen/).getAttribute('aria-pressed')).toBe('true')
     expect(screen.getByLabelText<HTMLInputElement>('Nombre de personnes').value).toBe('4')
-    expect(screen.getByLabelText<HTMLInputElement>('Arrivée').value).toBe('2026-09-26')
-    expect(screen.getByLabelText<HTMLInputElement>('Départ').value).toBe('2026-09-27')
+    expect(boutonDates().textContent).toBe('26 → 27 sept.')
 
     // La requête envoyée à l'API reflète bien les filtres restaurés
     const requete = new URL(urlsListings.at(-1) ?? '', 'http://test').searchParams
@@ -197,7 +210,7 @@ describe('Recherche — les filtres de l’URL sont réappliqués (retour depuis
 
     expect(chip('Lourdes').getAttribute('aria-pressed')).toBe('true')
     expect(chip('Canapé').getAttribute('aria-pressed')).toBe('false')
-    expect(screen.getByLabelText<HTMLInputElement>('Arrivée').value).toBe('2026-09-25')
+    expect(boutonDates().textContent).toBe('25 → 28 sept.')
 
     const requete = new URL(urlsListings.at(-1) ?? '', 'http://test').searchParams
     expect(requete.get('site')).toBe('lourdes')
@@ -205,6 +218,82 @@ describe('Recherche — les filtres de l’URL sont réappliqués (retour depuis
     expect(requete.getAll('types')).toEqual([])
     expect(requete.get('parking')).toBeNull()
     expect(requete.get('access')).toBeNull()
+  })
+
+  it('retombe sur les défauts pour des dates hors fenêtre événement (année partielle, etc.)', async () => {
+    // « to=0005-02-05 » : année en cours de saisie dans l'ancien input natif — bien
+    // formée mais hors fenêtre. « from=2026-01-01 » : idem, hors bornes.
+    rendreRecherche('/recherche?from=2026-01-01&to=0005-02-05')
+    await screen.findByRole('link', { name: /Chambre privée/ })
+
+    expect(boutonDates().textContent).toBe('25 → 28 sept.')
+    const requete = new URL(urlsListings.at(-1) ?? '', 'http://test').searchParams
+    expect(requete.get('from')).toBe('2026-09-25')
+    expect(requete.get('to')).toBe('2026-09-28')
+  })
+
+  it('retombe sur les défauts quand l’arrivée n’est pas avant le départ (inversé ou séjour d’un jour)', async () => {
+    for (const query of ['from=2026-09-28&to=2026-09-26', 'from=2026-09-26&to=2026-09-26']) {
+      urlsListings = []
+      const vue = rendreRecherche(`/recherche?${query}`)
+      await screen.findByRole('link', { name: /Chambre privée/ })
+
+      expect(boutonDates().textContent).toBe('25 → 28 sept.')
+      const requete = new URL(urlsListings.at(-1) ?? '', 'http://test').searchParams
+      expect(requete.get('from')).toBe('2026-09-25')
+      expect(requete.get('to')).toBe('2026-09-28')
+      vue.unmount()
+    }
+  })
+})
+
+describe('Recherche — comportement du range picker', () => {
+  it('ne change ni l’URL ni la requête tant que le range est incomplet', async () => {
+    rendreRecherche('/recherche')
+    await screen.findByRole('link', { name: /Chambre privée/ })
+    const nbRequetes = urlsListings.length
+
+    fireEvent.click(boutonDates())
+    fireEvent.click(screen.getByRole('button', { name: /26 septembre/ }))
+
+    expect(screen.getByTestId('sonde-search').textContent).toBe('')
+    expect(urlsListings.length).toBe(nbRequetes)
+    // Le popover reste ouvert en attendant le départ
+    expect(screen.getByRole('dialog', { name: 'Choisir les dates' })).toBeTruthy()
+  })
+
+  it('refuse le séjour d’un jour : re-clic sur le même jour = désélection, rien n’est commité', async () => {
+    rendreRecherche('/recherche')
+    await screen.findByRole('link', { name: /Chambre privée/ })
+    const nbRequetes = urlsListings.length
+
+    choisirDates(/26 septembre/, /26 septembre/)
+
+    // Pas de from=to possible : le popover reste ouvert, aucune URL ni requête émise
+    expect(screen.getByTestId('sonde-search').textContent).toBe('')
+    expect(urlsListings.length).toBe(nbRequetes)
+    expect(screen.getByRole('dialog', { name: 'Choisir les dates' })).toBeTruthy()
+
+    // On peut repartir : 26 puis 27 = une nuit, commit normal
+    fireEvent.click(screen.getByRole('button', { name: /26 septembre/ }))
+    fireEvent.click(screen.getByRole('button', { name: /27 septembre/ }))
+    const parametres = new URLSearchParams(screen.getByTestId('sonde-search').textContent ?? '')
+    expect(parametres.get('from')).toBe('2026-09-26')
+    expect(parametres.get('to')).toBe('2026-09-27')
+    expect(screen.queryByRole('dialog', { name: 'Choisir les dates' })).toBeNull()
+  })
+
+  it('Échap ferme le popover sans rien changer et rend le focus au bouton', async () => {
+    rendreRecherche('/recherche')
+    await screen.findByRole('link', { name: /Chambre privée/ })
+
+    fireEvent.click(boutonDates())
+    const dialogue = screen.getByRole('dialog', { name: 'Choisir les dates' })
+    fireEvent.keyDown(dialogue, { key: 'Escape' })
+
+    expect(screen.queryByRole('dialog', { name: 'Choisir les dates' })).toBeNull()
+    expect(screen.getByTestId('sonde-search').textContent).toBe('')
+    expect(document.activeElement).toBe(boutonDates())
   })
 })
 
@@ -216,7 +305,9 @@ describe('Recherche — la query est validée par le schéma de l’API avant l�
     const requete = new URL(urlsListings.at(-1) ?? '', 'http://test').searchParams
     expect(requete.get('people')).toBe('60')
     expect(requete.get('site')).toBe('paris')
-    expect(requete.get('to')).toBe('2026-09-25')
+    // `to=2026-09-25` seul = zéro nuit avec le from par défaut (25) : dates retombées
+    // sur les défauts (au moins une nuit), la recherche part quand même
+    expect(requete.get('to')).toBe('2026-09-28')
   })
 
   it('cherche jusqu’au plafond commun avec la demande (600 personnes)', async () => {
