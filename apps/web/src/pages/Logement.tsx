@@ -120,7 +120,7 @@ function FicheLogement({ logement, me }: { logement: ListingDetail; me: Me }) {
             </p>
           )}
           {logement.description && (
-            <p className="fiche-logement__description">« {logement.description} »</p>
+            <p className="fiche-logement__description">{logement.description}</p>
           )}
         </div>
         <div className="fiche-logement__colonne">
