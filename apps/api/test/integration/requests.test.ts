@@ -649,13 +649,13 @@ describe('garde-fous de création', () => {
     expect(((await res.json()) as ErrorBody).error.message).toContain('hôtel')
   })
 
-  it('base scout avec lien → 409 (réservation externe, comme un hôtel)', async () => {
+  it('base scoute avec lien → 409 (réservation externe, comme un hôtel)', async () => {
     const res = await createReq(marie.cookie, scoutBaseAvecLien)
     expect(res.status).toBe(409)
     expect(((await res.json()) as ErrorBody).error.message).toContain('lien de réservation')
   })
 
-  it('base scout sans lien → 201 (flux de demande standard, comme un gymnase)', async () => {
+  it('base scoute sans lien → 201 (flux de demande standard, comme un gymnase)', async () => {
     expect((await createReq(marie.cookie, scoutBaseSansLien)).status).toBe(201)
   })
 

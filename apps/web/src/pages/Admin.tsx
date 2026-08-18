@@ -51,7 +51,7 @@ export function Admin() {
                 ['Masqués', site.listings.privateHidden],
                 ['Hôtels', site.listings.hotel],
                 ['Gymnases', site.listings.collective],
-                ['Bases scout', site.listings.scoutBase],
+                ['Bases scoutes', site.listings.scoutBase],
                 ['Capacité totale', site.listings.totalCapacity],
               ]}
             />

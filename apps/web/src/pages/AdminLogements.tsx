@@ -42,7 +42,7 @@ type InstitutionalCategory = 'HOTEL' | 'COLLECTIVE' | 'SCOUT_BASE'
 const CATEGORY_LABELS: Record<InstitutionalCategory, string> = {
   HOTEL: 'Hôtel',
   COLLECTIVE: 'Gymnase',
-  SCOUT_BASE: 'Base scout',
+  SCOUT_BASE: 'Base scoute',
 }
 
 async function fetchAdminListings() {
@@ -95,7 +95,7 @@ async function resolveStoredAddress(label: string): Promise<AddressValue | null>
 }
 
 /**
- * /admin/logements — CRUD des logements institutionnels (hôtels, gymnases, bases scout).
+ * /admin/logements — CRUD des logements institutionnels (hôtels, gymnases, bases scoutes).
  * Hors maquette : liste en cartes-lignes + formulaire unique création/édition.
  */
 export function AdminLogements() {
@@ -210,6 +210,10 @@ function AdminListingForm({ listing, onSaved, onCancel }: AdminListingFormProps)
   const [availableTo, setAvailableTo] = useState(listing?.availableTo ?? eventConfig.dates.end)
   const [capacity, setCapacity] = useState(listing ? String(listing.capacity) : '')
   const [priceInfo, setPriceInfo] = useState(listing?.priceInfo ?? '')
+  // Badge « Payant » : coché par défaut pour un nouvel hôtel (la catégorie initiale),
+  // et suit les changements de catégorie tant que l'admin n'a pas touché la case.
+  const [isPaid, setIsPaid] = useState(listing?.isPaid ?? true)
+  const [isPaidTouched, setIsPaidTouched] = useState(isEdit)
   const [bookingUrl, setBookingUrl] = useState(listing?.bookingUrl ?? '')
   const [description, setDescription] = useState(listing?.description ?? '')
   const [notes, setNotes] = useState(listing?.accessibilityNotes ?? '')
@@ -236,7 +240,8 @@ function AdminListingForm({ listing, onSaved, onCancel }: AdminListingFormProps)
         address: finalAddress,
         capacity: Number(capacity),
         priceInfo: priceInfo.trim() === '' ? null : priceInfo.trim(),
-        // Hôtel et base scout : lien de réservation possible ; gymnase : jamais.
+        isPaid,
+        // Hôtel et base scoute : lien de réservation possible ; gymnase : jamais.
         bookingUrl:
           category !== 'COLLECTIVE' && bookingUrl.trim() !== '' ? bookingUrl.trim() : null,
         availableFrom,
@@ -283,11 +288,15 @@ function AdminListingForm({ listing, onSaved, onCancel }: AdminListingFormProps)
           <Field label="Catégorie">
             <Select
               value={category}
-              onChange={(event) => setCategory(event.target.value as InstitutionalCategory)}
+              onChange={(event) => {
+                const next = event.target.value as InstitutionalCategory
+                setCategory(next)
+                if (!isPaidTouched) setIsPaid(next === 'HOTEL')
+              }}
             >
               <option value="HOTEL">Hôtel</option>
               <option value="COLLECTIVE">Gymnase ou collectif</option>
-              <option value="SCOUT_BASE">Base scout</option>
+              <option value="SCOUT_BASE">Base scoute</option>
             </Select>
           </Field>
           <Field label="Titre">
@@ -352,6 +361,19 @@ function AdminListingForm({ listing, onSaved, onCancel }: AdminListingFormProps)
             />
           </Field>
         </div>
+        <Checkbox
+          checked={isPaid}
+          onChange={(event) => {
+            setIsPaid(event.target.checked)
+            setIsPaidTouched(true)
+          }}
+          label={
+            <>
+              <b>Payant</b> — affiche le badge « Payant » sur la carte de recherche, même sans prix
+              ni code renseigné
+            </>
+          }
+        />
         {category !== 'COLLECTIVE' && (
           <Field
             label="URL de réservation"

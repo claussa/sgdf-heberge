@@ -137,7 +137,7 @@ function FicheLogement({ logement, me }: { logement: ListingDetail; me: Me }) {
 }
 
 /**
- * Hôtel, ou base scout avec lien : pas de demande — prix en gros et réservation
+ * Hôtel, ou base scoute avec lien : pas de demande — prix en gros et réservation
  * directe (variante v1 actée).
  */
 function PanneauReservationExterne({ logement }: { logement: ListingDetail }) {

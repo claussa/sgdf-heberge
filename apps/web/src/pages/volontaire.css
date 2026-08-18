@@ -131,6 +131,31 @@
   gap: 6px;
 }
 
+/* Badge « … » : critères d'accessibilité au-delà des 2 premiers, en bulle au survol */
+.carte-logement__badge-plus {
+  position: relative;
+}
+
+.carte-logement__badge-bulle {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  z-index: 10;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 10px;
+  background: var(--blanc);
+  border: 1px solid var(--bordure);
+  white-space: nowrap;
+}
+
+.carte-logement__badge-plus:hover .carte-logement__badge-bulle,
+.carte-logement__badge-plus:focus-within .carte-logement__badge-bulle {
+  display: flex;
+}
+
 /* ============ Fiche logement (A.5) ============ */
 .fiche-logement {
   display: flex;

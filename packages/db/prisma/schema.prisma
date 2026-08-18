@@ -235,6 +235,9 @@ model Listing {
 
   /// Institutionnels : prix/conditions saisis par l'admin (« 45 € · code PAPE15 »)
   priceInfo  String?
+  /// Institutionnels : badge « Payant » sur la carte de recherche, indépendant de
+  /// priceInfo (ex. base scoute payante sans code ni tarif affiché)
+  isPaid     Boolean @default(false)
   /// Hôtels (obligatoire côté UX) et bases scoutes (optionnel) : URL de la plateforme
   /// de réservation. Présente = pas de demande in-app ; base scoute sans lien = flux
   /// de demande standard (comme un gymnase).

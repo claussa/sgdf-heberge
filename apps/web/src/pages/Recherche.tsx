@@ -36,7 +36,7 @@ const CHIPS_TYPE: ReadonlyArray<{ label: string; value: SearchType }> = [
   { label: 'Tente', value: 'TENT_SPOT' },
   { label: 'Hôtel', value: 'HOTEL' },
   { label: 'Gymnase', value: 'COLLECTIVE' },
-  { label: 'Base scout', value: 'SCOUT_BASE' },
+  { label: 'Base scoute', value: 'SCOUT_BASE' },
 ]
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
@@ -48,13 +48,28 @@ function dateParam(parametres: URLSearchParams, cle: string, defaut: string): st
   return valeur !== null && (valeur === '' || ISO_DATE.test(valeur)) ? valeur : defaut
 }
 
-/** Badge unique de la carte : payant (hôtel), collectif (gymnase), base scout, sinon 1er critère vrai. */
-function badgeDe(carte: ListingCard): string | null {
-  if (carte.category === 'HOTEL') return carte.priceInfo ? `Payant · ${carte.priceInfo}` : 'Payant'
-  if (carte.category === 'COLLECTIVE') return 'Couchage collectif'
-  if (carte.category === 'SCOUT_BASE') return 'Base scout'
-  const critere = ACCESS_CRITERIA.find((slug) => carte.access[slug])
-  return critere ? ACCESS_CRITERIA_LABELS[critere].label : null
+/** Badges d'accessibilité affichés sur une carte privée avant le « … » de débordement. */
+const MAX_BADGES_PRIVES = 2
+
+/**
+ * Badges de la carte. Institutionnels : catégorie puis « Payant » (checkbox admin)
+ * visibles, tous les critères d'accessibilité derrière le « … » (bulle au survol).
+ * Privés : les 2 premiers critères visibles, le reste derrière le « … ».
+ */
+function badgesDe(carte: ListingCard): { visibles: string[]; masques: string[] } {
+  const criteres = ACCESS_CRITERIA.filter((slug) => carte.access[slug]).map(
+    (slug) => ACCESS_CRITERIA_LABELS[slug].label,
+  )
+  const badges: string[] = []
+  if (carte.category === 'HOTEL') badges.push('Hôtel')
+  if (carte.category === 'COLLECTIVE') badges.push('Couchage collectif')
+  if (carte.category === 'SCOUT_BASE') badges.push('Base scoute')
+  if (carte.isPaid) badges.push(carte.priceInfo ? `Payant · ${carte.priceInfo}` : 'Payant')
+  if (badges.length > 0) return { visibles: badges, masques: criteres }
+  return {
+    visibles: criteres.slice(0, MAX_BADGES_PRIVES),
+    masques: criteres.slice(MAX_BADGES_PRIVES),
+  }
 }
 
 /** /recherche — écran A.4 « Où dormiras-tu ? ». */
@@ -286,7 +301,7 @@ function RechercheView({ me }: { me: Me }) {
 
 /** Carte logement (structure C.2) — clic = fiche, filtres reportés dans l’URL. */
 function CarteLogement({ carte, lienSuffixe }: { carte: ListingCard; lienSuffixe: string }) {
-  const badge = badgeDe(carte)
+  const { visibles, masques } = badgesDe(carte)
   return (
     <Link to={`/logements/${carte.id}${lienSuffixe}`} className="carte-logement">
       <span className="carte-logement__media">
@@ -301,9 +316,25 @@ function CarteLogement({ carte, lienSuffixe }: { carte: ListingCard; lienSuffixe
             Stationnement {PARKING_EASE_LABELS[carte.parkingEase].toLowerCase()}
           </span>
         )}
-        {badge && (
+        {visibles.length > 0 && (
           <span className="carte-logement__badges">
-            <Badge>{badge}</Badge>
+            {visibles.map((badge) => (
+              <Badge key={badge}>{badge}</Badge>
+            ))}
+            {masques.length > 0 && (
+              <span className="carte-logement__badge-plus">
+                <span aria-hidden="true">
+                  <Badge>…</Badge>
+                </span>
+                {/* Lecteurs d'écran : la bulle est en display:none, le texte passe par ici. */}
+                <span className="sr-only">{masques.join(', ')}</span>
+                <span className="carte-logement__badge-bulle" aria-hidden="true">
+                  {masques.map((badge) => (
+                    <Badge key={badge}>{badge}</Badge>
+                  ))}
+                </span>
+              </span>
+            )}
           </span>
         )}
       </span>

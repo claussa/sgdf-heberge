@@ -281,6 +281,8 @@ export const ListingCardSchema = z.object({
   bedTypes: z.array(BedTypeSchema),
   /** Institutionnels : « 45 € · code PAPE15 » */
   priceInfo: z.string().nullable(),
+  /** Institutionnels : badge « Payant » (checkbox admin), indépendant de priceInfo */
+  isPaid: z.boolean(),
 })
 export type ListingCard = z.infer<typeof ListingCardSchema>
 
@@ -628,6 +630,8 @@ export const AdminListingUpsertSchema = z.object({
   address: AddressInputSchema,
   capacity: z.number().int().min(1).max(10000),
   priceInfo: z.string().max(120).nullish(),
+  /** Badge « Payant » sur la carte de recherche — même sans priceInfo */
+  isPaid: z.boolean().default(false),
   bookingUrl: z.url().max(500).nullish(),
   availableFrom: z.iso.date(),
   availableTo: z.iso.date(),

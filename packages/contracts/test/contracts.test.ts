@@ -45,6 +45,7 @@ describe('minimisation : les schémas de réponse strippent les champs non décl
       parkingEase: null,
       bedTypes: ['PRIVATE_ROOM'],
       priceInfo: null,
+      isPaid: false,
       // champs interdits injectés volontairement :
       addressFull: '12 rue des Boulets, 75012 Paris',
       phone: '06 12 34 56 78',
