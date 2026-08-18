@@ -66,10 +66,58 @@
   color: var(--texte-secondaire);
 }
 
+.recherche__resultats-entete {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .recherche__compte {
   margin: 0;
   font: 400 14px var(--font-courant);
   color: var(--bleu);
+}
+
+/* Ligne « la liste bouge » sous le compteur : signe étoile en puce + une phrase */
+.recherche__nouvelles-offres {
+  margin: 0;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.recherche__nouvelles-offres .signe {
+  margin-top: 2px;
+  flex: none;
+}
+
+.recherche__nouvelles-offres-texte {
+  font: 400 13.5px / 1.5 var(--font-courant);
+  color: var(--label);
+  max-width: 640px;
+}
+
+/* État zéro résultat : signe « fin de piste » + message dans un cadre */
+.recherche__fin-de-piste {
+  border: 1px solid var(--bordure);
+  padding: 36px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.recherche__fin-de-piste-titre {
+  margin: 0;
+  font: 400 28px / 1.1 var(--font-titrage);
+  color: var(--bleu);
+}
+
+.recherche__fin-de-piste-texte {
+  margin: 0;
+  font: 400 14px / 1.6 var(--font-courant);
+  color: var(--bleu);
+  max-width: 540px;
 }
 
 .recherche__grille {
@@ -310,5 +358,9 @@ a.btn {
 
   .recherche__criteres {
     margin-left: 0;
+  }
+
+  .recherche__fin-de-piste {
+    padding: 24px 20px;
   }
 }

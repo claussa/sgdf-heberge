@@ -6,8 +6,16 @@ const signes = import.meta.glob('../assets/signes/*.png', {
   import: 'default',
 }) as Record<string, string>
 
-/** Les 7 signes de la charte — seule iconographie autorisée (ni emoji, ni lib d'icônes). */
-export type SigneName = 'fleche' | 'tente' | 'etoile' | 'campement' | 'paix' | 'soleil' | 'promesse'
+/** Les signes de la charte — seule iconographie autorisée (ni emoji, ni lib d'icônes). */
+export type SigneName =
+  | 'fleche'
+  | 'tente'
+  | 'etoile'
+  | 'campement'
+  | 'paix'
+  | 'soleil'
+  | 'promesse'
+  | 'fin-de-piste'
 
 type SigneImageProps = {
   name: SigneName

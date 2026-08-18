@@ -15,7 +15,6 @@ import { useMe } from '../lib/hooks'
 import {
   Badge,
   Chip,
-  EmptyState,
   HelpText,
   Input,
   Loading,
@@ -277,11 +276,34 @@ function RechercheView({ me }: { me: Me }) {
         <Loading />
       ) : (
         <>
-          <p className="recherche__compte" data-tour="resultats">
-            <b>{resultats.total}</b> logement{resultats.total > 1 ? 's' : ''}
-          </p>
+          <div className="recherche__resultats-entete">
+            <p className="recherche__compte" data-tour="resultats">
+              <b>{resultats.total}</b> logement{resultats.total > 1 ? 's' : ''}
+            </p>
+            {/* 1a — la liste bouge : ligne discrète quand il y a des résultats,
+                message complet « fin de piste » (1d) quand la liste est vide. */}
+            {resultats.total > 0 && (
+              <p className="recherche__nouvelles-offres">
+                <SigneImage name="etoile" size={16} />
+                <span className="recherche__nouvelles-offres-texte">
+                  Des particuliers ajoutent régulièrement des logements, et nous avons des pistes
+                  d’hébergements collectifs complémentaires. Repasse de temps en temps si aucune
+                  offre ne correspond à tes besoins !
+                </span>
+              </p>
+            )}
+          </div>
           {resultats.total === 0 ? (
-            <EmptyState>Aucun logement ne correspond à ta recherche.</EmptyState>
+            <div className="recherche__fin-de-piste">
+              <SigneImage name="fin-de-piste" size={44} />
+              <p className="recherche__fin-de-piste-titre">Fin de piste… pour aujourd’hui,</p>
+              <p className="recherche__fin-de-piste-texte">
+                Aucune offre ne correspond à tes filtres pour l’instant. Des particuliers ajoutent
+                régulièrement des logements, et des hébergements collectifs complémentaires sont en
+                préparation : repasse dans quelques jours, ou essaye d’élargir tes critères si tu le
+                peux.
+              </p>
+            </div>
           ) : (
             <div className="recherche__grille">
               {resultats.items.map((carte) => (
