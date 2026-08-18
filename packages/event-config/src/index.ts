@@ -69,12 +69,20 @@ const EventConfigSchema = z.object({
         z.object({
           label: z.string().min(1),
           description: z.string().min(1),
-          href: z.url(),
+          /** URL externe, ou chemin interne de la SPA (commence par « / ») */
+          href: z.union([z.url(), z.string().regex(/^\//)]),
           /** Nom d'un signe de la charte (fleche, etoile, tente…) */
           signe: z.string().min(1),
         }),
       )
       .min(1),
+  }),
+  /** Page « Transport » (/transport) — formulaires de covoiturage, un par site */
+  transport: z.object({
+    title: z.string().min(1),
+    intro: z.string().min(1),
+    /** Un formulaire par site — `site` est un slug de `sites` */
+    covoiturage: z.array(z.object({ site: z.string().min(1), href: z.url() })).min(1),
   }),
   /** Branches proposées au profil des unités scoutes (spécifique à l'organisateur) */
   unitBranches: z.array(z.string().min(1)).min(1),
@@ -136,7 +144,7 @@ export const eventConfig = {
       {
         label: 'Le transport, c’est par ici',
         description: 'Formulaire cars et covoiturage',
-        href: 'https://exemple.sgdf.fr/transport',
+        href: '/transport',
         signe: 'fleche',
       },
       {
@@ -145,6 +153,16 @@ export const eventConfig = {
         href: 'https://chefscadres.sgdf.fr/la-visite-apostolique-du-pape-leon-xiv-en-france-appel-a-mobilisation-des-sgdf/',
         signe: 'etoile',
       },
+    ],
+  },
+  transport: {
+    title: 'Le transport, c’est par ici',
+    intro:
+      'Pour rejoindre ton site en covoiturage — proposer des places ou trouver une voiture — passe par le formulaire de ton site. Il s’ouvre sur Vroum, le service de covoiturage de LaToileScoute.',
+    covoiturage: [
+      { site: 'lourdes', href: 'https://vroum.latoilescoute.net/WWKXopULAq' },
+      { site: 'paris', href: 'https://vroum.latoilescoute.net/cAsZyuYWHn' },
+      { site: 'metz', href: 'https://vroum.latoilescoute.net/LkBEFswwYG' },
     ],
   },
   unitBranches: [

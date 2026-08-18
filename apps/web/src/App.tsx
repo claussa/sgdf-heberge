@@ -22,6 +22,7 @@ import { ProfilHebergeur } from './pages/ProfilHebergeur'
 import { ProfilUnite } from './pages/ProfilUnite'
 import { ProfilVolontaire } from './pages/ProfilVolontaire'
 import { Recherche } from './pages/Recherche'
+import { Transport } from './pages/Transport'
 import { UniteAnnonce } from './pages/UniteAnnonce'
 import { UniteRelations } from './pages/UniteRelations'
 import { Loading } from './ui'
@@ -46,6 +47,7 @@ export function App() {
         <Route path="/connexion" element={<Connexion />} />
         <Route path="/mentions-legales" element={<MentionsLegales />} />
         <Route path="/aide" element={<Aide />} />
+        <Route path="/transport" element={<Transport />} />
         <Route
           path="/comment-ca-marche"
           element={
