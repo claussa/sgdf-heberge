@@ -280,8 +280,6 @@ function RechercheView({ me }: { me: Me }) {
             <p className="recherche__compte" data-tour="resultats">
               <b>{resultats.total}</b> logement{resultats.total > 1 ? 's' : ''}
             </p>
-            {/* 1a — la liste bouge : ligne discrète quand il y a des résultats,
-                message complet « fin de piste » (1d) quand la liste est vide. */}
             {resultats.total > 0 && (
               <p className="recherche__nouvelles-offres">
                 <SigneImage name="etoile" size={16} />
