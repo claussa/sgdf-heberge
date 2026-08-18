@@ -191,6 +191,8 @@
 
 .fiche-logement__description {
   margin: 0;
+  /* Les sauts de ligne saisis dans le textarea sont conservés à l'affichage */
+  white-space: pre-line;
   font: 400 14px / 1.6 var(--font-courant);
   color: var(--bleu);
 }

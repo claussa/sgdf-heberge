@@ -109,7 +109,7 @@ const updateListingRoute = createRoute({
   tags: ['admin'],
   summary: 'Modifier un logement institutionnel (corps complet)',
   description:
-    "N'importe quel admin peut éditer n'importe quel logement HOTEL/COLLECTIVE. " +
+    "N'importe quel admin peut éditer n'importe quel logement institutionnel. " +
     'Les logements de particuliers ne sont pas accessibles par cette route.',
   middleware: [requireAuth, requireAdmin] as const,
   request: {

@@ -340,6 +340,28 @@ async function main() {
       accessTransport: true,
     },
   })
+  // Base scoute SANS lien de réservation → flux de demande standard (comme un gymnase).
+  // Avec un bookingUrl, elle se comporterait comme un hôtel (réservation externe).
+  await db.listing.create({
+    data: {
+      ownerId: admin.id,
+      category: 'SCOUT_BASE',
+      site: 'paris',
+      title: 'Base scoute de Vincennes',
+      description:
+        'Terrain scout avec bâtiment d’accueil — couchage en dur et emplacements de tente. ' +
+        'Sanitaires et cuisine collective sur place.',
+      addressFull: '2 route de la Pyramide, 75012 Paris',
+      displayArea: 'Paris 12e',
+      distanceKm: 4.1,
+      availableFrom: d('2026-09-24'),
+      availableTo: d('2026-09-29'),
+      capacity: 80,
+      priceInfo: '5 € la nuit',
+      accessFewSteps: true,
+      accessQuiet: true,
+    },
+  })
 
   // ————— Demandes (côté Marie : 3 en attente = quota plein ; côté Claire : 2 reçues) —————
   await db.lodgingRequest.create({

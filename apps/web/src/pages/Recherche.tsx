@@ -36,6 +36,7 @@ const CHIPS_TYPE: ReadonlyArray<{ label: string; value: SearchType }> = [
   { label: 'Tente', value: 'TENT_SPOT' },
   { label: 'Hôtel', value: 'HOTEL' },
   { label: 'Gymnase', value: 'COLLECTIVE' },
+  { label: 'Base scout', value: 'SCOUT_BASE' },
 ]
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
@@ -47,10 +48,11 @@ function dateParam(parametres: URLSearchParams, cle: string, defaut: string): st
   return valeur !== null && (valeur === '' || ISO_DATE.test(valeur)) ? valeur : defaut
 }
 
-/** Badge unique de la carte : payant (hôtel), collectif (gymnase), sinon 1er critère vrai. */
+/** Badge unique de la carte : payant (hôtel), collectif (gymnase), base scout, sinon 1er critère vrai. */
 function badgeDe(carte: ListingCard): string | null {
   if (carte.category === 'HOTEL') return carte.priceInfo ? `Payant · ${carte.priceInfo}` : 'Payant'
   if (carte.category === 'COLLECTIVE') return 'Couchage collectif'
+  if (carte.category === 'SCOUT_BASE') return 'Base scout'
   const critere = ACCESS_CRITERIA.find((slug) => carte.access[slug])
   return critere ? ACCESS_CRITERIA_LABELS[critere].label : null
 }

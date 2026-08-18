@@ -20,6 +20,7 @@ export function signeDe(logement: Pick<ListingCard, 'category' | 'bedTypes'>): S
   if (premier) return SIGNE_PAR_COUCHAGE[premier]
   if (logement.category === 'HOTEL') return 'promesse'
   if (logement.category === 'COLLECTIVE') return 'paix'
+  if (logement.category === 'SCOUT_BASE') return 'campement'
   return 'tente'
 }
 

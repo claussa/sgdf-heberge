@@ -6,7 +6,7 @@
  * les coordonnées (nom du responsable, e-mail, téléphone) ne circulent QUE sur les
  * mises en relation ACCEPTED — jamais sur les cartes publiques ni sur un PENDING.
  *
- * Admin : métriques par site, CRUD des logements institutionnels (HOTEL/COLLECTIVE),
+ * Admin : métriques par site, CRUD des logements institutionnels (HOTEL/COLLECTIVE/SCOUT_BASE),
  * suppression qui annule d'abord les demandes acceptées (demandeurs prévenus),
  * logements PRIVATE inaccessibles par ces routes.
  */
@@ -35,6 +35,7 @@ let nancyContactId: string
 let segoleneContactId: string
 let hotelId: string
 let gymId: string
+let scoutBaseId: string
 let privateListingId: string
 
 async function loginAs(email: string): Promise<string> {
@@ -723,6 +724,35 @@ const gymBody = {
   parkingEase: 'MEDIUM',
 }
 
+// Base scout SANS lien de réservation — le lien est optionnel pour cette catégorie.
+const scoutBaseBody = {
+  category: 'SCOUT_BASE',
+  site: 'paris',
+  title: 'Base scoute de Vincennes',
+  description: 'Terrain scout avec bâtiment d’accueil, couchage en dur et sous tente.',
+  address: {
+    label: '2 route de la Pyramide, 75012 Paris',
+    city: 'Paris',
+    postcode: '75012',
+    lat: 48.835,
+    lng: 2.435,
+  },
+  capacity: 60,
+  priceInfo: '5 € / nuit',
+  availableFrom: '2026-09-25',
+  availableTo: '2026-09-28',
+  access: {
+    pmr: false,
+    electricWheelchair: false,
+    fewSteps: true,
+    humanHelp: false,
+    transport: false,
+    parking: true,
+    assistanceDog: true,
+    quiet: true,
+  },
+}
+
 describe('admin', () => {
   it('un USER (même unité) n’accède à aucune route /admin/* (403)', async () => {
     const metrics = await req('GET', '/admin/metrics', cookies.marie)
@@ -834,6 +864,45 @@ describe('admin', () => {
     expect(((await reset.json()) as { parkingEase: string | null }).parkingEase).toBeNull()
   })
 
+  it('création d’une base scout SANS lien : flux de demande standard, pas de booking-click', async () => {
+    const res = await req('POST', '/admin/listings', cookies.admin, scoutBaseBody)
+    expect(res.status).toBe(201)
+    const body = (await res.json()) as Record<string, unknown>
+    expect(body).toMatchObject({
+      category: 'SCOUT_BASE',
+      title: 'Base scoute de Vincennes',
+      capacity: 60,
+      bookingUrl: null,
+      bookingClicks: 0,
+    })
+    scoutBaseId = body.id as string
+
+    // Sans lien, la route booking-click n'existe pas pour elle (comme un gymnase).
+    const click = await req('POST', `/listings/${scoutBaseId}/booking-click`, cookies.marie)
+    expect(click.status).toBe(404)
+  })
+
+  it('base scout AVEC lien (ajouté au PATCH) : comportement hôtel, clics comptés', async () => {
+    const patch = await req('PATCH', `/admin/listings/${scoutBaseId}`, cookies.admin, {
+      ...scoutBaseBody,
+      bookingUrl: 'https://base.example.com/reservation',
+    })
+    expect(patch.status).toBe(200)
+    expect(((await patch.json()) as { bookingUrl: string | null }).bookingUrl).toBe(
+      'https://base.example.com/reservation',
+    )
+
+    const click = await req('POST', `/listings/${scoutBaseId}/booking-click`, cookies.marie)
+    expect(click.status).toBe(200)
+    const list = await req('GET', '/admin/listings', cookies.admin)
+    const items = ((await list.json()) as { items: { id: string; bookingClicks: number }[] }).items
+    expect(items.find((i) => i.id === scoutBaseId)?.bookingClicks).toBe(1)
+
+    // Supprimée ici pour laisser les métriques du test dédié inchangées.
+    const del = await req('DELETE', `/admin/listings/${scoutBaseId}`, cookies.admin)
+    expect(del.status).toBe(200)
+  })
+
   it('un logement PRIVATE n’est ni éditable ni supprimable via /admin/listings (404)', async () => {
     privateListingId = (
       await t.db.listing.create({
@@ -899,7 +968,7 @@ describe('admin', () => {
     // Fixtures dédiées sur Lourdes (site vierge jusqu'ici) — posées en direct via t.db.
     const listing = (data: {
       ownerId: string
-      category: 'PRIVATE' | 'HOTEL' | 'COLLECTIVE'
+      category: 'PRIVATE' | 'HOTEL' | 'COLLECTIVE' | 'SCOUT_BASE'
       capacity: number
       hiddenAt?: Date
       title?: string
@@ -934,6 +1003,14 @@ describe('admin', () => {
       category: 'COLLECTIVE',
       capacity: 60,
       title: 'Gymnase de Lourdes',
+    })
+    // Masquée : comptée dans scoutBase (actifs + masqués) mais pas dans la capacité.
+    await listing({
+      ownerId: ids.admin,
+      category: 'SCOUT_BASE',
+      capacity: 50,
+      title: 'Base scoute du Lavedan',
+      hiddenAt: new Date(),
     })
 
     const lodging = (listingId: string, status: 'PENDING' | 'ACCEPTED' | 'CANCELLED') =>
@@ -1019,7 +1096,9 @@ describe('admin', () => {
         privateHidden: 1,
         hotel: 1,
         collective: 1,
-        // Capacité des non-masqués : 8 (privé actif) + 40 (hôtel) + 60 (gymnase).
+        scoutBase: 1,
+        // Capacité des non-masqués : 8 (privé actif) + 40 (hôtel) + 60 (gymnase) —
+        // la base scoute masquée ne compte pas.
         totalCapacity: 108,
       },
       requests: { pending: 1, accepted: 1, declined: 0, expired: 0, cancelled: 1 },
@@ -1030,7 +1109,14 @@ describe('admin', () => {
     // relations acceptées sur l'annonce Woippy ; le PENDING ignoré ne compte pas.
     const metz = body.sites.find((s) => s.site === 'metz')
     expect(metz).toMatchObject({
-      listings: { privateActive: 0, privateHidden: 0, hotel: 0, collective: 0, totalCapacity: 0 },
+      listings: {
+        privateActive: 0,
+        privateHidden: 0,
+        hotel: 0,
+        collective: 0,
+        scoutBase: 0,
+        totalCapacity: 0,
+      },
       requests: { pending: 0, accepted: 0, declined: 0, expired: 0, cancelled: 0 },
       jumelage: { seeking: 1, hosting: 1, relations: 2 },
     })
@@ -1039,7 +1125,14 @@ describe('admin', () => {
     // PRIVATE témoin, l'annonce SEEKING d'Épinal. Capacité : 3 (privé) + 45 (hôtel PATCHé).
     const paris = body.sites.find((s) => s.site === 'paris')
     expect(paris).toMatchObject({
-      listings: { privateActive: 1, privateHidden: 0, hotel: 1, collective: 0, totalCapacity: 48 },
+      listings: {
+        privateActive: 1,
+        privateHidden: 0,
+        hotel: 1,
+        collective: 0,
+        scoutBase: 0,
+        totalCapacity: 48,
+      },
       requests: { pending: 0, accepted: 0, declined: 0, expired: 0, cancelled: 0 },
       jumelage: { seeking: 1, hosting: 0, relations: 0 },
     })

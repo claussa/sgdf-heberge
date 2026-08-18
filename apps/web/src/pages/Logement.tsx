@@ -120,12 +120,13 @@ function FicheLogement({ logement, me }: { logement: ListingDetail; me: Me }) {
             </p>
           )}
           {logement.description && (
-            <p className="fiche-logement__description">« {logement.description} »</p>
+            <p className="fiche-logement__description">{logement.description}</p>
           )}
         </div>
         <div className="fiche-logement__colonne">
-          {logement.category === 'HOTEL' ? (
-            <PanneauHotel logement={logement} />
+          {logement.category === 'HOTEL' ||
+          (logement.category === 'SCOUT_BASE' && logement.bookingUrl !== null) ? (
+            <PanneauReservationExterne logement={logement} />
           ) : (
             <PanneauDemande logement={logement} prenom={prenom} prefill={prefill} />
           )}
@@ -135,8 +136,12 @@ function FicheLogement({ logement, me }: { logement: ListingDetail; me: Me }) {
   )
 }
 
-/** Hôtel : pas de demande — prix en gros et réservation directe (variante v1 actée). */
-function PanneauHotel({ logement }: { logement: ListingDetail }) {
+/**
+ * Hôtel, ou base scout avec lien : pas de demande — prix en gros et réservation
+ * directe (variante v1 actée).
+ */
+function PanneauReservationExterne({ logement }: { logement: ListingDetail }) {
+  const estHotel = logement.category === 'HOTEL'
   // Compteur agrégé pour l'admin — fire-and-forget : la navigation part en
   // target="_blank", on ne la bloque jamais sur le tracking (échec silencieux).
   const compterClic = () => {
@@ -147,7 +152,8 @@ function PanneauHotel({ logement }: { logement: ListingDetail }) {
       <div className="fiche-logement__form">
         {logement.priceInfo && <p className="fiche-logement__prix">{logement.priceInfo}</p>}
         <p className="text-body">
-          La réservation se fait directement sur la plateforme de l’hôtel.
+          La réservation se fait directement sur{' '}
+          {estHotel ? 'la plateforme de l’hôtel' : 'la plateforme de réservation de la base'}.
         </p>
         {logement.bookingUrl && (
           <a
@@ -157,7 +163,7 @@ function PanneauHotel({ logement }: { logement: ListingDetail }) {
             rel="noreferrer"
             onClick={compterClic}
           >
-            Réserver sur le site de l’hôtel
+            {estHotel ? 'Réserver sur le site de l’hôtel' : 'Réserver sur le site de la base'}
           </a>
         )}
       </div>
@@ -165,7 +171,10 @@ function PanneauHotel({ logement }: { logement: ListingDetail }) {
   )
 }
 
-/** Panneau « Ma demande, » (PRIVATE et COLLECTIVE — le gymnase affiche aussi son prix). */
+/**
+ * Panneau « Ma demande, » (PRIVATE, COLLECTIVE et SCOUT_BASE sans lien — les
+ * institutionnels affichent aussi leur prix).
+ */
 function PanneauDemande({
   logement,
   prenom,
@@ -237,7 +246,7 @@ function PanneauDemande({
     <Card accentTop="brand" className="fiche-logement__panneau">
       <form className="fiche-logement__form" onSubmit={onSubmit}>
         <SectionTitle>Ma demande,</SectionTitle>
-        {logement.category === 'COLLECTIVE' && logement.priceInfo && (
+        {logement.category !== 'PRIVATE' && logement.priceInfo && (
           <p className="fiche-logement__prix">{logement.priceInfo}</p>
         )}
         <Field label="Dates et personnes">

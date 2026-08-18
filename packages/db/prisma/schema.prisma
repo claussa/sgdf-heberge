@@ -37,6 +37,7 @@ enum ListingCategory {
   PRIVATE
   HOTEL
   COLLECTIVE
+  SCOUT_BASE
 }
 
 enum ListingStatus {
@@ -178,7 +179,7 @@ model User {
 model Listing {
   id String @id @default(cuid())
 
-  /// Logements institutionnels (HOTEL/COLLECTIVE) : owner = compte admin qui les gère
+  /// Logements institutionnels (HOTEL/COLLECTIVE/SCOUT_BASE) : owner = compte admin qui les gère
   ownerId String
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
@@ -234,9 +235,11 @@ model Listing {
 
   /// Institutionnels : prix/conditions saisis par l'admin (« 45 € · code PAPE15 »)
   priceInfo  String?
-  /// Hôtels : URL de la plateforme de réservation (pas de demande in-app)
+  /// Hôtels (obligatoire côté UX) et bases scoutes (optionnel) : URL de la plateforme
+  /// de réservation. Présente = pas de demande in-app ; base scoute sans lien = flux
+  /// de demande standard (comme un gymnase).
   bookingUrl String?
-  /// Hôtels : nombre de clics sur le lien de réservation (compteur agrégé,
+  /// Nombre de clics sur le lien de réservation (compteur agrégé,
   /// affiché à l'admin — aucune trace individuelle de qui a cliqué)
   bookingClicks Int @default(0)
 
