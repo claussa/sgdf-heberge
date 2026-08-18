@@ -294,6 +294,26 @@ export function CommentCaMarche() {
           text="Jumelage : nous cherchons une unité sur place, ou nous pouvons en accueillir une."
         />
       </div>
+      {eventConfig.guidePdf && (
+        <Card className="ccm-pdf">
+          <span className="ccm-pdf__signe-box" aria-hidden="true">
+            <SigneMask name="fleche" className="ccm-pdf__signe" />
+          </span>
+          <div className="ccm-pdf__body">
+            <h2 className="ccm-pdf__title">La notice existe aussi en PDF</h2>
+            <p className="ccm-step__text">
+              Le mode opératoire illustré, capture d’écran par capture d’écran — pratique à imprimer
+              ou à transférer à quelqu’un qui découvre la plateforme.
+            </p>
+            <p className="ccm-pdf__action">
+              <a href={eventConfig.guidePdf.href} target="_blank" rel="noreferrer">
+                {eventConfig.guidePdf.label}
+              </a>
+              <span className="ccm-pdf__meta">{eventConfig.guidePdf.meta}</span>
+            </p>
+          </div>
+        </Card>
+      )}
       {choice === 'volontaire' && <ParcoursVolontaire key="volontaire" />}
       {choice === 'unite' && <ParcoursUnite key="unite" />}
       {choice && (

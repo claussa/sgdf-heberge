@@ -87,6 +87,21 @@ const EventConfigSchema = z.object({
     logoEvent: z.string(),
     favicon: z.string(),
   }),
+  /**
+   * Notice PDF (mode opératoire illustré) proposée sur « Comment ça marche » —
+   * null si l'événement n'en fournit pas. Le fichier vit dans apps/web/public/
+   * (copié tel quel dans le bucket SPA au déploiement, stocké en Git LFS),
+   * `href` est son chemin public.
+   */
+  guidePdf: z
+    .object({
+      href: z.string().min(1),
+      /** Libellé du lien de téléchargement */
+      label: z.string().min(1),
+      /** Métadonnées affichées à côté du lien, ex. « PDF · 15 pages · 1,4 Mo » */
+      meta: z.string().min(1),
+    })
+    .nullable(),
 })
 
 export type EventConfig = z.infer<typeof EventConfigSchema>
@@ -159,6 +174,11 @@ export const eventConfig = {
   assets: {
     logoEvent: 'pape-leon-xiv-france-2026.png',
     favicon: 'favicon.svg',
+  },
+  guidePdf: {
+    href: '/docs/tuto-hebergement.pdf',
+    label: 'Télécharger le tuto hébergement',
+    meta: 'PDF · 15 pages · 1,4 Mo',
   },
 } as const satisfies EventConfig
 
