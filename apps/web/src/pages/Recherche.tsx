@@ -1,6 +1,7 @@
 import {
   ACCESS_CRITERIA,
   type ListingCard,
+  ListingSearchQuerySchema,
   type Me,
   PARKING_EASE,
   type ParkingEase,
@@ -135,33 +136,42 @@ function RechercheView({ me }: { me: Me }) {
     setParametres(suivant, { replace: true })
   }
 
-  const nbPersonnes = Number(personnes)
-  const personnesValide = Number.isInteger(nbPersonnes) && nbPersonnes >= 1
+  /**
+   * Query de `GET /listings`, validée par LE schéma de l'API (§5 : une seule source
+   * d'autorité, aucune borne recopiée côté SPA — c'est la recopie qui avait laissé
+   * passer un `people` hors bornes jusqu'au 400).
+   *
+   * Le contrôle est ici et non dans `majFiltres` parce que le formulaire n'est pas la
+   * seule entrée : l'URL est la source de vérité, et un lien partagé ou mis en favori
+   * n'y passe jamais. Les deux chemins se rejoignent sur cet objet.
+   *
+   * `people` vide = critère retiré (le champ qu'on vide ne filtre plus), ce que le
+   * schéma accepte via `.optional()`.
+   */
+  const query = {
+    site,
+    from: dateFrom || undefined,
+    to: dateTo || undefined,
+    people: personnes.trim() === '' ? undefined : personnes,
+    types: types.length > 0 ? types : undefined,
+    access: besoins && me.accessibilityNeeds.length > 0 ? me.accessibilityNeeds : undefined,
+    parking: parking ?? undefined,
+    pageSize: '60',
+  }
+  const filtres = ListingSearchQuerySchema.safeParse(query)
+  /** Seul champ libre des filtres : les autres sont contraints par les chips et les sélecteurs de date. */
+  const erreurFiltres = filtres.success
+    ? null
+    : filtres.error.issues.some((issue) => issue.path[0] === 'people')
+      ? 'Indique un nombre entier de personnes, au moins 1.'
+      : 'Ces filtres ne sont pas valides.'
 
   const recherche = useQuery({
-    queryKey: [
-      'listings',
-      site,
-      dateFrom,
-      dateTo,
-      personnes,
-      [...types].sort().join('+'),
-      besoins ? me.accessibilityNeeds.join('+') : '',
-      parking ?? '',
-    ],
+    // Clé structurelle : React Query hashe l'objet, elle ne peut plus désynchroniser de la query.
+    queryKey: ['listings', query],
+    enabled: filtres.success,
     queryFn: async () => {
-      const res = await api.listings.$get({
-        query: {
-          site,
-          from: dateFrom || undefined,
-          to: dateTo || undefined,
-          people: personnesValide ? personnes : undefined,
-          types: types.length > 0 ? types : undefined,
-          access: besoins && me.accessibilityNeeds.length > 0 ? me.accessibilityNeeds : undefined,
-          parking: parking ?? undefined,
-          pageSize: '60',
-        },
-      })
+      const res = await api.listings.$get({ query })
       if (res.status !== 200) throw new Error(`GET /listings : ${res.status}`)
       return res.json()
     },
@@ -223,7 +233,6 @@ function RechercheView({ me }: { me: Me }) {
               uiSize="xs"
               className="recherche__nombre"
               min={1}
-              max={30}
               value={personnes}
               onChange={(event) => majFiltres({ people: event.target.value })}
               aria-label="Nombre de personnes"
@@ -271,7 +280,9 @@ function RechercheView({ me }: { me: Me }) {
           </span>
         </div>
       </div>
-      {recherche.isError ? (
+      {erreurFiltres ? (
+        <p className="alert-text">{erreurFiltres}</p>
+      ) : recherche.isError ? (
         <p className="alert-text">La recherche a échoué. Réessaie dans un instant.</p>
       ) : resultats === undefined ? (
         <Loading />

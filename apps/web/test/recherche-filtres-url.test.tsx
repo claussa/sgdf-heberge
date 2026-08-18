@@ -208,6 +208,38 @@ describe('Recherche — les filtres de l’URL sont réappliqués (retour depuis
   })
 })
 
+describe('Recherche — la query est validée par le schéma de l’API avant l’envoi', () => {
+  it('envoie un grand groupe sans le rejeter (URL partagée `?people=60`)', async () => {
+    rendreRecherche('/recherche?site=paris&to=2026-09-25&people=60')
+    await screen.findByRole('link', { name: /Chambre privée/ })
+
+    const requete = new URL(urlsListings.at(-1) ?? '', 'http://test').searchParams
+    expect(requete.get('people')).toBe('60')
+    expect(requete.get('site')).toBe('paris')
+    expect(requete.get('to')).toBe('2026-09-25')
+  })
+
+  it('ne part pas en 400 : une valeur refusée par le schéma bloque la requête et s’affiche', async () => {
+    rendreRecherche('/recherche?people=0')
+
+    expect(await screen.findByText(/nombre entier de personnes/i)).toBeTruthy()
+    expect(urlsListings).toEqual([])
+  })
+
+  it('vider le champ retire le critère au lieu de casser la recherche', async () => {
+    rendreRecherche('/recherche')
+    await screen.findByRole('link', { name: /Chambre privée/ })
+
+    fireEvent.change(screen.getByLabelText('Nombre de personnes'), { target: { value: '' } })
+
+    await waitFor(() => {
+      const requete = new URL(urlsListings.at(-1) ?? '', 'http://test').searchParams
+      expect(requete.get('people')).toBeNull()
+    })
+    expect(screen.queryByText(/nombre entier de personnes/i)).toBeNull()
+  })
+})
+
 describe('Logement — « Retour à la recherche » conserve les filtres', () => {
   it('pointe vers /recherche avec la query string reçue de la recherche', async () => {
     render(

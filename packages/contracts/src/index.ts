@@ -352,7 +352,13 @@ export const ListingSearchQuerySchema = z.object({
   site: SiteSchema,
   from: z.iso.date().optional(),
   to: z.iso.date().optional(),
-  people: z.coerce.number().int().min(1).max(30).optional(),
+  /**
+   * Taille du groupe — simple filtre `capacity >= people`, sans plafond : la SPA
+   * n'en impose aucun (l'attribut `max` d'un input number ne bloque ni la saisie
+   * ni un paramètre d'URL), et un plafond côté API ne ferait que transformer une
+   * recherche « 0 résultat » en 400.
+   */
+  people: z.coerce.number().int().min(1).optional(),
   types: queryArray(SearchTypeSchema),
   /** Slugs d'accessibilité exigés (filtre « compatibles avec mes besoins ») */
   access: queryArray(AccessCriterionSchema),
