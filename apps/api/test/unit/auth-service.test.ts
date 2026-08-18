@@ -1,8 +1,10 @@
+import { MAGIC_LINK_RESEND_COOLDOWN_SECONDS } from '@repo/contracts'
 import { describe, expect, it } from 'vitest'
 import {
   generateToken,
   hashToken,
   MAGIC_LINK_MAX_USES,
+  MAGIC_LINK_RESEND_COOLDOWN_MS,
   MAGIC_LINK_TTL_MS,
   SESSION_ABSOLUTE_MS,
   SESSION_REFRESH_INTERVAL_MS,
@@ -37,6 +39,11 @@ describe('constantes décidées (§9) — ne pas modifier sans discussion', () =
   it('plafond de 3 à 5 utilisations', () => {
     expect(MAGIC_LINK_MAX_USES).toBeGreaterThanOrEqual(3)
     expect(MAGIC_LINK_MAX_USES).toBeLessThanOrEqual(5)
+  })
+
+  it('cooldown de renvoi : 5 minutes, même constante que le timer front (@repo/contracts)', () => {
+    expect(MAGIC_LINK_RESEND_COOLDOWN_MS).toBe(5 * 60 * 1000)
+    expect(MAGIC_LINK_RESEND_COOLDOWN_MS).toBe(MAGIC_LINK_RESEND_COOLDOWN_SECONDS * 1000)
   })
 
   it('session glissante 90 jours, plafond absolu 6 mois, refresh 24 h max', () => {

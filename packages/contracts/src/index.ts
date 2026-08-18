@@ -119,13 +119,23 @@ export const MagicLinkRequestSchema = z.object({
 })
 
 /**
+ * Délai minimal entre deux envois de lien pour un même email. Partagé front/back :
+ * le compte à rebours affiché sur l'écran de connexion ET la garde en base
+ * (`requestMagicLink` saute silencieusement tout renvoi plus tôt — anti-énumération
+ * oblige, la réponse HTTP reste identique).
+ */
+export const MAGIC_LINK_RESEND_COOLDOWN_SECONDS = 5 * 60
+
+/**
  * Réponse STRICTEMENT identique que l'email existe ou non (anti-énumération, §9).
  * Copy de la maquette, TTL corrigé à 10 minutes (§9 — multi-usage plafonné, pas
  * d'« usage unique » contrairement au texte de la maquette).
  */
 export const MagicLinkRequestResponseSchema = z.object({
   ok: z.literal(true),
-  message: z.literal('Le lien est parti ! Vérifie ta boîte mail : il est valable 10 minutes.'),
+  message: z.literal(
+    'Le lien est parti ! Vérifie ta boîte mail (et tes spams) : il est valable 10 minutes.',
+  ),
 })
 
 /** Profil du connecté — /me. accountType null = onboarding pas encore fait. */

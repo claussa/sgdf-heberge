@@ -1,6 +1,7 @@
+import { MAGIC_LINK_RESEND_COOLDOWN_SECONDS } from '@repo/contracts'
 import { eventConfig } from '@repo/event-config'
 import { useMutation } from '@tanstack/react-query'
-import { type FormEvent, useRef, useState } from 'react'
+import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useSearchParams } from 'react-router'
 import { api } from '../lib/api'
 import { assetUrl } from '../lib/assets'
@@ -50,6 +51,28 @@ function AutresRoutes({ variant }: { variant: 'hero' | 'panel' }) {
 }
 
 /**
+ * Secondes restantes avant `target` (epoch ms), rafraîchies chaque seconde.
+ * Affichage seulement : la règle est appliquée côté API (cooldown en base dans
+ * requestMagicLink, même constante partagée via @repo/contracts).
+ */
+function useCountdown(target: number | null): number {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (target === null) return
+    setNow(Date.now())
+    const id = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [target])
+  return target === null ? 0 : Math.max(0, Math.ceil((target - now) / 1000))
+}
+
+function formatCountdown(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${minutes}:${String(seconds).padStart(2, '0')}`
+}
+
+/**
  * Écran de connexion (A.1) : panneau hero bleu (textes de eventConfig) + formulaire
  * magic link. Desktop = proposition 1c (chemin des autres routes en bas du bleu) ;
  * mobile = proposition 4a (deux écrans aimantés : accroche, puis connexion et chemin) ;
@@ -60,6 +83,10 @@ export function Connexion() {
   const { me, isPending } = useMe()
   const [searchParams] = useSearchParams()
   const [email, setEmail] = useState('')
+  // Nombre d'envois pour cet email (1er envoi, puis renvoi) et date à partir de
+  // laquelle un renvoi est possible — même délai que la garde serveur.
+  const [sendCount, setSendCount] = useState(0)
+  const [resendAt, setResendAt] = useState<number | null>(null)
   const panelRef = useRef<HTMLDivElement>(null)
 
   const send = useMutation({
@@ -67,16 +94,29 @@ export function Connexion() {
       const res = await api.auth['magic-link'].$post({ json: { email: value } })
       if (res.status !== 202) throw new Error(`POST /auth/magic-link : ${res.status}`)
     },
+    onSuccess: () => {
+      setSendCount((count) => count + 1)
+      setResendAt(Date.now() + MAGIC_LINK_RESEND_COOLDOWN_SECONDS * 1000)
+    },
   })
+
+  const resendIn = useCountdown(resendAt)
 
   if (isPending) return <Loading />
   if (me) return <Navigate to="/" replace />
 
-  const linkInvalid = searchParams.get('error') === 'lien-invalide' && !send.isSuccess
+  const linkInvalid = searchParams.get('error') === 'lien-invalide' && sendCount === 0
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (!send.isPending && !send.isSuccess) send.mutate(email)
+    if (!send.isPending && sendCount === 0) send.mutate(email)
+  }
+
+  const tryAnotherEmail = () => {
+    send.reset()
+    setSendCount(0)
+    setResendAt(null)
+    setEmail('')
   }
 
   return (
@@ -121,23 +161,53 @@ export function Connexion() {
               autoComplete="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
+              disabled={sendCount > 0}
             />
           </Field>
-          {send.isSuccess ? (
-            <SuccessPanel>
-              <p className="text-body">
-                <b>Le lien est parti !</b> Vérifie ta boîte mail : il est valable 10 minutes.
-              </p>
-            </SuccessPanel>
-          ) : (
+          {send.isError && (
+            <p className="alert-text">L’envoi a échoué. Attends un instant, puis réessaie.</p>
+          )}
+          {sendCount > 0 ? (
             <>
-              {send.isError && (
-                <p className="alert-text">L’envoi a échoué. Attends un instant, puis réessaie.</p>
+              <SuccessPanel>
+                <p className="text-body">
+                  <b>{sendCount > 1 ? 'Un nouveau lien est parti !' : 'Le lien est parti !'}</b>{' '}
+                  Vérifie ta boîte mail : il est valable 10 minutes.
+                </p>
+                <p className="text-body">
+                  Rien reçu au bout de quelques minutes ? <b>Pense à regarder dans tes spams</b>{' '}
+                  (courriers indésirables).
+                </p>
+              </SuccessPanel>
+              {resendIn > 0 ? (
+                <>
+                  <Button variant="secondary" block disabled>
+                    Renvoyer le lien ({formatCountdown(resendIn)})
+                  </Button>
+                  <HelpText>
+                    Toujours rien ? Tu pourras demander un nouveau lien à la fin du décompte.
+                  </HelpText>
+                </>
+              ) : (
+                <Button
+                  variant="secondary"
+                  block
+                  disabled={send.isPending}
+                  onClick={() => send.mutate(email)}
+                >
+                  Renvoyer le lien
+                </Button>
               )}
-              <Button type="submit" block disabled={send.isPending}>
-                Recevoir mon lien
-              </Button>
+              {sendCount > 1 && (
+                <button type="button" className="connexion__autre-mail" onClick={tryAnotherEmail}>
+                  Essayer avec un autre e-mail
+                </button>
+              )}
             </>
+          ) : (
+            <Button type="submit" block disabled={send.isPending}>
+              Recevoir mon lien
+            </Button>
           )}
           <HelpText>
             Première visite ? Le lien crée ton compte, tout simplement.{' '}
