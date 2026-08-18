@@ -15,6 +15,41 @@ import { z } from 'zod'
 export { SiteSchema }
 
 // ---------------------------------------------------------------------------
+// Bornes de saisie
+// ---------------------------------------------------------------------------
+
+/**
+ * Bornes de saisie, partagées entre les schémas et les attributs des formulaires SPA.
+ *
+ * Elles vivent ici parce que le RPC ne les transporte pas : une borne recopiée dans le
+ * JSX (`max={50}`, `maxLength={2000}`) dérive silencieusement dès qu'on touche au schéma,
+ * et la dérive ne se voit qu'en 400 côté utilisateur. Un seul littéral, deux usages.
+ */
+export const INPUT_LIMITS = {
+  /** Nombre de couchages d'un même type sur une ligne du tableau */
+  bedCount: { min: 1, max: 50 },
+  /** Personnes par couchage */
+  bedCapacity: { min: 1, max: 20 },
+  bedNote: 200,
+  /** Lignes du tableau de couchages */
+  beds: { min: 1, max: 20 },
+  description: 2000,
+  accessibilityNotes: 1000,
+  /**
+   * Nombre de personnes — borne COMMUNE aux trois endroits où la même grandeur est saisie :
+   * le profil (`groupSize`, « nous serons N »), le filtre de recherche (`?people=`) et la
+   * création de demande (`peopleCount`).
+   *
+   * Recherche et demande ont été distinctes un temps (1000 / 30). Tout écart se paie côté
+   * utilisateur : déclarer un groupe qu'on ne peut pas chercher, ou chercher un groupe
+   * qu'on ne peut pas demander, ne mène qu'à un cul-de-sac. Au-delà de la capacité d'un
+   * particulier, la recherche ne remonte de toute façon que des logements institutionnels.
+   */
+  people: { min: 1, max: 600 },
+  requestMessage: { min: 1, max: 2000 },
+} as const
+
+// ---------------------------------------------------------------------------
 // Erreurs — format unique, déclaré dans le spec OpenAPI (§5)
 // ---------------------------------------------------------------------------
 
@@ -172,7 +207,8 @@ const IndividualProfileFields = {
   firstName: z.string().min(1).max(100),
   lastName: z.string().min(1).max(100),
   phone: z.string().min(6).max(20),
-  groupSize: z.number().int().min(1).max(30).nullish(),
+  /** Même borne que la recherche et les demandes : c'est la même grandeur déclarée en amont. */
+  groupSize: z.number().int().min(INPUT_LIMITS.people.min).max(INPUT_LIMITS.people.max).nullish(),
   accessibilityNeeds: z.array(AccessCriterionSchema).max(8).optional(),
 }
 
@@ -234,35 +270,6 @@ export const UserExportSchema = z.object({
 // ---------------------------------------------------------------------------
 // Logements
 // ---------------------------------------------------------------------------
-
-/**
- * Bornes de saisie, partagées entre les schémas et les attributs des formulaires SPA.
- *
- * Elles vivent ici parce que le RPC ne les transporte pas : une borne recopiée dans le
- * JSX (`max={50}`, `maxLength={2000}`) dérive silencieusement dès qu'on touche au schéma,
- * et la dérive ne se voit qu'en 400 côté utilisateur. Un seul littéral, deux usages.
- */
-export const INPUT_LIMITS = {
-  /** Nombre de couchages d'un même type sur une ligne du tableau */
-  bedCount: { min: 1, max: 50 },
-  /** Personnes par couchage */
-  bedCapacity: { min: 1, max: 20 },
-  bedNote: 200,
-  /** Lignes du tableau de couchages */
-  beds: { min: 1, max: 20 },
-  description: 2000,
-  accessibilityNotes: 1000,
-  /**
-   * Nombre de personnes — borne COMMUNE au filtre de recherche (`?people=`) et à la
-   * création de demande (`peopleCount`). Les deux étaient volontairement distinctes
-   * (1000 / 30) ; elles sont réunifiées parce qu'un écart entre les deux se paie côté
-   * utilisateur : chercher pour un groupe qu'on ne pourra pas demander ne mène qu'à un
-   * cul-de-sac sur la fiche. Au-delà de la capacité d'un particulier, la recherche ne
-   * remonte de toute façon que des logements institutionnels.
-   */
-  people: { min: 1, max: 600 },
-  requestMessage: { min: 1, max: 2000 },
-} as const
 
 export const BedInputSchema = z.object({
   type: BedTypeSchema,

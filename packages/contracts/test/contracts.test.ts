@@ -6,6 +6,7 @@ import {
   ListingSearchQuerySchema,
   MagicLinkRequestSchema,
   OnboardingSchema,
+  ProfileUpdateSchema,
   RequestCreateSchema,
   RequestRequesterViewSchema,
   SiteSchema,
@@ -197,26 +198,30 @@ describe('requêtes', () => {
   })
 })
 
-describe('recherche et demande partagent la borne « nombre de personnes »', () => {
+describe('profil, recherche et demande partagent la borne « nombre de personnes »', () => {
   /**
-   * L'écart entre les deux bornes se paie côté utilisateur : chercher pour un groupe
-   * qu'on ne pourra pas demander mène à un cul-de-sac sur la fiche. Ce test verrouille
-   * l'alignement — les deux schémas doivent lire la MÊME entrée d'`INPUT_LIMITS`.
+   * Tout écart entre ces trois bornes se paie côté utilisateur : déclarer un groupe qu'on
+   * ne peut pas chercher, ou chercher un groupe qu'on ne peut pas demander, mène à un
+   * cul-de-sac. Ce test verrouille l'alignement — les trois schémas doivent lire la MÊME
+   * entrée d'`INPUT_LIMITS`, pas trois littéraux qui se ressemblent aujourd'hui.
    */
   const { min, max } = INPUT_LIMITS.people
+  /** [nom, valeur → acceptée ?] pour les trois points de saisie de la même grandeur */
+  const points: [string, (v: number) => boolean][] = [
+    ['profil (groupSize)', (v) => ProfileUpdateSchema.safeParse({ groupSize: v }).success],
+    [
+      'recherche (people)',
+      (v) => ListingSearchQuerySchema.shape.people.safeParse(String(v)).success,
+    ],
+    ['demande (peopleCount)', (v) => RequestCreateSchema.shape.peopleCount.safeParse(v).success],
+  ]
 
-  it('accepte la même valeur maximale des deux côtés', () => {
-    expect(ListingSearchQuerySchema.shape.people.safeParse(String(max)).success).toBe(true)
-    expect(RequestCreateSchema.shape.peopleCount.safeParse(max).success).toBe(true)
-  })
-
-  it('refuse la même valeur au-delà des deux côtés', () => {
-    expect(ListingSearchQuerySchema.shape.people.safeParse(String(max + 1)).success).toBe(false)
-    expect(RequestCreateSchema.shape.peopleCount.safeParse(max + 1).success).toBe(false)
-  })
-
-  it('refuse la même valeur en deçà des deux côtés', () => {
-    expect(ListingSearchQuerySchema.shape.people.safeParse(String(min - 1)).success).toBe(false)
-    expect(RequestCreateSchema.shape.peopleCount.safeParse(min - 1).success).toBe(false)
-  })
+  for (const [nom, accepte] of points) {
+    it(`${nom} : accepte ${min}, accepte le plafond, refuse au-delà et en deçà`, () => {
+      expect(accepte(min)).toBe(true)
+      expect(accepte(max)).toBe(true)
+      expect(accepte(max + 1)).toBe(false)
+      expect(accepte(min - 1)).toBe(false)
+    })
+  }
 })

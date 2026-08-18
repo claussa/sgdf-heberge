@@ -1,5 +1,10 @@
 import type { AccessCriterion, Me } from '@repo/contracts'
-import { ACCESS_CRITERIA } from '@repo/contracts'
+import {
+  ACCESS_CRITERIA,
+  INPUT_LIMITS,
+  OnboardingSchema,
+  ProfileUpdateSchema,
+} from '@repo/contracts'
 import { useMutation } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { Navigate, useNavigate, useSearchParams } from 'react-router'
@@ -35,18 +40,30 @@ function ProfilVolontaireForm({ me }: { me: Me }) {
   const [phone, setPhone] = useState(me.phone ?? '')
   const [groupSize, setGroupSize] = useState(me.groupSize === null ? '' : String(me.groupSize))
   const [needs, setNeeds] = useState<AccessCriterion[]>(me.accessibilityNeeds)
+  const [tenteEnvoi, setTenteEnvoi] = useState(false)
+
+  const profile = {
+    firstName: firstName.trim(),
+    lastName: lastName.trim(),
+    phone: phone.trim(),
+    groupSize: groupSize === '' ? undefined : Number(groupSize),
+    accessibilityNeeds: needs,
+    // Enregistrer son profil volontaire active l'espace recherche (nav, accueil)
+    seeksAccommodation: true as const,
+  }
+  /**
+   * Validé par LE schéma que l'API appliquera — celui de l'onboarding au premier passage,
+   * celui de la mise à jour ensuite (§5). Le RPC ne type que la forme du JSON, donc sans
+   * ce parse une saisie hors bornes (`groupSize`, longueurs de nom) ne se voyait qu'en 400
+   * avec un message générique.
+   */
+  const profilValide =
+    me.accountType === null
+      ? OnboardingSchema.safeParse({ accountType: 'INDIVIDUAL', ...profile })
+      : ProfileUpdateSchema.safeParse(profile)
 
   const save = useMutation({
     mutationFn: async () => {
-      const profile = {
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        phone: phone.trim(),
-        groupSize: groupSize === '' ? undefined : Number(groupSize),
-        accessibilityNeeds: needs,
-        // Enregistrer son profil volontaire active l'espace recherche (nav, accueil)
-        seeksAccommodation: true as const,
-      }
       const res =
         me.accountType === null
           ? await api.me.onboarding.$post({ json: { accountType: 'INDIVIDUAL', ...profile } })
@@ -70,8 +87,17 @@ function ProfilVolontaireForm({ me }: { me: Me }) {
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (!save.isPending) save.mutate()
+    setTenteEnvoi(true)
+    if (!save.isPending && profilValide.success) save.mutate()
   }
+
+  /** Affiché seulement après une tentative : au montage un profil vierge est invalide. */
+  const erreurSaisie =
+    !tenteEnvoi || profilValide.success
+      ? null
+      : profilValide.error.issues.some((issue) => issue.path[0] === 'groupSize')
+        ? `Indique un nombre de personnes entre ${INPUT_LIMITS.people.min} et ${INPUT_LIMITS.people.max}.`
+        : 'Vérifie les informations saisies avant d’enregistrer.'
 
   return (
     <form className="profil fade" onSubmit={onSubmit}>
@@ -104,8 +130,8 @@ function ProfilVolontaireForm({ me }: { me: Me }) {
           <span className="profil__inline">
             <Input
               type="number"
-              min={1}
-              max={30}
+              min={INPUT_LIMITS.people.min}
+              max={INPUT_LIMITS.people.max}
               value={groupSize}
               onChange={(event) => setGroupSize(event.target.value)}
               aria-label="Nombre de personnes"
@@ -144,6 +170,7 @@ function ProfilVolontaireForm({ me }: { me: Me }) {
           )
         })}
       </FieldGroup>
+      {erreurSaisie && <p className="alert-text">{erreurSaisie}</p>}
       {save.isError && (
         <p className="alert-text">Impossible d’enregistrer. Vérifie les champs, puis réessaie.</p>
       )}

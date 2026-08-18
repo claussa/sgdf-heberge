@@ -7,6 +7,7 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { HebergeurLogementNouveau } from '../src/pages/HebergeurLogementNouveau'
 import { Logement } from '../src/pages/Logement'
+import { ProfilVolontaire } from '../src/pages/ProfilVolontaire'
 
 /**
  * Les schémas de `packages/contracts` sont la seule autorité sur les bornes de saisie :
@@ -162,13 +163,42 @@ describe('Logement hébergeur — les couchages sont jugés par ListingUpsertSch
   })
 })
 
+describe('Profil volontaire — la saisie est jugée par le schéma de l’onboarding / mise à jour', () => {
+  it('un prénom trop long n’a aucun attribut pour le bloquer : c’est le schéma qui l’arrête', async () => {
+    rendre('/profil', '/profil', <ProfilVolontaire />)
+    await screen.findByRole('button', { name: /Enregistrer et rechercher/ })
+
+    // Les champs prénom/nom ne portent pas de `maxLength` : rien côté navigateur ne voit
+    // le `max(100)` du schéma. Sans `safeParse`, ça partait en 400.
+    fireEvent.change(screen.getByLabelText('Prénom'), { target: { value: 'a'.repeat(101) } })
+    fireEvent.click(screen.getByRole('button', { name: /Enregistrer et rechercher/ }))
+
+    expect(await screen.findByText(/Vérifie les informations saisies/i)).toBeTruthy()
+    expect(ecritures).toEqual([])
+  })
+
+  it('un profil valide part bien vers l’API', async () => {
+    rendre('/profil', '/profil', <ProfilVolontaire />)
+    await screen.findByRole('button', { name: /Enregistrer et rechercher/ })
+
+    fireEvent.change(screen.getByLabelText('Nombre de personnes'), { target: { value: '600' } })
+    fireEvent.click(screen.getByRole('button', { name: /Enregistrer et rechercher/ }))
+
+    await waitFor(() => expect(ecritures).toEqual(['PATCH /api/me']))
+  })
+})
+
 describe('Les bornes ne sont plus recopiées dans le JSX', () => {
   /**
    * Garde-fou de non-régression : c'est la recopie d'une borne du schéma dans un attribut
    * du formulaire qui a produit le 400 sur `people`. Les formulaires doivent référencer
    * `INPUT_LIMITS`, jamais réécrire le littéral.
    */
-  const formulaires = ['../src/pages/HebergeurLogementNouveau.tsx', '../src/pages/Logement.tsx']
+  const formulaires = [
+    '../src/pages/HebergeurLogementNouveau.tsx',
+    '../src/pages/Logement.tsx',
+    '../src/pages/ProfilVolontaire.tsx',
+  ]
 
   for (const chemin of formulaires) {
     it(`${chemin.split('/').pop()} tire ses bornes d’INPUT_LIMITS`, () => {
