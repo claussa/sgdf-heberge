@@ -230,6 +230,7 @@
 }
 
 .radio__box {
+  position: relative;
   width: 18px;
   height: 18px;
   flex: none;
@@ -240,17 +241,20 @@
   box-shadow: inset 0 0 0 1.5px var(--bleu);
   border-radius: 50%;
   background: var(--blanc);
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
+/* Centrage géométrique (translate) : insensible au snapping sous-pixel de
+   l'écart impair 18 − 9 — même technique que .choice-card__dot-inner. */
 .radio__input:checked + .radio__box::after {
   content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
   width: 9px;
   height: 9px;
   border-radius: 50%;
   background: var(--bleu);
+  transform: translate(-50%, -50%);
 }
 
 .radio__input:focus-visible + .radio__box {
