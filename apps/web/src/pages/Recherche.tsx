@@ -322,9 +322,13 @@ function CarteLogement({ carte, lienSuffixe }: { carte: ListingCard; lienSuffixe
               <Badge key={badge}>{badge}</Badge>
             ))}
             {masques.length > 0 && (
-              <span className="carte-logement__badge-plus" aria-label={masques.join(', ')}>
-                <Badge>…</Badge>
-                <span className="carte-logement__badge-bulle" role="tooltip">
+              <span className="carte-logement__badge-plus">
+                <span aria-hidden="true">
+                  <Badge>…</Badge>
+                </span>
+                {/* Lecteurs d'écran : la bulle est en display:none, le texte passe par ici. */}
+                <span className="sr-only">{masques.join(', ')}</span>
+                <span className="carte-logement__badge-bulle" aria-hidden="true">
                   {masques.map((badge) => (
                     <Badge key={badge}>{badge}</Badge>
                   ))}
