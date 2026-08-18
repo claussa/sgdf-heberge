@@ -41,13 +41,14 @@ function dateParam(parametres: URLSearchParams, cle: string, defaut: string): st
 }
 
 /**
- * La recherche ne plafonne pas `people` (on peut chercher pour 60), mais une demande est
- * bornée par `RequestCreateSchema`. Un prefill hors bornes retombe donc sur le défaut
+ * Prefill `?people=` reporté par la recherche. Recherche et demande partagent désormais la
+ * même borne (`INPUT_LIMITS.people`), donc tout groupe cherché est reportable tel quel ; le
+ * garde-fou ne sert plus qu'aux valeurs bricolées dans l'URL, qui retombent sur le défaut
  * plutôt que de pré-remplir un formulaire qui partirait en 400.
  */
 function personnesParam(parametres: URLSearchParams, defaut: number): number {
   const valeur = Number(parametres.get('people'))
-  const { min, max } = INPUT_LIMITS.requestPeople
+  const { min, max } = INPUT_LIMITS.people
   return Number.isInteger(valeur) && valeur >= min && valeur <= max ? valeur : defaut
 }
 
@@ -274,7 +275,7 @@ function PanneauDemande({
     !tenteEnvoi || demande.success
       ? null
       : demande.error.issues.some((issue) => issue.path[0] === 'peopleCount')
-        ? `Indique un nombre de personnes entre ${INPUT_LIMITS.requestPeople.min} et ${INPUT_LIMITS.requestPeople.max}.`
+        ? `Indique un nombre de personnes entre ${INPUT_LIMITS.people.min} et ${INPUT_LIMITS.people.max}.`
         : demande.error.issues.some((issue) => issue.path[0] === 'message')
           ? 'Écris un message à ton hébergeur avant d’envoyer ta demande.'
           : 'Vérifie les dates de ton séjour.'
@@ -310,8 +311,8 @@ function PanneauDemande({
           <span className="fiche-logement__personnes">
             <Input
               type="number"
-              min={INPUT_LIMITS.requestPeople.min}
-              max={INPUT_LIMITS.requestPeople.max}
+              min={INPUT_LIMITS.people.min}
+              max={INPUT_LIMITS.people.max}
               value={personnes}
               onChange={(event) => setPersonnes(event.target.value)}
               aria-label="Nombre de personnes"

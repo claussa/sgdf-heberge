@@ -253,17 +253,14 @@ export const INPUT_LIMITS = {
   description: 2000,
   accessibilityNotes: 1000,
   /**
-   * Personnes d'une demande d'hébergement — un particulier n'accueille pas au-delà.
-   * Volontairement plus bas que `searchPeople` : on cherche large, on demande à un
-   * logement donné.
+   * Nombre de personnes — borne COMMUNE au filtre de recherche (`?people=`) et à la
+   * création de demande (`peopleCount`). Les deux étaient volontairement distinctes
+   * (1000 / 30) ; elles sont réunifiées parce qu'un écart entre les deux se paie côté
+   * utilisateur : chercher pour un groupe qu'on ne pourra pas demander ne mène qu'à un
+   * cul-de-sac sur la fiche. Au-delà de la capacité d'un particulier, la recherche ne
+   * remonte de toute façon que des logements institutionnels.
    */
-  requestPeople: { min: 1, max: 30 },
-  /**
-   * Personnes du filtre de recherche. Large : au-delà de 30, la recherche ne remonte
-   * plus que des logements institutionnels (gymnases, bases scoutes), ce qui est le
-   * comportement attendu pour un grand groupe.
-   */
-  searchPeople: { min: 1, max: 1000 },
+  people: { min: 1, max: 600 },
   requestMessage: { min: 1, max: 2000 },
 } as const
 
@@ -389,17 +386,16 @@ export const ListingSearchQuerySchema = z.object({
   from: z.iso.date().optional(),
   to: z.iso.date().optional(),
   /**
-   * Taille du groupe — simple filtre `capacity >= people`. La borne haute est celle de
-   * la recherche (`searchPeople`), pas celle d'une demande : chercher pour 200 est
-   * légitime et ne remonte que des logements institutionnels. Elle vient d'`INPUT_LIMITS`
-   * pour que l'attribut `max` du champ ne puisse pas en diverger — c'est cette recopie
-   * qui avait produit un 400 sur `people=60`.
+   * Taille du groupe — simple filtre `capacity >= people`. Même borne que
+   * `RequestCreateSchema.peopleCount` : ce qu'on peut chercher, on doit pouvoir le
+   * demander. Elle vient d'`INPUT_LIMITS` pour que l'attribut `max` du champ ne puisse
+   * pas en diverger — c'est cette recopie qui avait produit un 400 sur `people=60`.
    */
   people: z.coerce
     .number()
     .int()
-    .min(INPUT_LIMITS.searchPeople.min)
-    .max(INPUT_LIMITS.searchPeople.max)
+    .min(INPUT_LIMITS.people.min)
+    .max(INPUT_LIMITS.people.max)
     .optional(),
   types: queryArray(SearchTypeSchema),
   /** Slugs d'accessibilité exigés (filtre « compatibles avec mes besoins ») */
@@ -438,11 +434,7 @@ export const AdminListingsResponseSchema = z.object({ items: z.array(AdminListin
 export const RequestCreateSchema = z.object({
   dateFrom: z.iso.date(),
   dateTo: z.iso.date(),
-  peopleCount: z
-    .number()
-    .int()
-    .min(INPUT_LIMITS.requestPeople.min)
-    .max(INPUT_LIMITS.requestPeople.max),
+  peopleCount: z.number().int().min(INPUT_LIMITS.people.min).max(INPUT_LIMITS.people.max),
   message: z.string().min(INPUT_LIMITS.requestMessage.min).max(INPUT_LIMITS.requestMessage.max),
 })
 export type RequestCreateInput = z.infer<typeof RequestCreateSchema>

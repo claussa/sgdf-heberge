@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   AdminListingUpsertSchema,
+  INPUT_LIMITS,
   ListingCardSchema,
   ListingSearchQuerySchema,
   MagicLinkRequestSchema,
@@ -193,5 +194,29 @@ describe('requêtes', () => {
         access: accessGrid,
       }),
     ).toThrow()
+  })
+})
+
+describe('recherche et demande partagent la borne « nombre de personnes »', () => {
+  /**
+   * L'écart entre les deux bornes se paie côté utilisateur : chercher pour un groupe
+   * qu'on ne pourra pas demander mène à un cul-de-sac sur la fiche. Ce test verrouille
+   * l'alignement — les deux schémas doivent lire la MÊME entrée d'`INPUT_LIMITS`.
+   */
+  const { min, max } = INPUT_LIMITS.people
+
+  it('accepte la même valeur maximale des deux côtés', () => {
+    expect(ListingSearchQuerySchema.shape.people.safeParse(String(max)).success).toBe(true)
+    expect(RequestCreateSchema.shape.peopleCount.safeParse(max).success).toBe(true)
+  })
+
+  it('refuse la même valeur au-delà des deux côtés', () => {
+    expect(ListingSearchQuerySchema.shape.people.safeParse(String(max + 1)).success).toBe(false)
+    expect(RequestCreateSchema.shape.peopleCount.safeParse(max + 1).success).toBe(false)
+  })
+
+  it('refuse la même valeur en deçà des deux côtés', () => {
+    expect(ListingSearchQuerySchema.shape.people.safeParse(String(min - 1)).success).toBe(false)
+    expect(RequestCreateSchema.shape.peopleCount.safeParse(min - 1).success).toBe(false)
   })
 })
