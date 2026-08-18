@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { Navigate, useNavigate, useSearchParams } from 'react-router'
 import { AccountActions } from '../components/AccountActions'
+import { TransportLink } from '../components/TransportLink'
 import { api } from '../lib/api'
 import { useMe, useSetMe } from '../lib/hooks'
 import { Button, Field, HelpText, Input, Loading, PageTitle } from '../ui'
@@ -109,10 +110,10 @@ function ProfilHebergeurForm({ me }: { me: Me }) {
       >
         {me.hasListings ? 'Voir mes logements' : 'Créer mon premier logement'}
       </Button>
+      <hr className="divider" />
+      <span className="field__label">Et si besoin</span>
       {!isPremiere && !me.seeksAccommodation && (
         <>
-          <hr className="divider" />
-          <span className="field__label">Et si besoin</span>
           <Button
             variant="secondary"
             style={{ alignSelf: 'flex-start' }}
@@ -126,6 +127,7 @@ function ProfilHebergeurForm({ me }: { me: Me }) {
           </HelpText>
         </>
       )}
+      <TransportLink />
       <AccountActions />
     </form>
   )
