@@ -219,10 +219,25 @@ describe('Recherche — la query est validée par le schéma de l’API avant l�
     expect(requete.get('to')).toBe('2026-09-25')
   })
 
+  it('cherche jusqu’à 1000 personnes — au-delà de 30 seuls les institutionnels remontent', async () => {
+    rendreRecherche('/recherche?people=1000')
+    await screen.findByRole('link', { name: /Chambre privée/ })
+
+    const requete = new URL(urlsListings.at(-1) ?? '', 'http://test').searchParams
+    expect(requete.get('people')).toBe('1000')
+  })
+
   it('ne part pas en 400 : une valeur refusée par le schéma bloque la requête et s’affiche', async () => {
     rendreRecherche('/recherche?people=0')
 
     expect(await screen.findByText(/nombre entier de personnes/i)).toBeTruthy()
+    expect(urlsListings).toEqual([])
+  })
+
+  it('au-delà du plafond de recherche, la requête est bloquée et signalée', async () => {
+    rendreRecherche('/recherche?people=1001')
+
+    expect(await screen.findByText(/entre 1 et 1000/i)).toBeTruthy()
     expect(urlsListings).toEqual([])
   })
 

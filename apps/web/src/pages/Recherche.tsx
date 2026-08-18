@@ -1,5 +1,6 @@
 import {
   ACCESS_CRITERIA,
+  INPUT_LIMITS,
   type ListingCard,
   ListingSearchQuerySchema,
   type Me,
@@ -163,7 +164,7 @@ function RechercheView({ me }: { me: Me }) {
   const erreurFiltres = filtres.success
     ? null
     : filtres.error.issues.some((issue) => issue.path[0] === 'people')
-      ? 'Indique un nombre entier de personnes, au moins 1.'
+      ? `Indique un nombre entier de personnes, entre ${INPUT_LIMITS.searchPeople.min} et ${INPUT_LIMITS.searchPeople.max}.`
       : 'Ces filtres ne sont pas valides.'
 
   const recherche = useQuery({
@@ -232,7 +233,8 @@ function RechercheView({ me }: { me: Me }) {
               type="number"
               uiSize="xs"
               className="recherche__nombre"
-              min={1}
+              min={INPUT_LIMITS.searchPeople.min}
+              max={INPUT_LIMITS.searchPeople.max}
               value={personnes}
               onChange={(event) => majFiltres({ people: event.target.value })}
               aria-label="Nombre de personnes"

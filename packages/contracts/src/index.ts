@@ -252,8 +252,18 @@ export const INPUT_LIMITS = {
   beds: { min: 1, max: 20 },
   description: 2000,
   accessibilityNotes: 1000,
-  /** Personnes d'une demande d'hébergement */
+  /**
+   * Personnes d'une demande d'hébergement — un particulier n'accueille pas au-delà.
+   * Volontairement plus bas que `searchPeople` : on cherche large, on demande à un
+   * logement donné.
+   */
   requestPeople: { min: 1, max: 30 },
+  /**
+   * Personnes du filtre de recherche. Large : au-delà de 30, la recherche ne remonte
+   * plus que des logements institutionnels (gymnases, bases scoutes), ce qui est le
+   * comportement attendu pour un grand groupe.
+   */
+  searchPeople: { min: 1, max: 1000 },
   requestMessage: { min: 1, max: 2000 },
 } as const
 
@@ -379,12 +389,18 @@ export const ListingSearchQuerySchema = z.object({
   from: z.iso.date().optional(),
   to: z.iso.date().optional(),
   /**
-   * Taille du groupe — simple filtre `capacity >= people`, sans plafond : la SPA
-   * n'en impose aucun (l'attribut `max` d'un input number ne bloque ni la saisie
-   * ni un paramètre d'URL), et un plafond côté API ne ferait que transformer une
-   * recherche « 0 résultat » en 400.
+   * Taille du groupe — simple filtre `capacity >= people`. La borne haute est celle de
+   * la recherche (`searchPeople`), pas celle d'une demande : chercher pour 200 est
+   * légitime et ne remonte que des logements institutionnels. Elle vient d'`INPUT_LIMITS`
+   * pour que l'attribut `max` du champ ne puisse pas en diverger — c'est cette recopie
+   * qui avait produit un 400 sur `people=60`.
    */
-  people: z.coerce.number().int().min(1).optional(),
+  people: z.coerce
+    .number()
+    .int()
+    .min(INPUT_LIMITS.searchPeople.min)
+    .max(INPUT_LIMITS.searchPeople.max)
+    .optional(),
   types: queryArray(SearchTypeSchema),
   /** Slugs d'accessibilité exigés (filtre « compatibles avec mes besoins ») */
   access: queryArray(AccessCriterionSchema),
