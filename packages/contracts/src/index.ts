@@ -235,11 +235,37 @@ export const UserExportSchema = z.object({
 // Logements
 // ---------------------------------------------------------------------------
 
+/**
+ * Bornes de saisie, partagées entre les schémas et les attributs des formulaires SPA.
+ *
+ * Elles vivent ici parce que le RPC ne les transporte pas : une borne recopiée dans le
+ * JSX (`max={50}`, `maxLength={2000}`) dérive silencieusement dès qu'on touche au schéma,
+ * et la dérive ne se voit qu'en 400 côté utilisateur. Un seul littéral, deux usages.
+ */
+export const INPUT_LIMITS = {
+  /** Nombre de couchages d'un même type sur une ligne du tableau */
+  bedCount: { min: 1, max: 50 },
+  /** Personnes par couchage */
+  bedCapacity: { min: 1, max: 20 },
+  bedNote: 200,
+  /** Lignes du tableau de couchages */
+  beds: { min: 1, max: 20 },
+  description: 2000,
+  accessibilityNotes: 1000,
+  /** Personnes d'une demande d'hébergement */
+  requestPeople: { min: 1, max: 30 },
+  requestMessage: { min: 1, max: 2000 },
+} as const
+
 export const BedInputSchema = z.object({
   type: BedTypeSchema,
-  count: z.number().int().min(1).max(50),
-  capacityEach: z.number().int().min(1).max(20),
-  note: z.string().max(200).nullish(),
+  count: z.number().int().min(INPUT_LIMITS.bedCount.min).max(INPUT_LIMITS.bedCount.max),
+  capacityEach: z
+    .number()
+    .int()
+    .min(INPUT_LIMITS.bedCapacity.min)
+    .max(INPUT_LIMITS.bedCapacity.max),
+  note: z.string().max(INPUT_LIMITS.bedNote).nullish(),
 })
 
 export const BedSchema = z.object({
@@ -313,11 +339,11 @@ export const ListingUpsertSchema = z.object({
   site: SiteSchema,
   availableFrom: z.iso.date(),
   availableTo: z.iso.date(),
-  description: z.string().max(2000).nullish(),
+  description: z.string().max(INPUT_LIMITS.description).nullish(),
   address: AddressInputSchema,
-  beds: z.array(BedInputSchema).min(1).max(20),
+  beds: z.array(BedInputSchema).min(INPUT_LIMITS.beds.min).max(INPUT_LIMITS.beds.max),
   access: AccessGridSchema,
-  accessibilityNotes: z.string().max(1000).nullish(),
+  accessibilityNotes: z.string().max(INPUT_LIMITS.accessibilityNotes).nullish(),
   parkingEase: ParkingEaseSchema.nullish(),
 })
 export type ListingUpsertInput = z.infer<typeof ListingUpsertSchema>
@@ -396,8 +422,12 @@ export const AdminListingsResponseSchema = z.object({ items: z.array(AdminListin
 export const RequestCreateSchema = z.object({
   dateFrom: z.iso.date(),
   dateTo: z.iso.date(),
-  peopleCount: z.number().int().min(1).max(30),
-  message: z.string().min(1).max(2000),
+  peopleCount: z
+    .number()
+    .int()
+    .min(INPUT_LIMITS.requestPeople.min)
+    .max(INPUT_LIMITS.requestPeople.max),
+  message: z.string().min(INPUT_LIMITS.requestMessage.min).max(INPUT_LIMITS.requestMessage.max),
 })
 export type RequestCreateInput = z.infer<typeof RequestCreateSchema>
 

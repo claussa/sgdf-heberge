@@ -1,4 +1,10 @@
-import { ACCESS_CRITERIA, type ListingDetail, type Me } from '@repo/contracts'
+import {
+  ACCESS_CRITERIA,
+  INPUT_LIMITS,
+  type ListingDetail,
+  type Me,
+  RequestCreateSchema,
+} from '@repo/contracts'
 import { eventConfig, formatDateRangeLong } from '@repo/event-config'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
@@ -34,9 +40,15 @@ function dateParam(parametres: URLSearchParams, cle: string, defaut: string): st
   return valeur !== null && ISO_DATE.test(valeur) ? valeur : defaut
 }
 
+/**
+ * La recherche ne plafonne pas `people` (on peut chercher pour 60), mais une demande est
+ * bornée par `RequestCreateSchema`. Un prefill hors bornes retombe donc sur le défaut
+ * plutôt que de pré-remplir un formulaire qui partirait en 400.
+ */
 function personnesParam(parametres: URLSearchParams, defaut: number): number {
   const valeur = Number(parametres.get('people'))
-  return Number.isInteger(valeur) && valeur >= 1 && valeur <= 30 ? valeur : defaut
+  const { min, max } = INPUT_LIMITS.requestPeople
+  return Number.isInteger(valeur) && valeur >= min && valeur <= max ? valeur : defaut
 }
 
 /** /logements/:id — écran A.5 fiche logement. */
@@ -190,15 +202,23 @@ function PanneauDemande({
   const [dateTo, setDateTo] = useState(prefill.dateTo)
   const [personnes, setPersonnes] = useState(String(prefill.personnes))
   const [message, setMessage] = useState('')
+  const [tenteEnvoi, setTenteEnvoi] = useState(false)
 
   const nbPersonnes = Number(personnes)
-  const personnesValide = Number.isInteger(nbPersonnes) && nbPersonnes >= 1
+  /**
+   * Corps de `POST /listings/:id/requests`, validé par LE schéma de l'API avant l'envoi
+   * (§5) : les bornes ne sont plus recopiées ici, elles viennent de `RequestCreateSchema`.
+   * Le RPC ne type que la forme du JSON — `peopleCount: number` passe la compilation quelle
+   * que soit la valeur — donc sans ce parse, une saisie hors bornes ne se voit qu'en 400.
+   */
+  const corps = { dateFrom, dateTo, peopleCount: nbPersonnes, message: message.trim() }
+  const demande = RequestCreateSchema.safeParse(corps)
 
   const envoi = useMutation({
     mutationFn: async () => {
       const res = await api.listings[':id'].requests.$post({
         param: { id: logement.id },
-        json: { dateFrom, dateTo, peopleCount: nbPersonnes, message: message.trim() },
+        json: corps,
       })
       if (res.status === 201) return
       if (res.status === 409) {
@@ -234,13 +254,30 @@ function PanneauDemande({
     )
   }
 
+  // Le champ seul, validé par sa propre branche du schéma : l'alerte de sur-capacité ne
+  // doit pas attendre que le message soit écrit pour s'afficher.
+  const personnesValide = RequestCreateSchema.shape.peopleCount.safeParse(nbPersonnes).success
   const surCapacite = personnesValide && nbPersonnes > logement.capacity
   const placesTexte = `${logement.capacity} place${logement.capacity > 1 ? 's' : ''}`
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (!envoi.isPending && personnesValide && message.trim() !== '') envoi.mutate()
+    setTenteEnvoi(true)
+    if (!envoi.isPending && demande.success) envoi.mutate()
   }
+
+  /**
+   * Le champ en cause, en clair — c'est le schéma qui dit ce qui cloche. Affiché seulement
+   * après une tentative d'envoi : au montage le message est vide, donc invalide.
+   */
+  const erreurSaisie =
+    !tenteEnvoi || demande.success
+      ? null
+      : demande.error.issues.some((issue) => issue.path[0] === 'peopleCount')
+        ? `Indique un nombre de personnes entre ${INPUT_LIMITS.requestPeople.min} et ${INPUT_LIMITS.requestPeople.max}.`
+        : demande.error.issues.some((issue) => issue.path[0] === 'message')
+          ? 'Écris un message à ton hébergeur avant d’envoyer ta demande.'
+          : 'Vérifie les dates de ton séjour.'
 
   return (
     <Card accentTop="brand" className="fiche-logement__panneau">
@@ -273,8 +310,8 @@ function PanneauDemande({
           <span className="fiche-logement__personnes">
             <Input
               type="number"
-              min={1}
-              max={30}
+              min={INPUT_LIMITS.requestPeople.min}
+              max={INPUT_LIMITS.requestPeople.max}
               value={personnes}
               onChange={(event) => setPersonnes(event.target.value)}
               aria-label="Nombre de personnes"
@@ -295,9 +332,11 @@ function PanneauDemande({
             placeholder="Qui vous êtes, sur quel service vous êtes volontaires…"
             value={message}
             onChange={(event) => setMessage(event.target.value)}
+            maxLength={INPUT_LIMITS.requestMessage.max}
             required
           />
         </Field>
+        {erreurSaisie && <p className="alert-text">{erreurSaisie}</p>}
         {envoi.isError && <p className="alert-text">{envoi.error.message}</p>}
         <Button type="submit" disabled={envoi.isPending} style={{ alignSelf: 'flex-start' }}>
           Envoyer ma demande

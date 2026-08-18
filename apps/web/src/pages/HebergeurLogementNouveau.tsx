@@ -1,5 +1,11 @@
 import type { BedType, MyListing, ParkingEase } from '@repo/contracts'
-import { ACCESS_CRITERIA, PARKING_EASE } from '@repo/contracts'
+import {
+  ACCESS_CRITERIA,
+  INPUT_LIMITS,
+  ListingUpdateSchema,
+  ListingUpsertSchema,
+  PARKING_EASE,
+} from '@repo/contracts'
 import type { SiteSlug } from '@repo/event-config'
 import { eventConfig } from '@repo/event-config'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -119,24 +125,37 @@ function LogementForm({ listing }: { listing: MyListing | null }) {
     setRows((current) => current.map((row) => (row.key === key ? { ...row, ...patch } : row)))
   }
 
+  /**
+   * Corps du POST/PATCH, validé par LE schéma de l'API avant l'envoi (§5). Le RPC ne type
+   * que la forme du JSON : `count: number` passe la compilation à 500 comme à 5, donc les
+   * bornes ne sont vérifiées nulle part côté SPA sans ce parse — d'où les `max` recopiés
+   * dans le JSX, qui dérivaient en silence. Ils viennent maintenant d'`INPUT_LIMITS`.
+   *
+   * Édition : adresse absente = inchangée, c'est exactement ce que `ListingUpdateSchema`
+   * rend optionnel (`.partial({ address: true })`).
+   */
+  const body = {
+    site,
+    availableFrom,
+    availableTo,
+    description: description.trim() === '' ? undefined : description.trim(),
+    beds: rows.map((row) => ({
+      type: row.type,
+      count: Number(row.count),
+      capacityEach: Number(row.capacityEach),
+      note: row.note.trim() === '' ? undefined : row.note.trim(),
+    })),
+    access,
+    accessibilityNotes: accessibilityNotes.trim() === '' ? undefined : accessibilityNotes.trim(),
+    parkingEase,
+  }
+  const envoiComplet = address ? { ...body, address } : body
+  const logementValide = isEdit
+    ? ListingUpdateSchema.safeParse(envoiComplet)
+    : ListingUpsertSchema.safeParse(envoiComplet)
+
   const save = useMutation({
     mutationFn: async () => {
-      const body = {
-        site,
-        availableFrom,
-        availableTo,
-        description: description.trim() === '' ? undefined : description.trim(),
-        beds: rows.map((row) => ({
-          type: row.type,
-          count: Number(row.count),
-          capacityEach: Number(row.capacityEach),
-          note: row.note.trim() === '' ? undefined : row.note.trim(),
-        })),
-        access,
-        accessibilityNotes:
-          accessibilityNotes.trim() === '' ? undefined : accessibilityNotes.trim(),
-        parkingEase,
-      }
       if (listing) {
         const res = await api.my.listings[':id'].$patch({
           param: { id: listing.id },
@@ -157,14 +176,17 @@ function LogementForm({ listing }: { listing: MyListing | null }) {
   })
 
   const continueToStep2 = () => {
-    if (rows.length === 0) {
-      setStepError('Ajoute au moins un couchage.')
+    // Les couchages sont jugés par leur propre branche du schéma : bornes jamais recopiées.
+    const couchages = ListingUpsertSchema.shape.beds.safeParse(body.beds)
+    if (!couchages.success) {
+      setStepError(
+        rows.length === 0
+          ? 'Ajoute au moins un couchage.'
+          : 'Complète chaque couchage : combien, et pour combien de personnes.',
+      )
       return
     }
-    if (rows.some((row) => rowValue(row.count) === 0 || rowValue(row.capacityEach) === 0)) {
-      setStepError('Complète chaque couchage : combien, et pour combien de personnes.')
-      return
-    }
+    // Règle propre à la SPA : le schéma ne relie pas les deux dates entre elles.
     if (availableFrom === '' || availableTo === '' || availableFrom > availableTo) {
       setStepError('Vérifie les dates : le début doit précéder la fin.')
       return
@@ -179,8 +201,21 @@ function LogementForm({ listing }: { listing: MyListing | null }) {
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (step === 1) continueToStep2()
-    else if (!save.isPending) save.mutate()
+    if (step === 1) {
+      continueToStep2()
+      return
+    }
+    if (!logementValide.success) {
+      const champ = logementValide.error.issues[0]?.path[0]
+      setStepError(
+        champ === 'accessibilityNotes' || champ === 'description'
+          ? 'Ce texte est trop long : raccourcis-le avant d’enregistrer.'
+          : 'Vérifie les informations saisies avant d’enregistrer.',
+      )
+      return
+    }
+    setStepError(null)
+    if (!save.isPending) save.mutate()
   }
 
   return (
@@ -253,8 +288,8 @@ function LogementForm({ listing }: { listing: MyListing | null }) {
                   <Input
                     uiSize="sm"
                     type="number"
-                    min={1}
-                    max={50}
+                    min={INPUT_LIMITS.bedCount.min}
+                    max={INPUT_LIMITS.bedCount.max}
                     required
                     value={row.count}
                     aria-label="Combien"
@@ -263,8 +298,8 @@ function LogementForm({ listing }: { listing: MyListing | null }) {
                   <Input
                     uiSize="sm"
                     type="number"
-                    min={1}
-                    max={20}
+                    min={INPUT_LIMITS.bedCapacity.min}
+                    max={INPUT_LIMITS.bedCapacity.max}
                     required
                     value={row.capacityEach}
                     aria-label="Personnes"
@@ -273,7 +308,7 @@ function LogementForm({ listing }: { listing: MyListing | null }) {
                   <Input
                     uiSize="sm"
                     type="text"
-                    maxLength={200}
+                    maxLength={INPUT_LIMITS.bedNote}
                     value={row.note}
                     aria-label="Précision"
                     onChange={(event) => updateRow(row.key, { note: event.target.value })}
@@ -314,7 +349,7 @@ function LogementForm({ listing }: { listing: MyListing | null }) {
           <Field label="Description libre">
             <Textarea
               value={description}
-              maxLength={2000}
+              maxLength={INPUT_LIMITS.description}
               placeholder="Horaires d’arrivée, animaux, petit-déjeuner, ce qu’il faut apporter…"
               onChange={(event) => setDescription(event.target.value)}
             />
@@ -389,11 +424,12 @@ function LogementForm({ listing }: { listing: MyListing | null }) {
           <Field label="Autres informations d’accessibilité">
             <Textarea
               uiSize="sm"
-              maxLength={1000}
+              maxLength={INPUT_LIMITS.accessibilityNotes}
               value={accessibilityNotes}
               onChange={(event) => setAccessibilityNotes(event.target.value)}
             />
           </Field>
+          {stepError && <p className="alert-text">{stepError}</p>}
           {save.isError && (
             <p className="alert-text">
               Impossible d’enregistrer. Vérifie les champs, puis réessaie.
