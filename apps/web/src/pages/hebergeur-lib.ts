@@ -84,6 +84,7 @@ const BED_SIGNES: Record<BedType, SigneName> = {
 export function listingSigne(listing: Pick<MyListing, 'category' | 'bedTypes'>): SigneName {
   if (listing.category === 'HOTEL') return 'promesse'
   if (listing.category === 'COLLECTIVE') return 'paix'
+  if (listing.category === 'SCOUT_BASE') return 'campement'
   const first = listing.bedTypes[0]
   return first ? BED_SIGNES[first] : 'tente'
 }

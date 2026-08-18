@@ -37,6 +37,14 @@ import './jumelage-admin.css'
 
 const ADMIN_LISTINGS_KEY = ['admin-listings'] as const
 
+type InstitutionalCategory = 'HOTEL' | 'COLLECTIVE' | 'SCOUT_BASE'
+
+const CATEGORY_LABELS: Record<InstitutionalCategory, string> = {
+  HOTEL: 'Hôtel',
+  COLLECTIVE: 'Gymnase',
+  SCOUT_BASE: 'Base scout',
+}
+
 async function fetchAdminListings() {
   const res = await api.admin.listings.$get()
   if (res.status === 200) return res.json()
@@ -87,7 +95,7 @@ async function resolveStoredAddress(label: string): Promise<AddressValue | null>
 }
 
 /**
- * /admin/logements — CRUD des logements institutionnels (hôtels, gymnases).
+ * /admin/logements — CRUD des logements institutionnels (hôtels, gymnases, bases scout).
  * Hors maquette : liste en cartes-lignes + formulaire unique création/édition.
  */
 export function AdminLogements() {
@@ -138,12 +146,14 @@ export function AdminLogements() {
             <Card key={listing.id} className="ja-card-stack">
               <div className="ja-row-head">
                 <span className="ja-row-title">{listing.title}</span>
-                <Badge>{listing.category === 'HOTEL' ? 'Hôtel' : 'Gymnase'}</Badge>
+                <Badge>
+                  {listing.category === 'PRIVATE' ? 'Privé' : CATEGORY_LABELS[listing.category]}
+                </Badge>
               </div>
               <p className="ja-card-sub">
                 {siteLabel(listing.site)} · {listing.capacity} personnes
                 {listing.priceInfo ? ` · ${listing.priceInfo}` : ''}
-                {listing.category === 'HOTEL' && listing.bookingUrl
+                {listing.bookingUrl
                   ? ` · ${listing.bookingClicks} clic${listing.bookingClicks > 1 ? 's' : ''} sur le lien de réservation`
                   : ''}
               </p>
@@ -189,7 +199,7 @@ type AdminListingFormProps = {
 
 function AdminListingForm({ listing, onSaved, onCancel }: AdminListingFormProps) {
   const isEdit = listing !== null
-  const [category, setCategory] = useState<'HOTEL' | 'COLLECTIVE'>(
+  const [category, setCategory] = useState<InstitutionalCategory>(
     listing && listing.category !== 'PRIVATE' ? listing.category : 'HOTEL',
   )
   const [title, setTitle] = useState(listing?.title ?? '')
@@ -226,7 +236,9 @@ function AdminListingForm({ listing, onSaved, onCancel }: AdminListingFormProps)
         address: finalAddress,
         capacity: Number(capacity),
         priceInfo: priceInfo.trim() === '' ? null : priceInfo.trim(),
-        bookingUrl: category === 'HOTEL' && bookingUrl.trim() !== '' ? bookingUrl.trim() : null,
+        // Hôtel et base scout : lien de réservation possible ; gymnase : jamais.
+        bookingUrl:
+          category !== 'COLLECTIVE' && bookingUrl.trim() !== '' ? bookingUrl.trim() : null,
         availableFrom,
         availableTo,
         access,
@@ -271,10 +283,11 @@ function AdminListingForm({ listing, onSaved, onCancel }: AdminListingFormProps)
           <Field label="Catégorie">
             <Select
               value={category}
-              onChange={(event) => setCategory(event.target.value as 'HOTEL' | 'COLLECTIVE')}
+              onChange={(event) => setCategory(event.target.value as InstitutionalCategory)}
             >
               <option value="HOTEL">Hôtel</option>
               <option value="COLLECTIVE">Gymnase ou collectif</option>
+              <option value="SCOUT_BASE">Base scout</option>
             </Select>
           </Field>
           <Field label="Titre">
@@ -339,8 +352,11 @@ function AdminListingForm({ listing, onSaved, onCancel }: AdminListingFormProps)
             />
           </Field>
         </div>
-        {category === 'HOTEL' && (
-          <Field label="URL de réservation">
+        {category !== 'COLLECTIVE' && (
+          <Field
+            label="URL de réservation"
+            glose={category === 'SCOUT_BASE' ? 'optionnelle' : undefined}
+          >
             <Input
               type="url"
               value={bookingUrl}
@@ -348,6 +364,12 @@ function AdminListingForm({ listing, onSaved, onCancel }: AdminListingFormProps)
               placeholder="https://…"
               maxLength={500}
             />
+            {category === 'SCOUT_BASE' && (
+              <HelpText>
+                Avec un lien, la réservation se fait en ligne comme pour un hôtel. Sans lien, la
+                base reçoit les demandes sur la plateforme, comme un gymnase.
+              </HelpText>
+            )}
           </Field>
         )}
         {isEdit && !changeAddress && listing ? (

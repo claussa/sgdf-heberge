@@ -14,15 +14,17 @@ import { sendToRecipientAsync } from './notify'
 /**
  * Espace admin (arbitrages 7 et 8 du plan v1) : métriques par site + CRUD des
  * logements institutionnels. Hôtels : fiche prix + bouton vers la plateforme de
- * l'hôtel (pas de demande in-app) ; gymnases/collectifs : flux de demande standard,
- * le logement appartient au compte admin qui l'a créé — mais TOUT admin peut
+ * l'hôtel (pas de demande in-app) ; gymnases/collectifs : flux de demande standard ;
+ * bases scoutes : lien de réservation OPTIONNEL — avec lien, comportement hôtel,
+ * sans lien, comportement gymnase. Le logement appartient au compte admin qui l'a
+ * créé — mais TOUT admin peut
  * éditer TOUT logement institutionnel (petite équipe, pas de silo par compte).
  * Les logements PRIVATE des particuliers ne sont jamais accessibles par ces routes.
  */
 
 type AdminListingUpsertInput = z.infer<typeof AdminListingUpsertSchema>
 
-const INSTITUTIONAL_CATEGORIES: ListingCategory[] = ['HOTEL', 'COLLECTIVE']
+const INSTITUTIONAL_CATEGORIES: ListingCategory[] = ['HOTEL', 'COLLECTIVE', 'SCOUT_BASE']
 
 // ---------------------------------------------------------------------------
 // Select + mapping (institutionnels : capacité saisie, pas de lignes de couchages)
@@ -174,7 +176,7 @@ export async function createInstitutionalListing(
 
 /**
  * Mise à jour (corps complet, pas de partiel). N'importe quel admin peut éditer
- * n'importe quel logement HOTEL/COLLECTIVE — le WHERE sur la catégorie garantit
+ * n'importe quel logement institutionnel — le WHERE sur la catégorie garantit
  * qu'un logement PRIVATE d'un particulier n'est JAMAIS modifiable par ces routes.
  */
 export async function updateInstitutionalListing(
@@ -239,7 +241,7 @@ export async function deleteInstitutionalListing(db: Db, listingId: string): Pro
   await db.listing.delete({ where: { id: listingId } })
 }
 
-/** Liste de tous les logements institutionnels (les deux catégories, tous sites). */
+/** Liste de tous les logements institutionnels (toutes catégories, tous sites). */
 export async function listInstitutionalListings(db: Db) {
   const rows = await db.listing.findMany({
     where: { category: { in: INSTITUTIONAL_CATEGORIES } },
@@ -308,6 +310,7 @@ export async function getMetrics(db: Db) {
           privateHidden: hidden('PRIVATE'),
           hotel: active('HOTEL') + hidden('HOTEL'),
           collective: active('COLLECTIVE') + hidden('COLLECTIVE'),
+          scoutBase: active('SCOUT_BASE') + hidden('SCOUT_BASE'),
           // Capacité offerte = somme des logements non masqués (toutes catégories).
           totalCapacity: activeGroups
             .filter((g) => g.site === site.slug)

@@ -114,7 +114,7 @@ const BED_TITLE_SELECT = { type: true, count: true, capacityEach: true } as cons
 const RECIPIENT_SELECT = { firstName: true, email: true, emailStatus: true } as const
 
 interface TitledListing {
-  category: 'PRIVATE' | 'HOTEL' | 'COLLECTIVE'
+  category: 'PRIVATE' | 'HOTEL' | 'COLLECTIVE' | 'SCOUT_BASE'
   title: string | null
   capacity: number
   beds: {
@@ -146,6 +146,7 @@ const CREATE_LISTING_SELECT = {
   id: true,
   ownerId: true,
   category: true,
+  bookingUrl: true,
   status: true,
   hiddenAt: true,
   availableFrom: true,
@@ -190,6 +191,11 @@ export async function createRequest(
       if (listing.category === 'HOTEL') {
         // Arbitrage 7 : les hôtels se réservent sur leur propre plateforme, pas in-app.
         throw new AppError('CONFLICT', "Cet hébergement se réserve sur la plateforme de l'hôtel")
+      }
+      // Base scoute AVEC lien = comportement hôtel (réservation externe uniquement) ;
+      // sans lien, le flux de demande standard s'applique comme pour un gymnase.
+      if (listing.category === 'SCOUT_BASE' && listing.bookingUrl !== null) {
+        throw new AppError('CONFLICT', 'Cet hébergement se réserve via son lien de réservation')
       }
       if (listing.status !== 'OPEN') {
         throw new AppError('CONFLICT', 'Ce logement est complet')

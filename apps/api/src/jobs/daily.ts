@@ -78,7 +78,7 @@ type ExpiryCandidate = {
   requester: { firstName: string | null; email: string; emailStatus: EmailRecipient['emailStatus'] }
   listing: {
     id: string
-    category: 'PRIVATE' | 'HOTEL' | 'COLLECTIVE'
+    category: 'PRIVATE' | 'HOTEL' | 'COLLECTIVE' | 'SCOUT_BASE'
     title: string | null
     capacity: number
     lastHostActivityAt: Date

@@ -34,6 +34,7 @@ let metzId: string // Metz, 24→29, emplacements tente
 let fullId: string // Paris, passé FULL via l'API
 let hiddenId: string // Paris, masqué (hiddenAt posé)
 let hotelId: string // Paris, HOTEL institutionnel, distanceKm inconnue
+let scoutBaseId: string // Paris, SCOUT_BASE institutionnelle sans lien de réservation
 
 const PARIS_12E = {
   label: '12 Rue des Boulets 75012 Paris',
@@ -273,6 +274,26 @@ beforeAll(async () => {
       select: { id: true },
     })
   ).id
+
+  // Base scoute sans lien de réservation : recherche via la chip dédiée, flux standard.
+  scoutBaseId = (
+    await t.db.listing.create({
+      data: {
+        ownerId: claireId,
+        category: 'SCOUT_BASE',
+        site: 'paris',
+        title: 'Base scoute de Vincennes',
+        addressFull: '2 route de la Pyramide 75012 Paris',
+        displayArea: 'Paris 12e',
+        distanceKm: 4.5,
+        availableFrom: new Date('2026-09-20'),
+        availableTo: new Date('2026-10-02'),
+        capacity: 60,
+        priceInfo: '5 € la nuit',
+      },
+      select: { id: true },
+    })
+  ).id
 })
 
 afterAll(async () => {
@@ -390,6 +411,12 @@ describe('recherche', () => {
     const hotels = await search({ site: 'paris', types: ['HOTEL'] })
     expect(ids(hotels.items)).toContain(hotelId) // chip Hôtel → catégorie
     expect(ids(hotels.items)).not.toContain(coversId)
+    expect(ids(hotels.items)).not.toContain(scoutBaseId)
+
+    const bases = await search({ site: 'paris', types: ['SCOUT_BASE'] })
+    expect(ids(bases.items)).toContain(scoutBaseId) // chip Base scout → catégorie
+    expect(ids(bases.items)).not.toContain(hotelId)
+    expect(ids(bases.items)).not.toContain(coversId)
 
     const both = await search({ site: 'paris', types: ['PRIVATE_ROOM', 'HOTEL'] })
     expect(ids(both.items)).toEqual(expect.arrayContaining([coversId, hotelId]))

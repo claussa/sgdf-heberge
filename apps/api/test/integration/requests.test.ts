@@ -30,13 +30,15 @@ let pierre: Fixture // second demandeur
 let claire: Fixture // hébergeuse de listing1
 let karim: Fixture // hébergeur de listing2
 let lea: Fixture // hébergeuse de listing3
-let noe: Fixture // hébergeur de listing4 + hôtel
+let noe: Fixture // hébergeur de listing4 + institutionnels
 let unite: Fixture // compte SCOUT_UNIT (cloisonnement)
 let listing1: string
 let listing2: string
 let listing3: string
 let listing4: string
 let hotelListing: string
+let scoutBaseAvecLien: string // SCOUT_BASE avec bookingUrl → comportement hôtel
+let scoutBaseSansLien: string // SCOUT_BASE sans bookingUrl → flux standard
 
 const DEFAULT_ADDRESS = '12 rue des Boulets, 75012 Paris'
 
@@ -250,6 +252,37 @@ beforeAll(async () => {
     select: { id: true },
   })
   hotelListing = hotel.id
+  const baseAvecLien = await t.db.listing.create({
+    data: {
+      ownerId: noe.id,
+      category: 'SCOUT_BASE',
+      site: 'paris',
+      title: 'Base scoute de Vincennes',
+      addressFull: '2 route de la Pyramide, 75012 Paris',
+      displayArea: 'Paris 12e',
+      availableFrom: new Date('2026-09-20'),
+      availableTo: new Date('2026-10-02'),
+      capacity: 60,
+      bookingUrl: 'https://base.example.org/reservation',
+    },
+    select: { id: true },
+  })
+  scoutBaseAvecLien = baseAvecLien.id
+  const baseSansLien = await t.db.listing.create({
+    data: {
+      ownerId: noe.id,
+      category: 'SCOUT_BASE',
+      site: 'paris',
+      title: 'Base scoute du Bois',
+      addressFull: '4 route de la Pyramide, 75012 Paris',
+      displayArea: 'Paris 12e',
+      availableFrom: new Date('2026-09-20'),
+      availableTo: new Date('2026-10-02'),
+      capacity: 40,
+    },
+    select: { id: true },
+  })
+  scoutBaseSansLien = baseSansLien.id
 })
 
 beforeEach(async () => {
@@ -614,6 +647,16 @@ describe('garde-fous de création', () => {
     const res = await createReq(marie.cookie, hotelListing)
     expect(res.status).toBe(409)
     expect(((await res.json()) as ErrorBody).error.message).toContain('hôtel')
+  })
+
+  it('base scout avec lien → 409 (réservation externe, comme un hôtel)', async () => {
+    const res = await createReq(marie.cookie, scoutBaseAvecLien)
+    expect(res.status).toBe(409)
+    expect(((await res.json()) as ErrorBody).error.message).toContain('lien de réservation')
+  })
+
+  it('base scout sans lien → 201 (flux de demande standard, comme un gymnase)', async () => {
+    expect((await createReq(marie.cookie, scoutBaseSansLien)).status).toBe(201)
   })
 
   it('son propre logement → 409', async () => {

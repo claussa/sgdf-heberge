@@ -54,7 +54,7 @@ export const EmailStatusSchema = z.enum(['OK', 'BOUNCED', 'COMPLAINED'])
 export const TourStatusSchema = z.enum(['SKIPPED', 'DONE'])
 export type TourStatus = z.infer<typeof TourStatusSchema>
 
-export const ListingCategorySchema = z.enum(['PRIVATE', 'HOTEL', 'COLLECTIVE'])
+export const ListingCategorySchema = z.enum(['PRIVATE', 'HOTEL', 'COLLECTIVE', 'SCOUT_BASE'])
 export type ListingCategory = z.infer<typeof ListingCategorySchema>
 
 export const ListingStatusSchema = z.enum(['OPEN', 'FULL'])
@@ -280,7 +280,7 @@ export const ListingDetailSchema = ListingCardSchema.extend({
   /** « chez Claire M. » — null pour les institutionnels */
   hostDisplayName: z.string().nullable(),
   beds: z.array(BedSchema),
-  /** Hôtels uniquement : bouton « Réserver sur le site de l'hôtel » */
+  /** Hôtels et bases scoutes avec lien : bouton de réservation externe */
   bookingUrl: z.string().nullable(),
 })
 export type ListingDetail = z.infer<typeof ListingDetailSchema>
@@ -329,6 +329,7 @@ export const SearchTypeSchema = z.enum([
   'TENT_SPOT',
   'HOTEL',
   'COLLECTIVE',
+  'SCOUT_BASE',
 ])
 export type SearchType = z.infer<typeof SearchTypeSchema>
 
@@ -363,7 +364,7 @@ export const MyListingsResponseSchema = z.object({ items: z.array(MyListingSchem
  * Jamais servi par les routes /my/listings ni par la fiche publique.
  */
 export const AdminListingSchema = MyListingSchema.extend({
-  /** Hôtels : clics sur « Réserver sur le site de l'hôtel » (agrégé, 0 pour les gymnases) */
+  /** Clics sur le lien de réservation externe (agrégé, 0 pour les logements sans lien) */
   bookingClicks: z.number().int(),
 })
 export type AdminListing = z.infer<typeof AdminListingSchema>
@@ -583,6 +584,7 @@ export const AdminSiteMetricsSchema = z.object({
     privateHidden: z.number().int(),
     hotel: z.number().int(),
     collective: z.number().int(),
+    scoutBase: z.number().int(),
     totalCapacity: z.number().int(),
   }),
   requests: z.object({
@@ -609,7 +611,7 @@ export const AdminMetricsSchema = z.object({
 })
 
 export const AdminListingUpsertSchema = z.object({
-  category: z.enum(['HOTEL', 'COLLECTIVE']),
+  category: z.enum(['HOTEL', 'COLLECTIVE', 'SCOUT_BASE']),
   site: SiteSchema,
   title: z.string().min(1).max(200),
   description: z.string().max(2000).nullish(),
