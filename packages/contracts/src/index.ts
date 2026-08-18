@@ -18,35 +18,25 @@ export { SiteSchema }
 // Bornes de saisie
 // ---------------------------------------------------------------------------
 
-/**
- * Bornes de saisie, partagées entre les schémas et les attributs des formulaires SPA.
- *
- * Elles vivent ici parce que le RPC ne les transporte pas : une borne recopiée dans le
- * JSX (`max={50}`, `maxLength={2000}`) dérive silencieusement dès qu'on touche au schéma,
- * et la dérive ne se voit qu'en 400 côté utilisateur. Un seul littéral, deux usages.
- */
+/** Bornes de saisie, partagées entre les schémas et les attributs des formulaires SPA. */
 export const INPUT_LIMITS = {
-  /** Nombre de couchages d'un même type sur une ligne du tableau */
+  email: 320,
   bedCount: { min: 1, max: 50 },
-  /** Personnes par couchage */
   bedCapacity: { min: 1, max: 20 },
   bedNote: 200,
-  /** Lignes du tableau de couchages */
   beds: { min: 1, max: 20 },
   description: 2000,
   accessibilityNotes: 1000,
-  /**
-   * Nombre de personnes — borne COMMUNE aux trois endroits où la même grandeur est saisie :
-   * le profil (`groupSize`, « nous serons N »), le filtre de recherche (`?people=`) et la
-   * création de demande (`peopleCount`).
-   *
-   * Recherche et demande ont été distinctes un temps (1000 / 30). Tout écart se paie côté
-   * utilisateur : déclarer un groupe qu'on ne peut pas chercher, ou chercher un groupe
-   * qu'on ne peut pas demander, ne mène qu'à un cul-de-sac. Au-delà de la capacité d'un
-   * particulier, la recherche ne remonte de toute façon que des logements institutionnels.
-   */
+  /** Profil (`groupSize`), filtre de recherche (`?people=`) et demande (`peopleCount`). */
   people: { min: 1, max: 600 },
   requestMessage: { min: 1, max: 2000 },
+  jumelagePeopleLabel: { min: 1, max: 80 },
+  jumelageDescription: 1000,
+  jumelageContactMessage: 1000,
+  adminTitle: { min: 1, max: 200 },
+  adminCapacity: { min: 1, max: 10000 },
+  adminPriceInfo: 120,
+  adminBookingUrl: 500,
 } as const
 
 // ---------------------------------------------------------------------------
@@ -150,7 +140,7 @@ export type ParkingEase = z.infer<typeof ParkingEaseSchema>
 // ---------------------------------------------------------------------------
 
 export const MagicLinkRequestSchema = z.object({
-  email: z.email().max(320),
+  email: z.email().max(INPUT_LIMITS.email),
 })
 
 /**
@@ -207,7 +197,6 @@ const IndividualProfileFields = {
   firstName: z.string().min(1).max(100),
   lastName: z.string().min(1).max(100),
   phone: z.string().min(6).max(20),
-  /** Même borne que la recherche et les demandes : c'est la même grandeur déclarée en amont. */
   groupSize: z.number().int().min(INPUT_LIMITS.people.min).max(INPUT_LIMITS.people.max).nullish(),
   accessibilityNeeds: z.array(AccessCriterionSchema).max(8).optional(),
 }
@@ -392,12 +381,7 @@ export const ListingSearchQuerySchema = z.object({
   site: SiteSchema,
   from: z.iso.date().optional(),
   to: z.iso.date().optional(),
-  /**
-   * Taille du groupe — simple filtre `capacity >= people`. Même borne que
-   * `RequestCreateSchema.peopleCount` : ce qu'on peut chercher, on doit pouvoir le
-   * demander. Elle vient d'`INPUT_LIMITS` pour que l'attribut `max` du champ ne puisse
-   * pas en diverger — c'est cette recopie qui avait produit un 400 sur `people=60`.
-   */
+  /** Filtre `capacity >= people` — même borne que `RequestCreateSchema.peopleCount`. */
   people: z.coerce
     .number()
     .int()
@@ -447,7 +431,7 @@ export const RequestCreateSchema = z.object({
 export type RequestCreateInput = z.infer<typeof RequestCreateSchema>
 
 export const RequestMessageCreateSchema = z.object({
-  body: z.string().min(1).max(2000),
+  body: z.string().min(INPUT_LIMITS.requestMessage.min).max(INPUT_LIMITS.requestMessage.max),
 })
 
 export const RequestMessageSchema = z.object({
@@ -567,8 +551,11 @@ export const JumelageAdUpsertSchema = z.object({
   site: SiteSchema,
   dateFrom: z.iso.date(),
   dateTo: z.iso.date(),
-  peopleLabel: z.string().min(1).max(80),
-  description: z.string().max(1000).nullish(),
+  peopleLabel: z
+    .string()
+    .min(INPUT_LIMITS.jumelagePeopleLabel.min)
+    .max(INPUT_LIMITS.jumelagePeopleLabel.max),
+  description: z.string().max(INPUT_LIMITS.jumelageDescription).nullish(),
 })
 
 export const MyJumelageAdSchema = JumelageAdSchema.extend({
@@ -581,7 +568,7 @@ export const JumelageAdsResponseSchema = z.object({
 })
 
 export const JumelageContactCreateSchema = z.object({
-  message: z.string().max(1000).nullish(),
+  message: z.string().max(INPUT_LIMITS.jumelageContactMessage).nullish(),
 })
 
 /** Contact reçu sur notre annonce — coordonnées seulement si ACCEPTED */
@@ -676,18 +663,22 @@ export const AdminMetricsSchema = z.object({
 export const AdminListingUpsertSchema = z.object({
   category: z.enum(['HOTEL', 'COLLECTIVE', 'SCOUT_BASE']),
   site: SiteSchema,
-  title: z.string().min(1).max(200),
-  description: z.string().max(2000).nullish(),
+  title: z.string().min(INPUT_LIMITS.adminTitle.min).max(INPUT_LIMITS.adminTitle.max),
+  description: z.string().max(INPUT_LIMITS.description).nullish(),
   address: AddressInputSchema,
-  capacity: z.number().int().min(1).max(10000),
-  priceInfo: z.string().max(120).nullish(),
+  capacity: z
+    .number()
+    .int()
+    .min(INPUT_LIMITS.adminCapacity.min)
+    .max(INPUT_LIMITS.adminCapacity.max),
+  priceInfo: z.string().max(INPUT_LIMITS.adminPriceInfo).nullish(),
   /** Badge « Payant » sur la carte de recherche — même sans priceInfo */
   isPaid: z.boolean().default(false),
-  bookingUrl: z.url().max(500).nullish(),
+  bookingUrl: z.url().max(INPUT_LIMITS.adminBookingUrl).nullish(),
   availableFrom: z.iso.date(),
   availableTo: z.iso.date(),
   access: AccessGridSchema,
-  accessibilityNotes: z.string().max(1000).nullish(),
+  accessibilityNotes: z.string().max(INPUT_LIMITS.accessibilityNotes).nullish(),
   parkingEase: ParkingEaseSchema.nullish(),
 })
 
@@ -708,4 +699,4 @@ export type AdminUser = z.infer<typeof AdminUserSchema>
 
 export const AdminUsersResponseSchema = z.object({ items: z.array(AdminUserSchema) })
 
-export const AdminPromoteSchema = z.object({ email: z.email().max(320) })
+export const AdminPromoteSchema = z.object({ email: z.email().max(INPUT_LIMITS.email) })

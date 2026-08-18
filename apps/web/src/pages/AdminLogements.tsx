@@ -2,6 +2,8 @@ import {
   ACCESS_CRITERIA,
   type AccessGrid,
   type AdminListing,
+  AdminListingUpsertSchema,
+  INPUT_LIMITS,
   PARKING_EASE,
   type ParkingEase,
 } from '@repo/contracts'
@@ -223,6 +225,26 @@ function AdminListingForm({ listing, onSaved, onCancel }: AdminListingFormProps)
   // Édition : l'adresse reste verrouillée tant que « Changer l'adresse » n'est
   // pas activé ; l'activer exige une re-sélection dans l'autocomplete BAN.
   const [changeAddress, setChangeAddress] = useState(!isEdit)
+  const [tenteEnvoi, setTenteEnvoi] = useState(false)
+
+  const champs = {
+    category,
+    site,
+    title: title.trim(),
+    description: description.trim() === '' ? null : description.trim(),
+    capacity: Number(capacity),
+    priceInfo: priceInfo.trim() === '' ? null : priceInfo.trim(),
+    isPaid,
+    // Hôtel et base scoute : lien de réservation possible ; gymnase : jamais.
+    bookingUrl: category !== 'COLLECTIVE' && bookingUrl.trim() !== '' ? bookingUrl.trim() : null,
+    availableFrom,
+    availableTo,
+    access,
+    accessibilityNotes: notes.trim() === '' ? null : notes.trim(),
+    parkingEase,
+  }
+  // Hors adresse : elle est résolue en async dans mutationFn, et déjà gardée par ADDRESS_*.
+  const logementValide = AdminListingUpsertSchema.omit({ address: true }).safeParse(champs)
 
   const save = useMutation({
     mutationFn: async () => {
@@ -232,24 +254,7 @@ function AdminListingForm({ listing, onSaved, onCancel }: AdminListingFormProps)
         finalAddress = await resolveStoredAddress(listing.addressFull)
         if (!finalAddress) throw new Error('ADDRESS_RESOLVE')
       }
-      const body = {
-        category,
-        site,
-        title: title.trim(),
-        description: description.trim() === '' ? null : description.trim(),
-        address: finalAddress,
-        capacity: Number(capacity),
-        priceInfo: priceInfo.trim() === '' ? null : priceInfo.trim(),
-        isPaid,
-        // Hôtel et base scoute : lien de réservation possible ; gymnase : jamais.
-        bookingUrl:
-          category !== 'COLLECTIVE' && bookingUrl.trim() !== '' ? bookingUrl.trim() : null,
-        availableFrom,
-        availableTo,
-        access,
-        accessibilityNotes: notes.trim() === '' ? null : notes.trim(),
-        parkingEase,
-      }
+      const body = { ...champs, address: finalAddress }
       if (listing) {
         const res = await api.admin.listings[':id'].$patch({
           param: { id: listing.id },
@@ -269,16 +274,20 @@ function AdminListingForm({ listing, onSaved, onCancel }: AdminListingFormProps)
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (!save.isPending) save.mutate()
+    setTenteEnvoi(true)
+    if (!save.isPending && logementValide.success) save.mutate()
   }
 
-  const errorText = !save.isError
-    ? null
-    : save.error.message === 'ADDRESS_MISSING'
-      ? 'Choisis l’adresse dans la liste de suggestions.'
-      : save.error.message === 'ADDRESS_RESOLVE'
-        ? 'L’adresse enregistrée n’a pas pu être vérifiée : choisis-la à nouveau.'
-        : 'Impossible d’enregistrer. Vérifie les champs, puis réessaie.'
+  const errorText =
+    tenteEnvoi && !logementValide.success
+      ? 'Vérifie les informations saisies avant d’enregistrer.'
+      : !save.isError
+        ? null
+        : save.error.message === 'ADDRESS_MISSING'
+          ? 'Choisis l’adresse dans la liste de suggestions.'
+          : save.error.message === 'ADDRESS_RESOLVE'
+            ? 'L’adresse enregistrée n’a pas pu être vérifiée : choisis-la à nouveau.'
+            : 'Impossible d’enregistrer. Vérifie les champs, puis réessaie.'
 
   return (
     <Card className="ja-card-stack">
@@ -303,7 +312,7 @@ function AdminListingForm({ listing, onSaved, onCancel }: AdminListingFormProps)
             <Input
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              maxLength={200}
+              maxLength={INPUT_LIMITS.adminTitle.max}
               required
             />
           </Field>
@@ -348,7 +357,7 @@ function AdminListingForm({ listing, onSaved, onCancel }: AdminListingFormProps)
               value={capacity}
               onChange={(event) => setCapacity(event.target.value)}
               min={1}
-              max={10000}
+              max={INPUT_LIMITS.adminCapacity.max}
               required
             />
           </Field>
@@ -357,7 +366,7 @@ function AdminListingForm({ listing, onSaved, onCancel }: AdminListingFormProps)
               value={priceInfo}
               onChange={(event) => setPriceInfo(event.target.value)}
               placeholder="45 € · code PAPE15"
-              maxLength={120}
+              maxLength={INPUT_LIMITS.adminPriceInfo}
             />
           </Field>
         </div>
@@ -384,7 +393,7 @@ function AdminListingForm({ listing, onSaved, onCancel }: AdminListingFormProps)
               value={bookingUrl}
               onChange={(event) => setBookingUrl(event.target.value)}
               placeholder="https://…"
-              maxLength={500}
+              maxLength={INPUT_LIMITS.adminBookingUrl}
             />
             {category === 'SCOUT_BASE' && (
               <HelpText>
@@ -415,7 +424,7 @@ function AdminListingForm({ listing, onSaved, onCancel }: AdminListingFormProps)
           <Textarea
             value={description}
             onChange={(event) => setDescription(event.target.value)}
-            maxLength={2000}
+            maxLength={INPUT_LIMITS.description}
           />
         </Field>
         <FieldGroup label="Accessibilité">
@@ -473,7 +482,7 @@ function AdminListingForm({ listing, onSaved, onCancel }: AdminListingFormProps)
           <Textarea
             value={notes}
             onChange={(event) => setNotes(event.target.value)}
-            maxLength={1000}
+            maxLength={INPUT_LIMITS.accessibilityNotes}
           />
         </Field>
         {errorText && <p className="alert-text">{errorText}</p>}

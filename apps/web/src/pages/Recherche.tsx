@@ -137,18 +137,7 @@ function RechercheView({ me }: { me: Me }) {
     setParametres(suivant, { replace: true })
   }
 
-  /**
-   * Query de `GET /listings`, validée par LE schéma de l'API (§5 : une seule source
-   * d'autorité, aucune borne recopiée côté SPA — c'est la recopie qui avait laissé
-   * passer un `people` hors bornes jusqu'au 400).
-   *
-   * Le contrôle est ici et non dans `majFiltres` parce que le formulaire n'est pas la
-   * seule entrée : l'URL est la source de vérité, et un lien partagé ou mis en favori
-   * n'y passe jamais. Les deux chemins se rejoignent sur cet objet.
-   *
-   * `people` vide = critère retiré (le champ qu'on vide ne filtre plus), ce que le
-   * schéma accepte via `.optional()`.
-   */
+  // Validée ici et non dans `majFiltres` : une URL partagée ne passe pas par le formulaire.
   const query = {
     site,
     from: dateFrom || undefined,
@@ -160,7 +149,6 @@ function RechercheView({ me }: { me: Me }) {
     pageSize: '60',
   }
   const filtres = ListingSearchQuerySchema.safeParse(query)
-  /** Seul champ libre des filtres : les autres sont contraints par les chips et les sélecteurs de date. */
   const erreurFiltres = filtres.success
     ? null
     : filtres.error.issues.some((issue) => issue.path[0] === 'people')
@@ -168,7 +156,6 @@ function RechercheView({ me }: { me: Me }) {
       : 'Ces filtres ne sont pas valides.'
 
   const recherche = useQuery({
-    // Clé structurelle : React Query hashe l'objet, elle ne peut plus désynchroniser de la query.
     queryKey: ['listings', query],
     enabled: filtres.success,
     queryFn: async () => {

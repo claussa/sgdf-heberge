@@ -125,15 +125,7 @@ function LogementForm({ listing }: { listing: MyListing | null }) {
     setRows((current) => current.map((row) => (row.key === key ? { ...row, ...patch } : row)))
   }
 
-  /**
-   * Corps du POST/PATCH, validé par LE schéma de l'API avant l'envoi (§5). Le RPC ne type
-   * que la forme du JSON : `count: number` passe la compilation à 500 comme à 5, donc les
-   * bornes ne sont vérifiées nulle part côté SPA sans ce parse — d'où les `max` recopiés
-   * dans le JSX, qui dérivaient en silence. Ils viennent maintenant d'`INPUT_LIMITS`.
-   *
-   * Édition : adresse absente = inchangée, c'est exactement ce que `ListingUpdateSchema`
-   * rend optionnel (`.partial({ address: true })`).
-   */
+  // Édition : adresse absente = inchangée, d'où `ListingUpdateSchema`.
   const body = {
     site,
     availableFrom,
@@ -176,7 +168,6 @@ function LogementForm({ listing }: { listing: MyListing | null }) {
   })
 
   const continueToStep2 = () => {
-    // Les couchages sont jugés par leur propre branche du schéma : bornes jamais recopiées.
     const couchages = ListingUpsertSchema.shape.beds.safeParse(body.beds)
     if (!couchages.success) {
       setStepError(
@@ -186,7 +177,7 @@ function LogementForm({ listing }: { listing: MyListing | null }) {
       )
       return
     }
-    // Règle propre à la SPA : le schéma ne relie pas les deux dates entre elles.
+    // Le schéma ne relie pas les deux dates entre elles.
     if (availableFrom === '' || availableTo === '' || availableFrom > availableTo) {
       setStepError('Vérifie les dates : le début doit précéder la fin.')
       return

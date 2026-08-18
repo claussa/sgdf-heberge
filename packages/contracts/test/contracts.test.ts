@@ -199,14 +199,7 @@ describe('requêtes', () => {
 })
 
 describe('profil, recherche et demande partagent la borne « nombre de personnes »', () => {
-  /**
-   * Tout écart entre ces trois bornes se paie côté utilisateur : déclarer un groupe qu'on
-   * ne peut pas chercher, ou chercher un groupe qu'on ne peut pas demander, mène à un
-   * cul-de-sac. Ce test verrouille l'alignement — les trois schémas doivent lire la MÊME
-   * entrée d'`INPUT_LIMITS`, pas trois littéraux qui se ressemblent aujourd'hui.
-   */
   const { min, max } = INPUT_LIMITS.people
-  /** [nom, valeur → acceptée ?] pour les trois points de saisie de la même grandeur */
   const points: [string, (v: number) => boolean][] = [
     ['profil (groupSize)', (v) => ProfileUpdateSchema.safeParse({ groupSize: v }).success],
     [

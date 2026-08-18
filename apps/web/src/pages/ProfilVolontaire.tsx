@@ -51,12 +51,7 @@ function ProfilVolontaireForm({ me }: { me: Me }) {
     // Enregistrer son profil volontaire active l'espace recherche (nav, accueil)
     seeksAccommodation: true as const,
   }
-  /**
-   * Validé par LE schéma que l'API appliquera — celui de l'onboarding au premier passage,
-   * celui de la mise à jour ensuite (§5). Le RPC ne type que la forme du JSON, donc sans
-   * ce parse une saisie hors bornes (`groupSize`, longueurs de nom) ne se voyait qu'en 400
-   * avec un message générique.
-   */
+  // Onboarding au premier passage, mise à jour ensuite.
   const profilValide =
     me.accountType === null
       ? OnboardingSchema.safeParse({ accountType: 'INDIVIDUAL', ...profile })
@@ -91,7 +86,7 @@ function ProfilVolontaireForm({ me }: { me: Me }) {
     if (!save.isPending && profilValide.success) save.mutate()
   }
 
-  /** Affiché seulement après une tentative : au montage un profil vierge est invalide. */
+  // Après une tentative seulement : au montage un profil vierge est invalide.
   const erreurSaisie =
     !tenteEnvoi || profilValide.success
       ? null

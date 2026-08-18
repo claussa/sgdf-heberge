@@ -1,4 +1,4 @@
-import type { RequestHostView } from '@repo/contracts'
+import { INPUT_LIMITS, type RequestHostView, RequestMessageCreateSchema } from '@repo/contracts'
 import { formatDateRangeLong } from '@repo/event-config'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { driver } from 'driver.js'
@@ -339,6 +339,7 @@ function PendingCard({
   const invalidate = useInvalidateHebergeur()
   const [questionOpen, setQuestionOpen] = useState(false)
   const [question, setQuestion] = useState('')
+  const questionValide = RequestMessageCreateSchema.safeParse({ body: question.trim() })
   const { firstName, lastName, phone, needs } = request.requester
   const firstMessage = request.messages.find((message) => message.from === 'REQUESTER')
 
@@ -429,14 +430,14 @@ function PendingCard({
             <Textarea
               uiSize="sm"
               value={question}
-              maxLength={2000}
+              maxLength={INPUT_LIMITS.requestMessage.max}
               onChange={(event) => setQuestion(event.target.value)}
             />
           </Field>
           <Button
             size="sm"
             style={{ alignSelf: 'flex-start' }}
-            disabled={question.trim() === '' || sendQuestion.isPending}
+            disabled={!questionValide.success || sendQuestion.isPending}
             onClick={() => sendQuestion.mutate(question.trim())}
           >
             Envoyer

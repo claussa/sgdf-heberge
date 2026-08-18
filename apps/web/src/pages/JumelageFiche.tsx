@@ -1,4 +1,4 @@
-import type { JumelageAd } from '@repo/contracts'
+import { INPUT_LIMITS, type JumelageAd, JumelageContactCreateSchema } from '@repo/contracts'
 import { formatDateRangeLong, siteLabel } from '@repo/event-config'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
@@ -39,12 +39,14 @@ function FicheUnite({ ad }: { ad: JumelageAd }) {
   const queryClient = useQueryClient()
   const [message, setMessage] = useState('')
 
+  const corps = { message: message.trim() === '' ? null : message.trim() }
+  const contact = JumelageContactCreateSchema.safeParse(corps)
+
   const send = useMutation({
     mutationFn: async () => {
-      const trimmed = message.trim()
       const res = await api.jumelage.ads[':id'].contacts.$post({
         param: { id: ad.id },
-        json: { message: trimmed === '' ? null : trimmed },
+        json: corps,
       })
       if (res.status === 201) return
       throw new Error(res.status === 409 ? 'ALREADY_SENT' : `POST contacts : ${res.status}`)
@@ -56,7 +58,7 @@ function FicheUnite({ ad }: { ad: JumelageAd }) {
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (!send.isPending) send.mutate()
+    if (!send.isPending && contact.success) send.mutate()
   }
 
   const alreadySent = send.isError && send.error.message === 'ALREADY_SENT'
@@ -87,7 +89,7 @@ function FicheUnite({ ad }: { ad: JumelageAd }) {
               value={message}
               onChange={(event) => setMessage(event.target.value)}
               placeholder="Qui nous sommes, ce que nous venons faire…"
-              maxLength={1000}
+              maxLength={INPUT_LIMITS.jumelageContactMessage}
             />
           </Field>
           {send.isError && (

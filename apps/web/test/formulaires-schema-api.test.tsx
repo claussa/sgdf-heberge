@@ -9,15 +9,7 @@ import { HebergeurLogementNouveau } from '../src/pages/HebergeurLogementNouveau'
 import { Logement } from '../src/pages/Logement'
 import { ProfilVolontaire } from '../src/pages/ProfilVolontaire'
 
-/**
- * Les schémas de `packages/contracts` sont la seule autorité sur les bornes de saisie :
- * le RPC ne type que la forme du JSON (`peopleCount: number` compile à 31 comme à 3),
- * donc sans `safeParse` côté SPA une valeur hors bornes ne se voit qu'en 400.
- * Ces tests visent ce que la validation native du navigateur NE PEUT PAS attraper : les
- * attributs `min`/`max`/`required` bloquent déjà la soumission d'un champ hors bornes
- * (jsdom les applique aussi). Le `safeParse` est le filet pour le reste — message blanc,
- * tableau vidé — et pour le jour où le schéma se durcit sans que le JSX suive.
- */
+/** Ces tests visent ce que `min`/`max`/`required` ne peuvent pas attraper côté navigateur. */
 
 const GRILLE_VIDE: AccessGrid = {
   pmr: false,
@@ -73,7 +65,7 @@ const FICHE: ListingDetail = {
   bookingUrl: null,
 }
 
-/** Toute requête d'écriture est mémorisée : le test vérifie qu'il n'en part aucune. */
+/** Toute écriture est mémorisée : les tests vérifient qu'il n'en part aucune. */
 let ecritures: string[] = []
 const fetchMock = vi.fn(async (input: unknown, init?: { method?: string }) => {
   const url = String(input)
@@ -118,7 +110,6 @@ describe('Demande d’hébergement — la saisie est jugée par RequestCreateSch
     rendre('/logements/log-1', '/logements/:id', <Logement />)
     await screen.findByRole('button', { name: /Envoyer ma demande/ })
 
-    // `required` est satisfait par des espaces ; `message.trim()` est vide côté schéma.
     fireEvent.change(screen.getByRole('textbox'), { target: { value: '   ' } })
     fireEvent.click(screen.getByRole('button', { name: /Envoyer ma demande/ }))
 
@@ -141,7 +132,6 @@ describe('Demande d’hébergement — la saisie est jugée par RequestCreateSch
     rendre('/logements/log-1', '/logements/:id', <Logement />)
     await screen.findByRole('button', { name: /Envoyer ma demande/ })
 
-    // Le message est vide, donc la demande est invalide — mais rien ne doit s'afficher.
     expect(screen.queryByText(/nombre de personnes entre/i)).toBeNull()
     expect(screen.queryByText(/Écris un message/i)).toBeNull()
   })
@@ -168,8 +158,7 @@ describe('Profil volontaire — la saisie est jugée par le schéma de l’onboa
     rendre('/profil', '/profil', <ProfilVolontaire />)
     await screen.findByRole('button', { name: /Enregistrer et rechercher/ })
 
-    // Les champs prénom/nom ne portent pas de `maxLength` : rien côté navigateur ne voit
-    // le `max(100)` du schéma. Sans `safeParse`, ça partait en 400.
+    // Prénom/nom n'ont pas de `maxLength` : rien côté navigateur ne voit le `max(100)`.
     fireEvent.change(screen.getByLabelText('Prénom'), { target: { value: 'a'.repeat(101) } })
     fireEvent.click(screen.getByRole('button', { name: /Enregistrer et rechercher/ }))
 
@@ -189,24 +178,24 @@ describe('Profil volontaire — la saisie est jugée par le schéma de l’onboa
 })
 
 describe('Les bornes ne sont plus recopiées dans le JSX', () => {
-  /**
-   * Garde-fou de non-régression : c'est la recopie d'une borne du schéma dans un attribut
-   * du formulaire qui a produit le 400 sur `people`. Les formulaires doivent référencer
-   * `INPUT_LIMITS`, jamais réécrire le littéral.
-   */
+  // Les formulaires référencent `INPUT_LIMITS`, jamais le littéral.
   const formulaires = [
+    '../src/pages/AdminAdmins.tsx',
+    '../src/pages/AdminLogements.tsx',
+    '../src/pages/HebergeurDemandes.tsx',
     '../src/pages/HebergeurLogementNouveau.tsx',
+    '../src/pages/JumelageFiche.tsx',
     '../src/pages/Logement.tsx',
     '../src/pages/ProfilVolontaire.tsx',
+    '../src/pages/UniteAnnonce.tsx',
   ]
 
   for (const chemin of formulaires) {
     it(`${chemin.split('/').pop()} tire ses bornes d’INPUT_LIMITS`, () => {
       const source = readFileSync(join(__dirname, chemin), 'utf8')
       expect(source).toContain('INPUT_LIMITS')
-      // Les bornes du schéma, recopiées telles quelles, ne doivent plus apparaître
-      expect(source).not.toMatch(/max=\{(20|30|50)\}/)
-      expect(source).not.toMatch(/maxLength=\{(200|1000|2000)\}/)
+      expect(source).not.toMatch(/\bmax=\{\d/)
+      expect(source).not.toMatch(/\bmaxLength=\{\d/)
     })
   }
 })

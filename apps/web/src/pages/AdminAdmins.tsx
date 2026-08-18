@@ -1,4 +1,4 @@
-import type { AdminUser } from '@repo/contracts'
+import { AdminPromoteSchema, type AdminUser, INPUT_LIMITS } from '@repo/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { Link } from 'react-router'
@@ -67,9 +67,11 @@ export function AdminAdmins() {
     if (confirmed) demote.mutate(admin)
   }
 
+  const promotion = AdminPromoteSchema.safeParse({ email: email.trim() })
+
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (!promote.isPending) promote.mutate(email.trim())
+    if (!promote.isPending && promotion.success) promote.mutate(email.trim())
   }
 
   return (
@@ -125,7 +127,7 @@ export function AdminAdmins() {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="prenom.nom@exemple.fr"
-              maxLength={320}
+              maxLength={INPUT_LIMITS.email}
               required
             />
           </Field>

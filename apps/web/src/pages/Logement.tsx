@@ -40,12 +40,7 @@ function dateParam(parametres: URLSearchParams, cle: string, defaut: string): st
   return valeur !== null && ISO_DATE.test(valeur) ? valeur : defaut
 }
 
-/**
- * Prefill `?people=` reporté par la recherche. Recherche et demande partagent désormais la
- * même borne (`INPUT_LIMITS.people`), donc tout groupe cherché est reportable tel quel ; le
- * garde-fou ne sert plus qu'aux valeurs bricolées dans l'URL, qui retombent sur le défaut
- * plutôt que de pré-remplir un formulaire qui partirait en 400.
- */
+/** Prefill `?people=` reporté par la recherche ; hors bornes, on retombe sur le défaut. */
 function personnesParam(parametres: URLSearchParams, defaut: number): number {
   const valeur = Number(parametres.get('people'))
   const { min, max } = INPUT_LIMITS.people
@@ -206,12 +201,6 @@ function PanneauDemande({
   const [tenteEnvoi, setTenteEnvoi] = useState(false)
 
   const nbPersonnes = Number(personnes)
-  /**
-   * Corps de `POST /listings/:id/requests`, validé par LE schéma de l'API avant l'envoi
-   * (§5) : les bornes ne sont plus recopiées ici, elles viennent de `RequestCreateSchema`.
-   * Le RPC ne type que la forme du JSON — `peopleCount: number` passe la compilation quelle
-   * que soit la valeur — donc sans ce parse, une saisie hors bornes ne se voit qu'en 400.
-   */
   const corps = { dateFrom, dateTo, peopleCount: nbPersonnes, message: message.trim() }
   const demande = RequestCreateSchema.safeParse(corps)
 
@@ -255,8 +244,7 @@ function PanneauDemande({
     )
   }
 
-  // Le champ seul, validé par sa propre branche du schéma : l'alerte de sur-capacité ne
-  // doit pas attendre que le message soit écrit pour s'afficher.
+  // Le champ seul : l'alerte ne doit pas attendre que le message soit écrit.
   const personnesValide = RequestCreateSchema.shape.peopleCount.safeParse(nbPersonnes).success
   const surCapacite = personnesValide && nbPersonnes > logement.capacity
   const placesTexte = `${logement.capacity} place${logement.capacity > 1 ? 's' : ''}`
@@ -267,10 +255,7 @@ function PanneauDemande({
     if (!envoi.isPending && demande.success) envoi.mutate()
   }
 
-  /**
-   * Le champ en cause, en clair — c'est le schéma qui dit ce qui cloche. Affiché seulement
-   * après une tentative d'envoi : au montage le message est vide, donc invalide.
-   */
+  // Après une tentative seulement : au montage le message est vide, donc invalide.
   const erreurSaisie =
     !tenteEnvoi || demande.success
       ? null
