@@ -2,7 +2,7 @@ import {
   ACCESS_CRITERIA,
   type AccessGrid,
   type AdminListing,
-  AdminListingUpsertSchema,
+  AdminListingFieldsSchema,
   INPUT_LIMITS,
   PARKING_EASE,
   type ParkingEase,
@@ -245,7 +245,7 @@ function AdminListingForm({ listing, onSaved, onCancel }: AdminListingFormProps)
     parkingEase,
   }
   // Hors adresse : elle est résolue en async dans mutationFn, et déjà gardée par ADDRESS_*.
-  const logementValide = AdminListingUpsertSchema.omit({ address: true }).safeParse(champs)
+  const logementValide = AdminListingFieldsSchema.safeParse(champs)
 
   const save = useMutation({
     mutationFn: async () => {

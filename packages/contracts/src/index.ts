@@ -683,29 +683,41 @@ export const AdminMetricsSchema = z.object({
   }),
 })
 
-export const AdminListingUpsertSchema = z
-  .object({
-    category: z.enum(['HOTEL', 'COLLECTIVE', 'SCOUT_BASE']),
-    site: SiteSchema,
-    title: z.string().min(INPUT_LIMITS.adminTitle.min).max(INPUT_LIMITS.adminTitle.max),
-    description: z.string().max(INPUT_LIMITS.description).nullish(),
-    address: AddressInputSchema,
-    capacity: z
-      .number()
-      .int()
-      .min(INPUT_LIMITS.adminCapacity.min)
-      .max(INPUT_LIMITS.adminCapacity.max),
-    priceInfo: z.string().max(INPUT_LIMITS.adminPriceInfo).nullish(),
-    /** Badge « Payant » sur la carte de recherche — même sans priceInfo */
-    isPaid: z.boolean().default(false),
-    bookingUrl: z.url().max(INPUT_LIMITS.adminBookingUrl).nullish(),
-    availableFrom: z.iso.date(),
-    availableTo: z.iso.date(),
-    access: AccessGridSchema,
-    accessibilityNotes: z.string().max(INPUT_LIMITS.accessibilityNotes).nullish(),
-    parkingEase: ParkingEaseSchema.nullish(),
-  })
-  .refine((v) => v.availableFrom < v.availableTo, { error: NUIT_MINIMUM, path: ['availableTo'] })
+// Objet nu (sans refine) : Zod v4 interdit .omit()/.extend() sur un schéma refiné.
+const AdminListingUpsertObjectSchema = z.object({
+  category: z.enum(['HOTEL', 'COLLECTIVE', 'SCOUT_BASE']),
+  site: SiteSchema,
+  title: z.string().min(INPUT_LIMITS.adminTitle.min).max(INPUT_LIMITS.adminTitle.max),
+  description: z.string().max(INPUT_LIMITS.description).nullish(),
+  address: AddressInputSchema,
+  capacity: z
+    .number()
+    .int()
+    .min(INPUT_LIMITS.adminCapacity.min)
+    .max(INPUT_LIMITS.adminCapacity.max),
+  priceInfo: z.string().max(INPUT_LIMITS.adminPriceInfo).nullish(),
+  /** Badge « Payant » sur la carte de recherche — même sans priceInfo */
+  isPaid: z.boolean().default(false),
+  bookingUrl: z.url().max(INPUT_LIMITS.adminBookingUrl).nullish(),
+  availableFrom: z.iso.date(),
+  availableTo: z.iso.date(),
+  access: AccessGridSchema,
+  accessibilityNotes: z.string().max(INPUT_LIMITS.accessibilityNotes).nullish(),
+  parkingEase: ParkingEaseSchema.nullish(),
+})
+
+const auMoinsUneNuit = (v: { availableFrom: string; availableTo: string }) =>
+  v.availableFrom < v.availableTo
+
+export const AdminListingUpsertSchema = AdminListingUpsertObjectSchema.refine(auMoinsUneNuit, {
+  error: NUIT_MINIMUM,
+  path: ['availableTo'],
+})
+
+/** Validation SPA du formulaire admin : l'adresse est résolue à part (autocomplete BAN). */
+export const AdminListingFieldsSchema = AdminListingUpsertObjectSchema.omit({
+  address: true,
+}).refine(auMoinsUneNuit, { error: NUIT_MINIMUM, path: ['availableTo'] })
 
 /**
  * Compte administrateur vu par la page /admin/administrateurs. L'e-mail n'est

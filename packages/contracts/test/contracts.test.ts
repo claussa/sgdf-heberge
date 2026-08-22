@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  AdminListingFieldsSchema,
   AdminListingUpsertSchema,
   INPUT_LIMITS,
   ListingCardSchema,
@@ -220,6 +221,20 @@ describe('requêtes', () => {
         access: accessGrid,
       }),
     ).toThrow()
+  })
+
+  it('admin : le schéma hors adresse (SPA) garde la règle nuit minimum', () => {
+    const champs = {
+      category: 'HOTEL',
+      site: 'paris',
+      title: 'Hôtel des Pèlerins',
+      capacity: 120,
+      availableFrom: '2026-09-24',
+      availableTo: '2026-09-29',
+      access: accessGrid,
+    }
+    expect(AdminListingFieldsSchema.parse(champs).availableTo).toBe('2026-09-29')
+    expect(() => AdminListingFieldsSchema.parse({ ...champs, availableTo: '2026-09-24' })).toThrow()
   })
 })
 
