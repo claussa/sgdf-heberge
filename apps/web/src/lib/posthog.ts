@@ -1,4 +1,4 @@
-import posthog from 'posthog-js'
+import posthog, { type CaptureResult } from 'posthog-js'
 
 /**
  * PostHog Cloud EU — périmètre volontairement minimal, acté après analyse RGPD :
@@ -32,6 +32,21 @@ function scrubTokens(properties: Record<string, unknown>): Record<string, unknow
   return properties
 }
 
+/**
+ * Exceptions injectées par des logiciels tiers dans la page — pas notre code,
+ * non actionnables. « Object Not Found Matching Id » : scanner de liens
+ * Microsoft Outlook/Office qui rejoue la page dans une WebView et appelle un
+ * objet hôte disparu.
+ */
+const IGNORED_EXCEPTIONS = [/Object Not Found Matching Id:\d+, MethodName:\w+, ParamCount:\d+/]
+
+function dropInjectedExceptions(event: CaptureResult | null): CaptureResult | null {
+  if (event?.event !== '$exception') return event
+  const values = event.properties?.$exception_values
+  const haystack = Array.isArray(values) ? values.join('\n') : ''
+  return IGNORED_EXCEPTIONS.some((re) => re.test(haystack)) ? null : event
+}
+
 export function initAnalytics(): void {
   if (!key) return // dev sans clé : aucune télémétrie
   posthog.init(key, {
@@ -54,6 +69,7 @@ export function initAnalytics(): void {
     // localStorage/cookie sans mettre en place le consentement qui va avec.
     persistence: 'memory',
     sanitize_properties: scrubTokens,
+    before_send: dropInjectedExceptions,
   })
 }
 
