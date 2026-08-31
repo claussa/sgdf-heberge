@@ -7,16 +7,18 @@ import {
   PARKING_EASE,
 } from '@repo/contracts'
 import type { SiteSlug } from '@repo/event-config'
-import { eventConfig } from '@repo/event-config'
+import { eventConfig, siteLabel } from '@repo/event-config'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router'
 import { ACCESS_CRITERIA_LABELS } from '../lib/access-criteria'
 import { api } from '../lib/api'
+import { distanceToSite, formatKm, nearestSite } from '../lib/geo'
 import {
   AddressAutocomplete,
   type AddressValue,
   Button,
+  Card,
   Checkbox,
   DateRangePicker,
   Field,
@@ -30,6 +32,7 @@ import {
   Radio,
   SectionTitle,
   Select,
+  SigneImage,
   Stepper,
   Textarea,
 } from '../ui'
@@ -96,13 +99,23 @@ function rowValue(raw: string): number {
   return Number.isInteger(value) && value >= 1 ? value : 0
 }
 
+/**
+ * Site retenu pour le logement. `manual: false` = déduit de l'adresse (ou du
+ * logement stocké en édition), `manual: true` = surchargé via « Modifier ».
+ */
+type SiteChoice = { site: SiteSlug; manual: boolean }
+
+/** En édition : le site stocké fait foi ; distance null = il avait été surchargé. */
+function siteFromListing(listing: MyListing | null): SiteChoice | null {
+  return listing ? { site: listing.site, manual: listing.distanceKm === null } : null
+}
+
 function LogementForm({ listing }: { listing: MyListing | null }) {
   const isEdit = listing !== null
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
   const [step, setStep] = useState<1 | 2>(1)
-  const [site, setSite] = useState<SiteSlug>(listing?.site ?? eventConfig.sites[0].slug)
   const [availableFrom, setAvailableFrom] = useState(
     listing?.availableFrom ?? eventConfig.dates.start,
   )
@@ -111,6 +124,8 @@ function LogementForm({ listing }: { listing: MyListing | null }) {
     listing && listing.beds.length > 0 ? listing.beds.map((bed) => makeRow(bed)) : [makeRow()],
   )
   const [address, setAddress] = useState<AddressValue | null>(null)
+  const [siteChoice, setSiteChoice] = useState<SiteChoice | null>(() => siteFromListing(listing))
+  const [editingSite, setEditingSite] = useState(false)
   const [description, setDescription] = useState(listing?.description ?? '')
   const [access, setAccess] = useState(() => (listing ? { ...listing.access } : emptyAccessGrid()))
   const [accessibilityNotes, setAccessibilityNotes] = useState(listing?.accessibilityNotes ?? '')
@@ -126,29 +141,58 @@ function LogementForm({ listing }: { listing: MyListing | null }) {
     setRows((current) => current.map((row) => (row.key === key ? { ...row, ...patch } : row)))
   }
 
+  const onAddressChange = (value: AddressValue | null) => {
+    setAddress(value)
+    setEditingSite(false)
+    // Nouvelle adresse choisie : le site est recalculé (une surcharge manuelle saute).
+    setSiteChoice(value ? { site: nearestSite(value), manual: false } : siteFromListing(listing))
+  }
+
+  const pickSite = (site: SiteSlug) => {
+    const auto = address
+      ? nearestSite(address) === site
+      : listing !== null && listing.site === site && listing.distanceKm !== null
+    setSiteChoice({ site, manual: !auto })
+    setEditingSite(false)
+  }
+
+  // Distance affichée : recalculée si une adresse vient d'être choisie, sinon celle
+  // stockée (édition). Site surchargé sans adresse fraîche : pas de distance.
+  const siteDistanceKm =
+    siteChoice === null
+      ? null
+      : address
+        ? distanceToSite(siteChoice.site, address)
+        : listing && siteChoice.site === listing.site
+          ? listing.distanceKm
+          : null
+
+  const beds = rows.map((row) => ({
+    type: row.type,
+    count: Number(row.count),
+    capacityEach: Number(row.capacityEach),
+    note: row.note.trim() === '' ? undefined : row.note.trim(),
+  }))
+
   // Édition : adresse absente = inchangée, d'où `ListingUpdateSchema`.
-  const body = {
-    site,
+  const body = siteChoice && {
+    site: siteChoice.site,
     availableFrom,
     availableTo,
     description: description.trim() === '' ? undefined : description.trim(),
-    beds: rows.map((row) => ({
-      type: row.type,
-      count: Number(row.count),
-      capacityEach: Number(row.capacityEach),
-      note: row.note.trim() === '' ? undefined : row.note.trim(),
-    })),
+    beds,
     access,
     accessibilityNotes: accessibilityNotes.trim() === '' ? undefined : accessibilityNotes.trim(),
     parkingEase,
   }
-  const envoiComplet = address ? { ...body, address } : body
+  const envoiComplet = body && (address ? { ...body, address } : body)
   const logementValide = isEdit
     ? ListingUpdateSchema.safeParse(envoiComplet)
     : ListingUpsertSchema.safeParse(envoiComplet)
 
   const save = useMutation({
     mutationFn: async () => {
+      if (!body) throw new Error('site manquant')
       if (listing) {
         const res = await api.my.listings[':id'].$patch({
           param: { id: listing.id },
@@ -169,7 +213,7 @@ function LogementForm({ listing }: { listing: MyListing | null }) {
   })
 
   const continueToStep2 = () => {
-    const couchages = ListingUpsertSchema.shape.beds.safeParse(body.beds)
+    const couchages = ListingUpsertSchema.shape.beds.safeParse(beds)
     if (!couchages.success) {
       setStepError(
         rows.length === 0
@@ -178,13 +222,13 @@ function LogementForm({ listing }: { listing: MyListing | null }) {
       )
       return
     }
+    if (!isEdit && address === null) {
+      setStepError('Choisis une adresse dans la liste de suggestions.')
+      return
+    }
     // Le refine du schéma couvre aussi from < to ; vérifié ici pour un message ciblé dès l'étape 1.
     if (availableFrom === '' || availableTo === '' || availableFrom >= availableTo) {
       setStepError('Vérifie les dates : le début doit précéder la fin (au moins une nuit).')
-      return
-    }
-    if (!isEdit && address === null) {
-      setStepError('Choisis une adresse dans la liste de suggestions.')
       return
     }
     setStepError(null)
@@ -216,34 +260,7 @@ function LogementForm({ listing }: { listing: MyListing | null }) {
         <>
           <Stepper step={1} />
           <PageTitle>Décris ton logement,</PageTitle>
-          <div className="logement-form__grid3">
-            <Field label="Site le plus proche">
-              <Select value={site} onChange={(event) => setSite(event.target.value as SiteSlug)}>
-                {eventConfig.sites.map((s) => (
-                  <option key={s.slug} value={s.slug}>
-                    {s.label}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="Capacité" glose="calculée">
-              <Input value={countPersonnes(capacity)} disabled />
-            </Field>
-            <Field label="Disponible">
-              <DateRangePicker
-                min={eventConfig.dates.inputMin}
-                max={eventConfig.dates.inputMax}
-                from={availableFrom}
-                to={availableTo}
-                onChange={({ from, to }) => {
-                  setAvailableFrom(from)
-                  setAvailableTo(to)
-                }}
-                ariaLabel="Dates de disponibilité"
-              />
-            </Field>
-          </div>
-          <SectionTitle>Mes couchages,</SectionTitle>
+          <SectionTitle>1. Mes couchages,</SectionTitle>
           <div className="couchages">
             <div className="couchages__inner">
               <div className="couchages__head" aria-hidden="true">
@@ -294,6 +311,7 @@ function LogementForm({ listing }: { listing: MyListing | null }) {
                     maxLength={INPUT_LIMITS.bedNote}
                     value={row.note}
                     aria-label="Précision"
+                    placeholder="Lit double, BZ…"
                     onChange={(event) => updateRow(row.key, { note: event.target.value })}
                   />
                   <button
@@ -307,40 +325,110 @@ function LogementForm({ listing }: { listing: MyListing | null }) {
               ))}
             </div>
           </div>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            style={{ alignSelf: 'flex-start' }}
-            onClick={() => setRows((current) => [...current, makeRow()])}
-          >
-            + Ajouter un couchage
-          </Button>
-          <HelpText>La capacité affichée est la somme des couchages déclarés.</HelpText>
-          <AddressAutocomplete
-            label="Adresse"
-            glose="obligatoire"
-            value={address}
-            onChange={setAddress}
-            initialQuery={listing?.addressFull}
-          />
-          <HelpText>
-            Adresse choisie dans une liste : ville, code postal et distance au site se remplissent
-            seuls. Seul le quartier est affiché publiquement — l’adresse complète part au volontaire
-            ou participant quand tu acceptes sa demande.
-          </HelpText>
-          <Field label="Description libre">
-            <Textarea
-              value={description}
-              maxLength={INPUT_LIMITS.description}
-              placeholder="Horaires d’arrivée, animaux, petit-déjeuner, ce qu’il faut apporter…"
-              onChange={(event) => setDescription(event.target.value)}
-            />
-          </Field>
+          <div className="couchages-footer">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => setRows((current) => [...current, makeRow()])}
+            >
+              + Ajouter un couchage
+            </Button>
+            <div className="capacite-chip">
+              <SigneImage name="tente" size={18} />
+              <span>
+                Capacité calculée : <b>{countPersonnes(capacity)}</b>
+              </span>
+            </div>
+          </div>
+
+          <div className="logement-form__section">
+            <SectionTitle>2. Ton adresse,</SectionTitle>
+            <div className="logement-form__adresse">
+              <AddressAutocomplete
+                label="Adresse"
+                glose="obligatoire"
+                value={address}
+                onChange={onAddressChange}
+                initialQuery={listing?.addressFull}
+              />
+              <HelpText>
+                Seul le quartier est affiché publiquement — l’adresse complète part au volontaire ou
+                participant quand tu acceptes sa demande.
+              </HelpText>
+            </div>
+            {siteChoice && (
+              <Card accentTop="success" className="site-card fade">
+                <p className="text-body site-card__line">
+                  <span>
+                    Site le plus proche : <b>{siteLabel(siteChoice.site)}</b>
+                    {siteDistanceKm !== null && <> · à {formatKm(siteDistanceKm)}</>}
+                  </span>
+                  {!editingSite && (
+                    <button
+                      type="button"
+                      className="site-card__edit"
+                      onClick={() => setEditingSite(true)}
+                    >
+                      Modifier
+                    </button>
+                  )}
+                </p>
+                <HelpText>
+                  {siteChoice.manual
+                    ? 'Choisi manuellement — il sera recalculé si tu changes d’adresse.'
+                    : 'Calculé automatiquement depuis ton adresse.'}
+                </HelpText>
+                {editingSite && (
+                  <Select
+                    value={siteChoice.site}
+                    aria-label="Site le plus proche"
+                    wrapClassName="site-card__select"
+                    onChange={(event) => pickSite(event.target.value as SiteSlug)}
+                  >
+                    {eventConfig.sites.map((s) => (
+                      <option key={s.slug} value={s.slug}>
+                        {s.label}
+                      </option>
+                    ))}
+                  </Select>
+                )}
+              </Card>
+            )}
+          </div>
+
+          <div className="logement-form__section">
+            <SectionTitle>3. Disponibilité et description,</SectionTitle>
+            <Field label="Disponible">
+              <DateRangePicker
+                min={eventConfig.dates.inputMin}
+                max={eventConfig.dates.inputMax}
+                from={availableFrom}
+                to={availableTo}
+                onChange={({ from, to }) => {
+                  setAvailableFrom(from)
+                  setAvailableTo(to)
+                }}
+                ariaLabel="Dates de disponibilité"
+              />
+            </Field>
+            <Field label="Description libre">
+              <Textarea
+                value={description}
+                maxLength={INPUT_LIMITS.description}
+                placeholder="Horaires d’arrivée, animaux, petit-déjeuner, ce qu’il faut apporter…"
+                onChange={(event) => setDescription(event.target.value)}
+              />
+            </Field>
+          </div>
+
           {stepError && <p className="alert-text">{stepError}</p>}
-          <Button type="submit" style={{ minWidth: 200, alignSelf: 'flex-start' }}>
-            Continuer
-          </Button>
+          <div className="logement-form__cta">
+            <Button type="submit" disabled={siteChoice === null} style={{ minWidth: 200 }}>
+              Continuer
+            </Button>
+            {siteChoice === null && <HelpText>Renseigne ton adresse pour continuer.</HelpText>}
+          </div>
         </>
       ) : (
         <>

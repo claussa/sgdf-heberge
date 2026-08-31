@@ -65,6 +65,16 @@ const FICHE: ListingDetail = {
   bookingUrl: null,
 }
 
+/** Réponse BAN minimale — l'adresse débloque le CTA de l'étape 1 (site dérivé). */
+const BAN = {
+  features: [
+    {
+      properties: { label: '12 Rue de la Paix 75002 Paris', city: 'Paris', postcode: '75002' },
+      geometry: { coordinates: [2.331, 48.869] },
+    },
+  ],
+}
+
 /** Toute écriture est mémorisée : les tests vérifient qu'il n'en part aucune. */
 let ecritures: string[] = []
 const fetchMock = vi.fn(async (input: unknown, init?: { method?: string }) => {
@@ -73,6 +83,9 @@ const fetchMock = vi.fn(async (input: unknown, init?: { method?: string }) => {
   if (method !== 'GET') {
     ecritures.push(`${method} ${url}`)
     return { status: 201, json: async () => ({}) }
+  }
+  if (url.includes('api-adresse.data.gouv.fr')) {
+    return { ok: true, status: 200, json: async () => BAN }
   }
   if (url.startsWith('/api/me')) return { status: 200, json: async () => ME }
   if (url.startsWith('/api/my/listings')) return { status: 200, json: async () => [] }
@@ -145,8 +158,21 @@ describe('Logement hébergeur — les couchages sont jugés par ListingUpsertSch
       <HebergeurLogementNouveau />,
     )
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Retirer' }))
-    fireEvent.click(screen.getByRole('button', { name: /Continuer/ }))
+    // Sans adresse, pas de site : le CTA est désactivé et le rappel est affiché.
+    const continuer = await screen.findByRole<HTMLButtonElement>('button', { name: /Continuer/ })
+    expect(continuer.disabled).toBe(true)
+    expect(screen.getByText(/Renseigne ton adresse pour continuer/i)).toBeTruthy()
+
+    // L'adresse choisie dans la liste BAN dérive le site et débloque le CTA.
+    fireEvent.change(screen.getByPlaceholderText(/Commence à taper ton adresse/i), {
+      target: { value: '12 rue de la paix' },
+    })
+    fireEvent.click(await screen.findByRole('button', { name: /12 Rue de la Paix/ }))
+    expect(await screen.findByText(/Site le plus proche/i)).toBeTruthy()
+    expect(continuer.disabled).toBe(false)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retirer' }))
+    fireEvent.click(continuer)
 
     expect(await screen.findByText(/Ajoute au moins un couchage/i)).toBeTruthy()
     expect(ecritures).toEqual([])
