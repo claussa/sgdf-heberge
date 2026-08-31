@@ -175,10 +175,20 @@
   gap: 16px;
 }
 
-.logement-form__grid3 {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+/* Sections numérotées 2 et 3 (adresse, disponibilité) — colonne 520px du design */
+.logement-form__section {
+  border-top: 1px solid var(--bordure);
+  padding-top: 20px;
+  display: flex;
+  flex-direction: column;
   gap: 14px;
+  max-width: 520px;
+}
+
+.logement-form__adresse {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 /* Tableau des couchages : Type (2fr) · Combien (70px) · Personnes (100px) ·
@@ -234,6 +244,65 @@
   color: var(--rouge);
 }
 
+/* Sous le tableau : bouton d'ajout + capacité calculée */
+.couchages-footer {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.capacite-chip {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: var(--fond-neutre);
+  padding: 8px 14px;
+  font: 400 14px var(--font-courant);
+  color: var(--bleu);
+}
+
+/* Carte « Site le plus proche » — dérivé de l'adresse, surchargeable */
+.site-card {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.site-card__line {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.site-card__edit {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: 400 13px var(--font-courant);
+  color: var(--lien);
+  text-decoration: underline;
+}
+
+.site-card__edit:hover {
+  color: var(--bleu);
+}
+
+.site-card__select {
+  max-width: 240px;
+}
+
+/* CTA « Continuer » + rappel adresse manquante */
+.logement-form__cta {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 /* Grille des 8 critères d'accessibilité (A.11) */
 .acces-grid {
   display: grid;
@@ -269,10 +338,6 @@
     flex-direction: row;
     align-items: center;
     width: 100%;
-  }
-
-  .logement-form__grid3 {
-    grid-template-columns: 1fr;
   }
 
   .acces-grid {

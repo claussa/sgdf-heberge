@@ -42,13 +42,15 @@ export function AddressAutocomplete({
   const [suggestions, setSuggestions] = useState<BanFeature[]>([])
   const [open, setOpen] = useState(false)
   const abortRef = useRef<AbortController | null>(null)
-  // vrai au montage quand le champ est pré-rempli (édition) : la valeur initiale
-  // ne doit pas déclencher la recherche ni ouvrir la liste
-  const skipNextFetch = useRef(Boolean(value?.label ?? initialQuery))
+  // requête « engagée » (pré-remplissage d'édition ou adresse choisie) : elle ne
+  // doit pas déclencher la recherche ni ouvrir la liste — y compris quand
+  // StrictMode rejoue l'effet au montage (un flag one-shot ne suffit pas)
+  const committedQuery = useRef(value?.label ?? initialQuery ?? '')
 
   useEffect(() => {
-    if (skipNextFetch.current) {
-      skipNextFetch.current = false
+    if (query === committedQuery.current) {
+      setSuggestions([])
+      setOpen(false)
       return
     }
     if (query.trim().length < 3) {
@@ -78,7 +80,7 @@ export function AddressAutocomplete({
 
   function select(feature: BanFeature) {
     const [lng, lat] = feature.geometry.coordinates
-    skipNextFetch.current = true
+    committedQuery.current = feature.properties.label
     setQuery(feature.properties.label)
     setSuggestions([])
     setOpen(false)
