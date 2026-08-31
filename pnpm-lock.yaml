@@ -199,6 +199,9 @@ importers:
       '@repo/config':
         specifier: workspace:*
         version: link:../config
+      '@repo/event-config':
+        specifier: workspace:*
+        version: link:../event-config
       '@testcontainers/postgresql':
         specifier: ^12.1.0
         version: 12.1.0
