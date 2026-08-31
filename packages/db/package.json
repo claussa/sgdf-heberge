@@ -13,6 +13,7 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx --env-file=.env prisma/seed.ts",
     "db:promote-admin": "tsx scripts/promote-admin.ts",
+    "db:fix-site-mismatch": "tsx scripts/fix-site-mismatch.ts",
     "db:purge": "tsx --env-file=.env scripts/purge.ts",
     "check-types": "tsc --noEmit",
     "test:integration": "vitest run"
@@ -23,6 +24,7 @@
   },
   "devDependencies": {
     "@repo/config": "workspace:*",
+    "@repo/event-config": "workspace:*",
     "@testcontainers/postgresql": "^12.1.0",
     "@types/node": "^26.2.0",
     "prisma": "6.19.3",
