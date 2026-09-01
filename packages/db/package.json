@@ -14,6 +14,7 @@
     "db:seed": "tsx --env-file=.env prisma/seed.ts",
     "db:promote-admin": "tsx scripts/promote-admin.ts",
     "db:fix-site-mismatch": "tsx scripts/fix-site-mismatch.ts",
+    "db:audit-bed-types": "tsx scripts/audit-bed-types.ts",
     "db:purge": "tsx --env-file=.env scripts/purge.ts",
     "check-types": "tsc --noEmit",
     "test:integration": "vitest run"
