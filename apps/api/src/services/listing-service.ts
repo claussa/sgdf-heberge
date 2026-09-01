@@ -12,7 +12,12 @@ import type { z } from 'zod'
 import { getEnv } from '../env'
 import { AppError } from '../errors'
 import { computeDistanceKm, deriveDisplayArea } from '../lib/geocode'
-import { hostDisplayName, listingCardTitle, listingOwnerTitle } from './listing-title'
+import {
+  hostDisplayName,
+  listingCardTitle,
+  listingOwnerTitle,
+  rankedBedTypes,
+} from './listing-title'
 import { sendToRecipientAsync } from './notify'
 
 /**
@@ -60,6 +65,8 @@ const CARD_SELECT = {
   parkingEase: true,
   ...ACCESS_SELECT,
   beds: { select: BED_SELECT },
+  // Prénom seul, pour le titre (« Chez Claire · 5 places ») — jamais exposé tel quel.
+  owner: { select: { firstName: true } },
 } as const satisfies Prisma.ListingSelect
 
 const DETAIL_SELECT = {
@@ -119,7 +126,7 @@ function toCard(row: CardRow) {
     availableTo: isoDate(row.availableTo),
     access: accessGrid(row),
     parkingEase: row.parkingEase,
-    bedTypes: [...new Set(row.beds.map((bed) => bed.type))],
+    bedTypes: rankedBedTypes(row.beds),
     priceInfo: row.priceInfo,
     isPaid: row.isPaid,
   }

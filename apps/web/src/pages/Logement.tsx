@@ -31,7 +31,7 @@ import {
   SuccessPanel,
   Textarea,
 } from '../ui'
-import { prenomDe, signeDe } from './volontaire-lib'
+import { lignesCouchages, prenomDe, signeDe } from './volontaire-lib'
 import './volontaire.css'
 
 /** Prefill `?people=` reporté par la recherche ; hors bornes, on retombe sur le défaut. */
@@ -114,6 +114,13 @@ function FicheLogement({ logement, me }: { logement: ListingDetail; me: Me }) {
           </div>
           <PageTitle>{logement.title},</PageTitle>
           <p className="fiche-logement__soustitre">{sousTitre}</p>
+          {logement.beds.length > 0 && (
+            <ul className="fiche-logement__couchages">
+              {lignesCouchages(logement.beds).map((ligne) => (
+                <li key={ligne.cle}>{ligne.texte}</li>
+              ))}
+            </ul>
+          )}
           {criteres.length > 0 && (
             <div className="fiche-logement__badges">
               {criteres.map((slug) => (

@@ -117,6 +117,11 @@ Grille résultats `repeat(auto-fill, minmax(270px,1fr))`, gap 20px.
 - Note : **« Seul le quartier de chaque logement est affiché. L'adresse complète t'est transmise
   quand l'hébergeur accepte ta demande. »**
 
+Variante v1 (hors maquette, actée) : le titre d'un logement de particulier est **« Chez {prénom} ·
+{n} places »**, sans type de couchage — un logement à plusieurs types ressortait sur un chip avec le
+titre d'un autre type. Les types présents sont listés sous le titre de la carte, du plus grand au
+plus petit (« Chambre privée · Canapé »).
+
 ## A.5 — Fiche logement (bénévole)
 Desktop : grille `1.6fr 1fr` gap 32px ; mobile : `1fr`. Lien **« ← Retour à la recherche »**.
 
@@ -146,7 +151,9 @@ Desktop : grille `1.6fr 1fr` gap 32px ; mobile : `1fr`. Lien **« ← Retour à 
 
 Variantes v1 (hors maquette, actées) : **hôtel** = pas de panneau demande → bloc prix/code promo
 + bouton primaire vers `bookingUrl` (« Réserver sur le site de l'hôtel ») ; **gymnase** = panneau
-demande standard + prix affiché.
+demande standard + prix affiché ; **titre** = « Chez Claire · 5 places » (cf. A.4) et
+**couchages** = liste sous le sous-titre (« 2 chambres privées · 2 personnes chacune · 1er étage,
+ascenseur »), l'état Libre/Complet restant global au logement.
 
 ## A.6 — Mes demandes (bénévole)
 Colonne `max-width:760px`.

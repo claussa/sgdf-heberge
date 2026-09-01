@@ -296,7 +296,7 @@ export const ListingCardSchema = z.object({
   id: z.string(),
   category: ListingCategorySchema,
   site: SiteSchema,
-  /** PRIVATE : dérivé (« Chambre privée · 2 places ») ; institutionnels : title en base */
+  /** PRIVATE : dérivé (« Chez Claire · 2 places ») ; institutionnels : title en base */
   title: z.string(),
   displayArea: z.string(),
   distanceKm: z.number().nullable(),
@@ -306,7 +306,7 @@ export const ListingCardSchema = z.object({
   access: AccessGridSchema,
   /** Facilité de stationnement — null = non renseigné (le champ est facultatif) */
   parkingEase: ParkingEaseSchema.nullable(),
-  /** Types de couchages présents (icône + sous-titre carte) */
+  /** Types de couchages présents, du plus grand au plus petit (icône + ligne de types de la carte) */
   bedTypes: z.array(BedTypeSchema),
   /** Institutionnels : « 45 € · code PAPE15 » */
   priceInfo: z.string().nullable(),

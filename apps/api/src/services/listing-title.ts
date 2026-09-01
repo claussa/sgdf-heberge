@@ -3,8 +3,8 @@ import type { BedType, ListingCategory } from '@repo/db'
 /**
  * Dérivation des titres de logements (le titre n'est PAS stocké pour les logements
  * de particuliers — il périmerait à chaque modification des couchages).
- * Wording de la maquette : « Chambre privée · 2 places », « Chez Claire — 2 chambres,
- * 1 canapé, 2 couchages ».
+ * Wording : « Chez Claire · 5 places » (carte, fiche, emails au demandeur),
+ * « Chez Claire — 2 chambres, 1 canapé, 2 couchages » (vue hébergeur).
  */
 
 interface BedLine {
@@ -20,6 +20,9 @@ const BED_LABELS: Record<BedType, { singular: string; plural: string }> = {
   TENT_SPOT: { singular: 'emplacement tente', plural: 'emplacements tente' },
 }
 
+/** Départage des types à capacité égale : ordre du select « Type » (A.10). */
+const BED_TYPE_ORDER = Object.keys(BED_LABELS) as BedType[]
+
 /** « 2 chambres privées, 1 canapé, 2 couchages sommaires » */
 export function bedSummary(beds: BedLine[]): string {
   return beds
@@ -29,29 +32,32 @@ export function bedSummary(beds: BedLine[]): string {
     .join(', ')
 }
 
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1)
+/** Types présents du plus grand (Σ count × capacityEach) au plus petit, sans doublon — icône et ligne de types de la carte. */
+export function rankedBedTypes(beds: BedLine[]): BedType[] {
+  const totals = new Map<BedType, number>()
+  for (const bed of beds) {
+    totals.set(bed.type, (totals.get(bed.type) ?? 0) + bed.count * bed.capacityEach)
+  }
+  return [...totals.entries()]
+    .sort(
+      ([typeA, totalA], [typeB, totalB]) =>
+        totalB - totalA || BED_TYPE_ORDER.indexOf(typeA) - BED_TYPE_ORDER.indexOf(typeB),
+    )
+    .map(([type]) => type)
 }
 
-/**
- * Titre de carte de recherche / fiche.
- * Institutionnels : le titre saisi par l'admin. Particuliers : le couchage dominant,
- * ex. « Chambre privée · 8 places ».
- */
+/** « Chez Claire · 5 places » (institutionnels : le title admin) — le type est dans bedTypes, pas dans le titre. */
 export function listingCardTitle(listing: {
   category: ListingCategory
   title: string | null
   capacity: number
-  beds: BedLine[]
+  owner: { firstName: string | null }
 }): string {
   if (listing.category !== 'PRIVATE') {
     return listing.title ?? 'Hébergement'
   }
-  const dominant = [...listing.beds].sort(
-    (a, b) => b.count * b.capacityEach - a.count * a.capacityEach,
-  )[0]
-  const label = dominant ? capitalize(BED_LABELS[dominant.type].singular) : 'Logement'
-  return `${label} · ${listing.capacity} place${listing.capacity > 1 ? 's' : ''}`
+  const prefix = listing.owner.firstName ? `Chez ${listing.owner.firstName}` : 'Logement'
+  return `${prefix} · ${listing.capacity} place${listing.capacity > 1 ? 's' : ''}`
 }
 
 /** Vue « Mes logements » : « Chez Claire — 2 chambres privées, 1 canapé » */
