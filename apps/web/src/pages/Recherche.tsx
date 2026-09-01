@@ -27,7 +27,7 @@ import {
   ParkingGauge,
   SigneImage,
 } from '../ui'
-import { signeDe } from './volontaire-lib'
+import { signeDe, typesCouchagesLabel } from './volontaire-lib'
 import { useVolontaireTourProposal } from './volontaire-tour'
 import './volontaire.css'
 
@@ -320,6 +320,9 @@ function CarteLogement({ carte, lienSuffixe }: { carte: ListingCard; lienSuffixe
       </span>
       <span className="carte-logement__corps">
         <span className="carte-logement__titre">{carte.title}</span>
+        {carte.bedTypes.length > 0 && (
+          <span className="carte-logement__couchages">{typesCouchagesLabel(carte.bedTypes)}</span>
+        )}
         <span className="carte-logement__zone">{carte.displayArea}</span>
         {carte.parkingEase && (
           <span className="carte-logement__parking">

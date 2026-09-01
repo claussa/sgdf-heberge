@@ -377,7 +377,6 @@ export async function acceptRequest(
             category: true,
             title: true,
             capacity: true,
-            beds: { select: BED_TITLE_SELECT },
             owner: {
               select: { firstName: true, lastName: true, phone: true, email: true },
             },
@@ -467,7 +466,7 @@ export async function declineRequest(
               category: true,
               title: true,
               capacity: true,
-              beds: { select: BED_TITLE_SELECT },
+              owner: { select: { firstName: true } },
             },
           },
         },
@@ -748,7 +747,6 @@ const MY_REQUEST_SELECT = {
       // ⚠️ Chargée pour la SEULE variante ACCEPTED : le builder ci-dessous ne pose la clé
       // hostContact que sur elle, et la route re-parse l'union discriminée avant c.json (§5).
       addressFull: true,
-      beds: { select: BED_TITLE_SELECT },
       owner: { select: { firstName: true, lastName: true, phone: true, email: true } },
     },
   },

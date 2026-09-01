@@ -402,6 +402,18 @@ describe('recherche', () => {
     expect(ids(result.items)).not.toContain(narrowId) // 2 places
   })
 
+  it('carte : titre « Chez Claire · n places » sans type, bedTypes du plus grand au plus petit', async () => {
+    // Trois types (2×2 + 1×2 + 2×1) : ressort sur le chip Canapé avec un titre qui ne contredit pas le filtre
+    const couches = await search({ site: 'paris', types: ['COUCH'] })
+    const covers = couches.items.find((item) => item.id === coversId)
+    expect(covers?.title).toBe('Chez Claire · 8 places')
+    expect(covers?.bedTypes).toEqual(['PRIVATE_ROOM', 'COUCH', 'FLOOR_BED'])
+
+    const narrow = couches.items.find((item) => item.id === narrowId)
+    expect(narrow?.title).toBe('Chez Claire · 2 places')
+    expect(narrow?.bedTypes).toEqual(['COUCH'])
+  })
+
   it('types : OR entre types de couchages et catégories institutionnelles', async () => {
     const rooms = await search({ site: 'paris', types: ['PRIVATE_ROOM'] })
     expect(ids(rooms.items)).toContain(coversId)
