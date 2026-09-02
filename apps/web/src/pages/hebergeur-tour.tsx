@@ -170,8 +170,9 @@ export function startHebergeurTour(options: {
       popover: {
         title: 'Complet ? Tu décides',
         description:
-          'À tout moment, passe un logement en « Complet » pour le sortir des recherches — ' +
-          'ça n’annule rien de ce qui est déjà accepté.',
+          'À tout moment, passe un logement en « Complet » pour le sortir des recherches, ou ' +
+          'marque seulement les couchages déjà pris : seules les places restantes ressortent. ' +
+          'Ça n’annule rien de ce qui est déjà accepté.',
         ...(includeSeekerStep
           ? {
               onNextClick: () => {

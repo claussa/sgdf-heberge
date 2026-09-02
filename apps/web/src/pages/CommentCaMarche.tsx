@@ -198,7 +198,7 @@ function ParcoursVolontaire() {
           logement ; chaque demande t’arrive par e-mail avec le téléphone de la personne, et tu
           réponds — accepter, poser une question ou refuser — sous 7 jours. Ton adresse complète
           n’est transmise qu’aux personnes que tu acceptes, et tu peux passer un logement en «
-          Complet » à tout moment.
+          Complet » à tout moment — ou ne marquer comme occupés que certains de tes couchages.
         </p>
       </Card>
     </section>

@@ -204,7 +204,8 @@ model Listing {
   availableFrom DateTime @db.Date
   availableTo   DateTime @db.Date
 
-  /// Libre / complet — à la main de l'hébergeur, à tout moment
+  /// Libre / complet — à la main de l'hébergeur, à tout moment. Interrupteur GLOBAL :
+  /// FULL sort tout le logement des recherches, quelle que soit l'occupation par ligne.
   status   ListingStatus @default(OPEN)
   /// Masquage automatique (hébergeur inactif 7 j). Ne filtre QUE la recherche :
   /// une réservation acceptée reste visible. Réactivation = action explicite.
@@ -217,6 +218,10 @@ model Listing {
   /// dans la même transaction que toute écriture de couchages (+ re-sync par le job).
   /// Institutionnels : saisie directement (pas de lignes de couchages).
   capacity Int @default(0)
+  /// Places restantes, dénormalisée = Σ beds ((count − takenCount) × capacityEach),
+  /// recalculée avec `capacity`. C'est ELLE que filtre la recherche (people ≤ restantes,
+  /// 0 = invisible même OPEN). Institutionnels : = capacity (pas d'occupation par ligne).
+  availableCapacity Int @default(0)
 
   // Grille d'accessibilité (8 critères du cadrage, relus par une ergothérapeute)
   accessPmr                Boolean @default(false)
@@ -267,6 +272,9 @@ model ListingBed {
   count        Int
   /// « Personnes » — capacité de chaque couchage (ligne = count × capacityEach)
   capacityEach Int
+  /// « Occupés » — couchages de la ligne déjà pris (0 ≤ takenCount ≤ count), à la main
+  /// de l'hébergeur ; restantes = (count − takenCount) × capacityEach
+  takenCount   Int     @default(0)
   /// « Précision » — texte libre (« 1er étage, ascenseur », « matelas au sol »)
   note         String?
 

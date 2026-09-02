@@ -96,6 +96,7 @@ interface MyListingBody {
   category: string
   status: string
   capacity: number
+  availableCapacity: number
   displayArea: string
   distanceKm: number | null
   availableFrom: string
@@ -105,7 +106,14 @@ interface MyListingBody {
   pendingRequests: number
   acceptedPeople: number
   bedTypes: string[]
-  beds: Array<{ type: string; count: number; capacityEach: number; note: string | null }>
+  beds: Array<{
+    id: string
+    type: string
+    count: number
+    capacityEach: number
+    takenCount: number
+    note: string | null
+  }>
 }
 
 async function api(path: string, init?: RequestInit): Promise<Response> {
@@ -268,6 +276,7 @@ beforeAll(async () => {
         availableFrom: new Date('2026-09-20'),
         availableTo: new Date('2026-10-02'),
         capacity: 30,
+        availableCapacity: 30,
         priceInfo: '45 € · code PAPE15',
         bookingUrl: 'https://hotel.example.org/reservation',
       },
@@ -289,6 +298,7 @@ beforeAll(async () => {
         availableFrom: new Date('2026-09-20'),
         availableTo: new Date('2026-10-02'),
         capacity: 60,
+        availableCapacity: 60,
         priceInfo: '5 € la nuit',
       },
       select: { id: true },
@@ -609,6 +619,160 @@ describe('statut', () => {
       body: JSON.stringify({ status: 'FULL' }),
     })
     expect(res.status).toBe(404)
+  })
+})
+
+describe('occupation par couchage', () => {
+  async function setTaken(
+    listingId: string,
+    bedId: string,
+    takenCount: number,
+    cookie = claire,
+  ): Promise<Response> {
+    return api(`/my/listings/${listingId}/beds/${bedId}`, {
+      method: 'PATCH',
+      headers: jsonHeaders(cookie),
+      body: JSON.stringify({ takenCount }),
+    })
+  }
+
+  function bedOf(listing: MyListingBody, type: string) {
+    const bed = listing.beds.find((item) => item.type === type)
+    if (!bed) throw new Error(`pas de ligne ${type}`)
+    return bed
+  }
+
+  it('création : aucune ligne occupée, places restantes = capacité, un id par ligne', async () => {
+    const listing = await createListingAs(claire)
+    expect(listing.capacity).toBe(8)
+    expect(listing.availableCapacity).toBe(8)
+    expect(listing.beds.map((bed) => bed.takenCount)).toEqual([0, 0, 0])
+    expect(listing.beds.every((bed) => bed.id.length > 0)).toBe(true)
+  })
+
+  it('« 1 chambre sur 2 occupée » : places restantes, titre, filtre people et fiche suivent', async () => {
+    const listing = await createListingAs(claire)
+    const rooms = bedOf(listing, 'PRIVATE_ROOM') // 2 × 2 places
+    const res = await setTaken(listing.id, rooms.id, 1)
+    expect(res.status).toBe(200)
+    const updated = (await res.json()) as MyListingBody
+    expect(updated.capacity).toBe(8) // déclarée : inchangée
+    expect(updated.availableCapacity).toBe(6)
+    expect(bedOf(updated, 'PRIVATE_ROOM').takenCount).toBe(1)
+    expect(updated.beds).toHaveLength(3) // le propriétaire voit toutes ses lignes
+
+    // Recherche sur les places RESTANTES ; carte et titre aussi
+    expect(ids((await search({ site: 'paris', people: '6' })).items)).toContain(listing.id)
+    expect(ids((await search({ site: 'paris', people: '7' })).items)).not.toContain(listing.id)
+    const carte = (await search({ site: 'paris' })).items.find((item) => item.id === listing.id)
+    expect(carte?.title).toBe('Chez Claire · 6 places')
+    expect(carte?.availableCapacity).toBe(6)
+    expect(carte?.capacity).toBe(8)
+
+    // Fiche publique : takenCount exposé (le front n'affiche que les restants)
+    const fiche = await api(`/listings/${listing.id}`, { headers: { cookie: marie } })
+    expect(fiche.status).toBe(200)
+    const detail = (await fiche.json()) as {
+      availableCapacity: number
+      beds: Array<{ type: string; count: number; takenCount: number }>
+    }
+    expect(detail.availableCapacity).toBe(6)
+    expect(detail.beds.find((bed) => bed.type === 'PRIVATE_ROOM')).toMatchObject({
+      count: 2,
+      takenCount: 1,
+    })
+  })
+
+  it('ligne entièrement occupée : hors du filtre « Type » et de bedTypes, statut intact', async () => {
+    const listing = await createListingAs(claire)
+    const couch = bedOf(listing, 'COUCH') // 1 × 2 places
+    expect((await setTaken(listing.id, couch.id, 1)).status).toBe(200)
+
+    expect(ids((await search({ site: 'paris', types: ['COUCH'] })).items)).not.toContain(listing.id)
+    const parChambre = await search({ site: 'paris', types: ['PRIVATE_ROOM'] })
+    const carte = parChambre.items.find((item) => item.id === listing.id)
+    expect(carte?.bedTypes).toEqual(['PRIVATE_ROOM', 'FLOOR_BED'])
+    expect(carte?.title).toBe('Chez Claire · 6 places')
+
+    const mine = await api('/my/listings', { headers: { cookie: claire } })
+    const own = ((await mine.json()) as { items: MyListingBody[] }).items.find(
+      (item) => item.id === listing.id,
+    )
+    expect(own?.status).toBe('OPEN')
+    // Vue propriétaire : les types DÉCLARÉS (vignette stable), occupés compris
+    expect(own?.bedTypes).toEqual(['PRIVATE_ROOM', 'COUCH', 'FLOOR_BED'])
+  })
+
+  it('tout occupé : invisible en recherche même « Libre » ; libérer une ligne le fait revenir', async () => {
+    const listing = await createListingAs(claire)
+    for (const bed of listing.beds) {
+      expect((await setTaken(listing.id, bed.id, bed.count)).status).toBe(200)
+    }
+    const row = await t.db.listing.findUniqueOrThrow({
+      where: { id: listing.id },
+      select: { status: true, capacity: true, availableCapacity: true },
+    })
+    expect(row).toEqual({ status: 'OPEN', capacity: 8, availableCapacity: 0 })
+    expect(ids((await search({ site: 'paris' })).items)).not.toContain(listing.id)
+    expect(ids((await search({ site: 'paris', people: '1' })).items)).not.toContain(listing.id)
+
+    const floor = bedOf(listing, 'FLOOR_BED') // 2 × 1 place → 1 libre
+    const freed = (await (await setTaken(listing.id, floor.id, 1)).json()) as MyListingBody
+    expect(freed.availableCapacity).toBe(1)
+    expect(ids((await search({ site: 'paris', people: '1' })).items)).toContain(listing.id)
+    expect(ids((await search({ site: 'paris', people: '2' })).items)).not.toContain(listing.id)
+  })
+
+  it('action explicite de l’hébergeur : remet hiddenAt à null', async () => {
+    const listing = await createListingAs(claire)
+    await t.db.listing.update({ where: { id: listing.id }, data: { hiddenAt: new Date() } })
+    const res = await setTaken(listing.id, bedOf(listing, 'COUCH').id, 1)
+    expect(res.status).toBe(200)
+    expect(((await res.json()) as MyListingBody).hiddenAt).toBeNull()
+  })
+
+  it('takenCount > count → 400 ; ligne d’un autre hébergeur ou inconnue → 404', async () => {
+    const listing = await createListingAs(claire)
+    const couch = bedOf(listing, 'COUCH')
+    expect((await setTaken(listing.id, couch.id, 2)).status).toBe(400)
+    expect((await setTaken(listing.id, couch.id, 1, marie)).status).toBe(404)
+    expect((await setTaken(listing.id, 'nexistepas', 0)).status).toBe(404)
+    const inDb = await t.db.listingBed.findUniqueOrThrow({
+      where: { id: couch.id },
+      select: { takenCount: true },
+    })
+    expect(inDb.takenCount).toBe(0)
+  })
+
+  it('édition du logement : l’occupation envoyée est conservée, incohérente → 400', async () => {
+    const listing = await createListingAs(claire)
+    const res = await api(`/my/listings/${listing.id}`, {
+      method: 'PATCH',
+      headers: jsonHeaders(claire),
+      body: JSON.stringify(
+        listingBody({
+          beds: [
+            { type: 'PRIVATE_ROOM', count: 2, capacityEach: 2, takenCount: 2 },
+            { type: 'COUCH', count: 1, capacityEach: 3 },
+          ],
+        }),
+      ),
+    })
+    expect(res.status).toBe(200)
+    const updated = (await res.json()) as MyListingBody
+    expect(updated.capacity).toBe(7)
+    expect(updated.availableCapacity).toBe(3)
+    expect(bedOf(updated, 'PRIVATE_ROOM').takenCount).toBe(2)
+    expect(bedOf(updated, 'COUCH').takenCount).toBe(0)
+
+    const bad = await api(`/my/listings/${listing.id}`, {
+      method: 'PATCH',
+      headers: jsonHeaders(claire),
+      body: JSON.stringify(
+        listingBody({ beds: [{ type: 'COUCH', count: 1, capacityEach: 2, takenCount: 2 }] }),
+      ),
+    })
+    expect(bad.status).toBe(400)
   })
 })
 

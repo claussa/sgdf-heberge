@@ -142,6 +142,8 @@ function FicheLogement({ logement, me }: { logement: ListingDetail; me: Me }) {
           {logement.category === 'HOTEL' ||
           (logement.category === 'SCOUT_BASE' && logement.bookingUrl !== null) ? (
             <PanneauReservationExterne logement={logement} />
+          ) : logement.availableCapacity === 0 ? (
+            <PanneauComplet />
           ) : (
             <PanneauDemande logement={logement} prenom={prenom} prefill={prefill} />
           )}
@@ -181,6 +183,24 @@ function PanneauReservationExterne({ logement }: { logement: ListingDetail }) {
             {estHotel ? 'Réserver sur le site de l’hôtel' : 'Réserver sur le site de la base'}
           </a>
         )}
+      </div>
+    </Card>
+  )
+}
+
+/**
+ * Tous les couchages sont occupés (la recherche ne montre plus le logement, mais un
+ * lien direct y mène encore) : pas de demande possible, l'API répondrait 409.
+ */
+function PanneauComplet() {
+  return (
+    <Card accentTop="brand" className="fiche-logement__panneau">
+      <div className="fiche-logement__form">
+        <SectionTitle>Complet,</SectionTitle>
+        <p className="text-body">
+          Tous les couchages de ce logement sont occupés pour le moment. Repasse plus tard, ou
+          retourne à la recherche.
+        </p>
       </div>
     </Card>
   )
@@ -252,9 +272,11 @@ function PanneauDemande({
   }
 
   // Le champ seul : l'alerte ne doit pas attendre que le message soit écrit.
+  // Comparé aux places RESTANTES (couchages occupés déduits), pas à la capacité déclarée.
   const personnesValide = RequestCreateSchema.shape.peopleCount.safeParse(nbPersonnes).success
-  const surCapacite = personnesValide && nbPersonnes > logement.capacity
-  const placesTexte = `${logement.capacity} place${logement.capacity > 1 ? 's' : ''}`
+  const surCapacite = personnesValide && nbPersonnes > logement.availableCapacity
+  const pluriel = logement.availableCapacity > 1 ? 's' : ''
+  const placesTexte = `${logement.availableCapacity} place${pluriel} disponible${pluriel}`
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()

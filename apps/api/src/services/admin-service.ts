@@ -42,6 +42,7 @@ const ADMIN_LISTING_SELECT = {
   displayArea: true,
   distanceKm: true,
   capacity: true,
+  availableCapacity: true,
   availableFrom: true,
   availableTo: true,
   priceInfo: true,
@@ -80,6 +81,7 @@ function toAdminListing(row: AdminListingRow, acceptedPeople: number) {
     displayArea: row.displayArea,
     distanceKm: row.distanceKm,
     capacity: row.capacity,
+    availableCapacity: row.availableCapacity,
     availableFrom: isoDate(row.availableFrom),
     availableTo: isoDate(row.availableTo),
     access: {
@@ -130,6 +132,8 @@ function institutionalData(input: AdminListingUpsertInput) {
     displayArea: deriveDisplayArea(input.address),
     distanceKm: computeDistanceKm(input.site, input.address),
     capacity: input.capacity,
+    // Pas de lignes de couchages : les places restantes sont la capacité saisie.
+    availableCapacity: input.capacity,
     priceInfo: input.priceInfo ?? null,
     isPaid: input.isPaid,
     bookingUrl: input.bookingUrl ?? null,

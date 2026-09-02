@@ -13,6 +13,7 @@ import { getEnv } from '../env'
 import { AppError } from '../errors'
 import { computeDistanceKm, deriveDisplayArea } from '../lib/geocode'
 import {
+  availableBeds,
   hostDisplayName,
   listingCardTitle,
   listingOwnerTitle,
@@ -36,7 +37,13 @@ export type Tx = Omit<Db, '$connect' | '$disconnect' | '$on' | '$transaction' | 
 // Selects explicites (§5 — jamais de findMany nu sur une table à PII)
 // ---------------------------------------------------------------------------
 
-const BED_SELECT = { type: true, count: true, capacityEach: true, note: true } as const
+const BED_SELECT = {
+  type: true,
+  count: true,
+  capacityEach: true,
+  takenCount: true,
+  note: true,
+} as const
 
 const ACCESS_SELECT = {
   accessPmr: true,
@@ -58,6 +65,7 @@ const CARD_SELECT = {
   displayArea: true,
   distanceKm: true,
   capacity: true,
+  availableCapacity: true,
   availableFrom: true,
   availableTo: true,
   priceInfo: true,
@@ -82,6 +90,8 @@ const DETAIL_SELECT = {
 /** Vue propriétaire — la SEULE qui expose addressFull (sa propre adresse, déchiffrée). */
 const MY_LISTING_SELECT = {
   ...DETAIL_SELECT,
+  // id des lignes : cible du réglage d'occupation (PATCH /my/listings/{id}/beds/{bedId})
+  beds: { select: { id: true, ...BED_SELECT } },
   addressFull: true,
   status: true,
   _count: { select: { requests: { where: { status: 'PENDING' } } } },
@@ -122,13 +132,25 @@ function toCard(row: CardRow) {
     displayArea: row.displayArea,
     distanceKm: row.distanceKm,
     capacity: row.capacity,
+    availableCapacity: row.availableCapacity,
     availableFrom: isoDate(row.availableFrom),
     availableTo: isoDate(row.availableTo),
     access: accessGrid(row),
     parkingEase: row.parkingEase,
-    bedTypes: rankedBedTypes(row.beds),
+    // Un type entièrement occupé ne ressort ni sur la carte ni sur le chip de filtre.
+    bedTypes: rankedBedTypes(availableBeds(row.beds)),
     priceInfo: row.priceInfo,
     isPaid: row.isPaid,
+  }
+}
+
+function bedDto(bed: CardRow['beds'][number]) {
+  return {
+    type: bed.type,
+    count: bed.count,
+    capacityEach: bed.capacityEach,
+    takenCount: bed.takenCount,
+    note: bed.note,
   }
 }
 
@@ -140,12 +162,7 @@ function toDetail(row: DetailRow) {
     // « chez Claire M. » — les institutionnels s'identifient par leur title, pas par
     // le compte admin qui les gère.
     hostDisplayName: row.category === 'PRIVATE' ? hostDisplayName(row.owner) : null,
-    beds: row.beds.map((bed) => ({
-      type: bed.type,
-      count: bed.count,
-      capacityEach: bed.capacityEach,
-      note: bed.note,
-    })),
+    beds: row.beds.map(bedDto),
     bookingUrl: row.bookingUrl,
   }
 }
@@ -177,6 +194,9 @@ function toMyListing(row: MyListingRow, acceptedPeople: number) {
       ownerFirstName: row.owner.firstName,
     }),
     status: row.status,
+    // Le propriétaire voit tout ce qu'il a déclaré (vignette stable, lignes occupées comprises).
+    bedTypes: rankedBedTypes(row.beds),
+    beds: row.beds.map((bed) => ({ id: bed.id, ...bedDto(bed) })),
     hiddenAt: row.hiddenAt ? row.hiddenAt.toISOString() : null,
     addressFull: row.addressFull,
     pendingRequests: row._count.requests,
@@ -188,18 +208,28 @@ function toMyListing(row: MyListingRow, acceptedPeople: number) {
 // Écritures
 // ---------------------------------------------------------------------------
 
+/** Capacité déclarée et places restantes d'un jeu de lignes — la seule formule, partagée avec le job. */
+export function capacitiesOf(beds: { count: number; capacityEach: number; takenCount: number }[]) {
+  return {
+    capacity: beds.reduce((sum, bed) => sum + bed.count * bed.capacityEach, 0),
+    availableCapacity: beds.reduce(
+      (sum, bed) => sum + Math.max(0, bed.count - bed.takenCount) * bed.capacityEach,
+      0,
+    ),
+  }
+}
+
 /**
- * Recalcul COMPLET de la capacité dénormalisée : Σ (count × capacityEach), jamais
+ * Recalcul COMPLET des capacités dénormalisées (déclarée + restante), jamais
  * d'incrémental. À appeler dans la MÊME transaction que TOUTE écriture de couchages
  * (le job quotidien re-synchronise par-dessus, auto-guérison de la dénormalisation).
  */
 export async function syncListingCapacity(tx: Tx, listingId: string): Promise<void> {
   const beds = await tx.listingBed.findMany({
     where: { listingId },
-    select: { count: true, capacityEach: true },
+    select: { count: true, capacityEach: true, takenCount: true },
   })
-  const capacity = beds.reduce((sum, bed) => sum + bed.count * bed.capacityEach, 0)
-  await tx.listing.update({ where: { id: listingId }, data: { capacity } })
+  await tx.listing.update({ where: { id: listingId }, data: capacitiesOf(beds) })
 }
 
 function assertDateRange(input: { availableFrom: string; availableTo: string }): void {
@@ -247,6 +277,7 @@ function bedRows(listingId: string, beds: ListingUpsertInput['beds']) {
     type: bed.type,
     count: bed.count,
     capacityEach: bed.capacityEach,
+    takenCount: bed.takenCount,
     note: bed.note ?? null,
   }))
 }
@@ -334,6 +365,44 @@ export async function setListingStatus(
 }
 
 /**
+ * Occupation d'une ligne de couchage (« 1 chambre sur 2 occupée »), à la main de
+ * l'hébergeur, indépendante du statut global. Même geste d'activité que le statut
+ * (hiddenAt remis à null, lastHostActivityAt touchée). Le WHERE de l'écriture épingle
+ * count ≥ takenCount : une ligne remplacée entre-temps (édition du logement) fait
+ * échouer le count → 409, jamais une occupation posée sur des couchages disparus.
+ */
+export async function setBedTakenCount(
+  db: Db,
+  ownerId: string,
+  listingId: string,
+  bedId: string,
+  takenCount: number,
+  now = new Date(),
+) {
+  await db.$transaction(async (tx) => {
+    const bed = await tx.listingBed.findFirst({
+      where: { id: bedId, listingId, listing: { ownerId } },
+      select: { count: true },
+    })
+    if (!bed) throw new AppError('NOT_FOUND', 'Couchage introuvable')
+    if (takenCount > bed.count) {
+      throw new AppError('VALIDATION_ERROR', 'Plus de couchages occupés que déclarés')
+    }
+    const written = await tx.listingBed.updateMany({
+      where: { id: bedId, listingId, count: { gte: takenCount } },
+      data: { takenCount },
+    })
+    if (written.count === 0) throw new AppError('CONFLICT', 'Couchages modifiés entre-temps')
+    await tx.listing.update({
+      where: { id: listingId },
+      data: { hiddenAt: null, lastHostActivityAt: now },
+    })
+    await syncListingCapacity(tx, listingId)
+  })
+  return getMyListing(db, ownerId, listingId)
+}
+
+/**
  * Suppression d'un logement — même principe que deleteUserAccount : la cascade DB est
  * le filet, pas le chemin nominal. On annule d'abord les demandes ACCEPTED et on
  * prévient chaque demandeur (un hébergement ne disparaît pas silencieusement à J−3),
@@ -415,10 +484,11 @@ const PARKING_AT_LEAST: Record<ParkingEase, ParkingEase[]> = {
 
 /**
  * Recherche publique : uniquement les logements OPEN et non masqués du site, couvrant
- * les dates demandées (chaque borne appliquée seulement si fournie), de capacité
- * suffisante. Chips « Type » : OR entre types de couchages et catégories
- * institutionnelles ; accessibilité : AND sur chaque critère coché ; stationnement :
- * facilité minimale (non renseigné = exclu dès qu'un niveau est exigé).
+ * les dates demandées (chaque borne appliquée seulement si fournie), avec assez de
+ * places RESTANTES (tout occupé = invisible même OPEN). Chips « Type » : OR entre
+ * types de couchages encore libres et catégories institutionnelles ; accessibilité :
+ * AND sur chaque critère coché ; stationnement : facilité minimale (non renseigné =
+ * exclu dès qu'un niveau est exigé).
  */
 export async function searchListings(db: Db, query: ListingSearchQuery) {
   const types = query.types ?? []
@@ -431,7 +501,12 @@ export async function searchListings(db: Db, query: ListingSearchQuery) {
       type === 'HOTEL' || type === 'COLLECTIVE' || type === 'SCOUT_BASE',
   )
   const typeConditions: Prisma.ListingWhereInput[] = []
-  if (bedTypes.length > 0) typeConditions.push({ beds: { some: { type: { in: bedTypes } } } })
+  if (bedTypes.length > 0) {
+    // Une ligne ne compte que s'il lui reste un couchage libre (comparaison de colonnes).
+    typeConditions.push({
+      beds: { some: { type: { in: bedTypes }, takenCount: { lt: db.listingBed.fields.count } } },
+    })
+  }
   if (categories.length > 0) typeConditions.push({ category: { in: categories } })
 
   const where: Prisma.ListingWhereInput = {
@@ -440,7 +515,7 @@ export async function searchListings(db: Db, query: ListingSearchQuery) {
     hiddenAt: null,
     ...(query.from ? { availableFrom: { lte: new Date(query.from) } } : {}),
     ...(query.to ? { availableTo: { gte: new Date(query.to) } } : {}),
-    ...(query.people !== undefined ? { capacity: { gte: query.people } } : {}),
+    availableCapacity: { gte: query.people ?? 1 },
     ...(typeConditions.length > 0 ? { OR: typeConditions } : {}),
     ...(query.parking ? { parkingEase: { in: PARKING_AT_LEAST[query.parking] } } : {}),
   }

@@ -116,7 +116,6 @@ const RECIPIENT_SELECT = { firstName: true, email: true, emailStatus: true } as 
 interface TitledListing {
   category: 'PRIVATE' | 'HOTEL' | 'COLLECTIVE' | 'SCOUT_BASE'
   title: string | null
-  capacity: number
   beds: {
     type: 'PRIVATE_ROOM' | 'COUCH' | 'FLOOR_BED' | 'TENT_SPOT'
     count: number
@@ -152,7 +151,7 @@ const CREATE_LISTING_SELECT = {
   availableFrom: true,
   availableTo: true,
   title: true,
-  capacity: true,
+  availableCapacity: true,
   beds: { select: BED_TITLE_SELECT },
   owner: { select: RECIPIENT_SELECT },
 } as const satisfies Prisma.ListingSelect
@@ -197,7 +196,8 @@ export async function createRequest(
       if (listing.category === 'SCOUT_BASE' && listing.bookingUrl !== null) {
         throw new AppError('CONFLICT', 'Cet hébergement se réserve via son lien de réservation')
       }
-      if (listing.status !== 'OPEN') {
+      // Complet par l'interrupteur global OU parce que toutes les lignes sont occupées.
+      if (listing.status !== 'OPEN' || listing.availableCapacity <= 0) {
         throw new AppError('CONFLICT', 'Ce logement est complet')
       }
 
@@ -345,7 +345,6 @@ export async function acceptRequest(
           select: {
             category: true,
             title: true,
-            capacity: true,
             beds: { select: BED_TITLE_SELECT },
             owner: { select: RECIPIENT_SELECT },
           },
@@ -376,7 +375,7 @@ export async function acceptRequest(
             addressFull: true,
             category: true,
             title: true,
-            capacity: true,
+            availableCapacity: true,
             owner: {
               select: { firstName: true, lastName: true, phone: true, email: true },
             },
@@ -465,7 +464,7 @@ export async function declineRequest(
             select: {
               category: true,
               title: true,
-              capacity: true,
+              availableCapacity: true,
               owner: { select: { firstName: true } },
             },
           },
@@ -546,7 +545,7 @@ export async function cancelRequest(
           select: {
             category: true,
             title: true,
-            capacity: true,
+            availableCapacity: true,
             beds: { select: BED_TITLE_SELECT },
             owner: { select: RECIPIENT_SELECT },
           },
@@ -742,7 +741,7 @@ const MY_REQUEST_SELECT = {
       category: true,
       site: true,
       title: true,
-      capacity: true,
+      availableCapacity: true,
       displayArea: true,
       // ⚠️ Chargée pour la SEULE variante ACCEPTED : le builder ci-dessous ne pose la clé
       // hostContact que sur elle, et la route re-parse l'union discriminée avant c.json (§5).
@@ -825,7 +824,7 @@ const RECEIVED_REQUEST_SELECT = {
       ownerId: true,
       category: true,
       title: true,
-      capacity: true,
+      availableCapacity: true,
       beds: { select: BED_TITLE_SELECT },
       owner: { select: { firstName: true } },
     },
@@ -834,7 +833,8 @@ const RECEIVED_REQUEST_SELECT = {
 
 /**
  * Vue hébergeur des demandes reçues : téléphone du demandeur transmis d'emblée
- * (« c'est à toi de la contacter »), besoins d'accessibilité, alerte sur-capacité.
+ * (« c'est à toi de la contacter »), besoins d'accessibilité, alerte sur-capacité
+ * (par rapport aux places RESTANTES : occuper des couchages peut la faire apparaître).
  * CANCELLED exclues (arbitrage 12).
  */
 export async function listReceivedRequests(
@@ -858,7 +858,7 @@ export async function listReceivedRequests(
       phone: row.requester.phone ?? '',
       needs: parseAccessibilityNeeds(row.requester.accessibilityNeeds),
     },
-    overCapacity: row.peopleCount > row.listing.capacity,
+    overCapacity: row.peopleCount > row.listing.availableCapacity,
   }))
 
   return ReceivedRequestsResponseSchema.parse({ items })

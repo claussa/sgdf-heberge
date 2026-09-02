@@ -99,6 +99,61 @@
   gap: 8px;
 }
 
+/* Bloc Disponibilité (A.8) : ligne titre + chips globales, puis l'occupation par couchage */
+.dispo-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Occupation ligne par ligne (A.8, A.9) — « 2× Chambre privée · 2 pers. » + Libre/Occupé
+   ou select « 1 libre sur 2 » */
+.couchages-dispo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.couchages-dispo__lignes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.couchages-dispo__ligne {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.couchages-dispo__libelle {
+  flex: 1;
+  min-width: 160px;
+  font: 400 13px / 1.5 var(--font-courant);
+  color: var(--bleu);
+}
+
+.couchages-dispo__select {
+  width: 150px;
+}
+
+.couchages-dispo .select {
+  min-height: 32px;
+  padding: 0 28px 0 10px;
+  font-size: 13px;
+}
+
+/* Tout occupé mais statut « Libre » : orange = accent quota de la charte */
+.couchages-dispo__note {
+  margin: 0;
+  font: 400 13px / 1.5 var(--font-courant);
+  color: var(--orange);
+}
+
 /* ============ Mes logements (A.9) ============ */
 .logements {
   max-width: 760px;

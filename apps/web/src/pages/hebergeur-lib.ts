@@ -58,6 +58,29 @@ export function useListingStatus() {
   })
 }
 
+/**
+ * PATCH /my/listings/{id}/beds/{bedId} — occupation d'une ligne (« 1 chambre sur 2 »).
+ * Les demandes reçues sont aussi rechargées : l'alerte sur-capacité se lit sur les
+ * places restantes.
+ */
+export function useBedTakenCount() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: { listingId: string; bedId: string; takenCount: number }) => {
+      const res = await api.my.listings[':id'].beds[':bedId'].$patch({
+        param: { id: input.listingId, bedId: input.bedId },
+        json: { takenCount: input.takenCount },
+      })
+      if (res.status !== 200) throw new Error(`PATCH occupation du couchage : ${res.status}`)
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: MY_LISTINGS_KEY })
+      queryClient.invalidateQueries({ queryKey: RECEIVED_REQUESTS_KEY })
+    },
+  })
+}
+
 /** Ordre du select « Type » de la maquette (A.10). */
 export const BED_TYPE_ORDER: readonly BedType[] = [
   'PRIVATE_ROOM',
@@ -97,6 +120,12 @@ export function peopleLabel(count: number): string {
 /** « 8 personnes » / « 1 personne » — capacités. */
 export function countPersonnes(count: number): string {
   return count === 1 ? '1 personne' : `${count} personnes`
+}
+
+/** « 4 places libres » / « 1 place libre » / « aucune place libre » — places restantes. */
+export function placesLibresLabel(count: number): string {
+  if (count === 0) return 'aucune place libre'
+  return count === 1 ? '1 place libre' : `${count} places libres`
 }
 
 const DAY_MS = 86_400_000
