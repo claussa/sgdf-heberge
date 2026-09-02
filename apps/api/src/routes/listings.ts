@@ -1,5 +1,6 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
 import {
+  BedTakenCountUpdateSchema,
   ErrorResponseSchema,
   ListingDetailSchema,
   ListingSearchQuerySchema,
@@ -21,6 +22,7 @@ import {
   getMyListings,
   recordBookingClick,
   searchListings,
+  setBedTakenCount,
   setListingStatus,
   updateListing,
 } from '../services/listing-service'
@@ -46,6 +48,7 @@ const error404 = {
 }
 
 const idParam = z.object({ id: z.string().min(1) })
+const bedParams = z.object({ id: z.string().min(1), bedId: z.string().min(1) })
 
 const searchListingsRoute = createRoute({
   method: 'get',
@@ -54,7 +57,8 @@ const searchListingsRoute = createRoute({
   summary: 'Rechercher des logements',
   description:
     'Cartes SANS adresse (seule la zone « Paris 12e » est publique). Exclut les logements ' +
-    'complets (FULL) et masqués. Tri par distance au site, valeurs inconnues en dernier.',
+    'complets (FULL ou toutes lignes de couchages occupées) et masqués ; `people` se compare ' +
+    'aux places restantes. Tri par distance au site, valeurs inconnues en dernier.',
   middleware: [requireAuth] as const,
   request: { query: ListingSearchQuerySchema },
   responses: {
@@ -201,6 +205,39 @@ const listingStatusRoute = createRoute({
   },
 })
 
+const bedTakenCountRoute = createRoute({
+  method: 'patch',
+  path: '/my/listings/{id}/beds/{bedId}',
+  tags: ['listings'],
+  summary: 'Régler l’occupation d’une ligne de couchage',
+  description:
+    '« 1 chambre sur 2 occupée » : takenCount ≤ count de la ligne. Recalcule les places ' +
+    'restantes (filtre de recherche) sans toucher au statut global Libre/Complet ; action ' +
+    'explicite de l’hébergeur, réactive aussi un logement masqué pour inactivité.',
+  middleware: [requireAuth, requireAccountType('INDIVIDUAL')] as const,
+  request: {
+    params: bedParams,
+    body: {
+      content: { 'application/json': { schema: BedTakenCountUpdateSchema } },
+      required: true,
+    },
+  },
+  responses: {
+    200: {
+      description: 'Occupation mise à jour',
+      content: { 'application/json': { schema: MyListingSchema } },
+    },
+    400: error400,
+    401: error401,
+    403: error403,
+    404: error404,
+    409: {
+      description: 'Couchages modifiés entre-temps (ligne remplacée par une édition du logement)',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+})
+
 const deleteListingRoute = createRoute({
   method: 'delete',
   path: '/my/listings/{id}',
@@ -260,6 +297,17 @@ export const listingsRouter = new OpenAPIHono<{ Variables: AuthVariables }>()
       c.get('user').id,
       c.req.valid('param').id,
       c.req.valid('json').status,
+    )
+    return c.json(MyListingSchema.parse(listing), 200)
+  })
+  .openapi(bedTakenCountRoute, async (c) => {
+    const { id, bedId } = c.req.valid('param')
+    const listing = await setBedTakenCount(
+      getDb(),
+      c.get('user').id,
+      id,
+      bedId,
+      c.req.valid('json').takenCount,
     )
     return c.json(MyListingSchema.parse(listing), 200)
   })

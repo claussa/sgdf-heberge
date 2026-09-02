@@ -72,6 +72,8 @@ type BedRow = {
   type: BedType
   count: string
   capacityEach: string
+  /** Occupation réglée depuis « Mes logements » — reportée telle quelle par l'édition, jamais saisie ici */
+  takenCount: number
   note: string
 }
 
@@ -81,6 +83,7 @@ function makeRow(bed?: {
   type: BedType
   count: number
   capacityEach: number
+  takenCount: number
   note: string | null
 }): BedRow {
   bedRowKey += 1
@@ -89,6 +92,7 @@ function makeRow(bed?: {
     type: bed?.type ?? 'PRIVATE_ROOM',
     count: bed ? String(bed.count) : '1',
     capacityEach: bed ? String(bed.capacityEach) : '1',
+    takenCount: bed?.takenCount ?? 0,
     note: bed?.note ?? '',
   }
 }
@@ -171,8 +175,11 @@ function LogementForm({ listing }: { listing: MyListing | null }) {
     type: row.type,
     count: Number(row.count),
     capacityEach: Number(row.capacityEach),
+    // Une ligne réduite garde son occupation, plafonnée au nouveau « Combien ».
+    takenCount: Math.min(row.takenCount, rowValue(row.count)),
     note: row.note.trim() === '' ? undefined : row.note.trim(),
   }))
+  const occupationEnCours = rows.some((row) => row.takenCount > 0)
 
   // Édition : adresse absente = inchangée, d'où `ListingUpdateSchema`.
   const body = siteChoice && {
@@ -341,6 +348,12 @@ function LogementForm({ listing }: { listing: MyListing | null }) {
               </span>
             </div>
           </div>
+          {occupationEnCours && (
+            <HelpText>
+              Les couchages marqués occupés le restent après l’enregistrement — l’occupation se
+              règle depuis « Mes logements ».
+            </HelpText>
+          )}
 
           <div className="logement-form__section">
             <SectionTitle>2. Ton adresse,</SectionTitle>

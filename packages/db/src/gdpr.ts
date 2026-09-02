@@ -61,6 +61,7 @@ export async function exportUserData(db: Db, userId: string) {
           status: true,
           hiddenAt: true,
           capacity: true,
+          availableCapacity: true,
           accessPmr: true,
           accessElectricWheelchair: true,
           accessFewSteps: true,
@@ -74,7 +75,9 @@ export async function exportUserData(db: Db, userId: string) {
           bookingUrl: true,
           bookingClicks: true,
           createdAt: true,
-          beds: { select: { type: true, count: true, capacityEach: true, note: true } },
+          beds: {
+            select: { type: true, count: true, capacityEach: true, takenCount: true, note: true },
+          },
           // Demandes reçues : métadonnées seulement, pas les PII des demandeurs
           requests: {
             select: {

@@ -153,7 +153,9 @@ Variantes v1 (hors maquette, actées) : **hôtel** = pas de panneau demande → 
 + bouton primaire vers `bookingUrl` (« Réserver sur le site de l'hôtel ») ; **gymnase** = panneau
 demande standard + prix affiché ; **titre** = « Chez Claire · 5 places » (cf. A.4) et
 **couchages** = liste sous le sous-titre (« 2 chambres privées · 2 personnes chacune · 1er étage,
-ascenseur »), l'état Libre/Complet restant global au logement.
+ascenseur »), limitée aux couchages ENCORE LIBRES (une ligne occupée disparaît, une ligne
+partiellement occupée affiche les restants) ; « n places » du titre = places restantes.
+Tout occupé : panneau **« Complet, »** à la place du formulaire de demande.
 
 ## A.6 — Mes demandes (bénévole)
 Colonne `max-width:760px`.
@@ -218,6 +220,15 @@ Colonne `max-width:760px`.
 - Note : **« Passer en "complet" sort le logement des recherches sans rien annuler. Sans action
   pendant 7 jours, la demande expire et le logement est masqué automatiquement. »**
 
+Variante v1 (hors maquette, actée) : **occupation par ligne de couchage** sous les chips
+globales, dès qu'un logement de particulier a plusieurs lignes ou plusieurs couchages sur une
+ligne (« 2× Chambre privée · 2 pers. »). Une ligne d'un seul couchage se règle par chips
+**« Libre » / « Occupé »**, une ligne de N couchages par select **« k libre(s) sur N »**. Les
+places restantes (Σ des couchages libres) remplacent la capacité déclarée dans le filtre de
+recherche, le titre de carte et l'alerte « N pers. pour M places libres » ; tout occupé =
+invisible en recherche même en « Libre ». « Complet » reste l'interrupteur global. Après une
+acceptation, la mise en avant englobe ces réglages.
+
 États vides : **« Aucune demande acceptée pour l'instant. » « Aucune demande refusée. »
 « Aucune demande expirée. »**
 
@@ -231,6 +242,8 @@ Colonne `max-width:760px`.
 - Bouton secondaire : **« + Ajouter un logement »**
 - Note : **« Tu peux avoir plusieurs logements, et passer chacun en "complet" à tout moment. »**
 - v1 : si masqué (hiddenAt) → bandeau + bouton « Réactiver ».
+- v1 : occupation par ligne de couchage sous la méta (cf. A.8) ; la méta ajoute
+  **« · 4 places libres »** dès que des couchages sont occupés.
 
 ## A.10 — Nouveau logement 1/2 (hébergeur)
 Colonne `max-width:760px` ; grille haut `1fr 1fr 1fr` / `1fr` ; tableau couchages

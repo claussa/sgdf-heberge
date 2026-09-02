@@ -32,6 +32,13 @@ export function bedSummary(beds: BedLine[]): string {
     .join(', ')
 }
 
+/** Lignes ayant encore un couchage libre, `count` ramené aux restants — tout ce que voit un demandeur. */
+export function availableBeds<T extends BedLine & { takenCount: number }>(beds: T[]): T[] {
+  return beds
+    .filter((bed) => bed.count > bed.takenCount)
+    .map((bed) => ({ ...bed, count: bed.count - bed.takenCount }))
+}
+
 /** Types présents du plus grand (Σ count × capacityEach) au plus petit, sans doublon — icône et ligne de types de la carte. */
 export function rankedBedTypes(beds: BedLine[]): BedType[] {
   const totals = new Map<BedType, number>()
@@ -46,18 +53,21 @@ export function rankedBedTypes(beds: BedLine[]): BedType[] {
     .map(([type]) => type)
 }
 
-/** « Chez Claire · 5 places » (institutionnels : le title admin) — le type est dans bedTypes, pas dans le titre. */
+/** « Chez Claire · 5 places » — places RESTANTES (institutionnels : le title admin) ; le type est dans bedTypes. */
 export function listingCardTitle(listing: {
   category: ListingCategory
   title: string | null
-  capacity: number
+  availableCapacity: number
   owner: { firstName: string | null }
 }): string {
   if (listing.category !== 'PRIVATE') {
     return listing.title ?? 'Hébergement'
   }
   const prefix = listing.owner.firstName ? `Chez ${listing.owner.firstName}` : 'Logement'
-  return `${prefix} · ${listing.capacity} place${listing.capacity > 1 ? 's' : ''}`
+  const places = listing.availableCapacity
+  // Tout occupé : hors recherche, mais joignable par lien direct et cité dans les emails.
+  if (places === 0) return `${prefix} · complet`
+  return `${prefix} · ${places} place${places > 1 ? 's' : ''}`
 }
 
 /** Vue « Mes logements » : « Chez Claire — 2 chambres privées, 1 canapé » */

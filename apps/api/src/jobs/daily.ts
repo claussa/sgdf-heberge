@@ -22,6 +22,7 @@ import { captureServerException, shutdownAnalytics } from '../lib/analytics'
 import type { OutgoingEmail } from '../lib/email'
 import { logger } from '../lib/logger'
 import { getDb } from '../lib/prisma'
+import { capacitiesOf } from '../services/listing-service'
 import { listingCardTitle, listingOwnerTitle } from '../services/listing-title'
 import { type EmailRecipient, sendToRecipient } from '../services/notify'
 import { REQUEST_EXPIRY_MS, REQUEST_REMINDER_AFTER_MS } from '../services/request-service'
@@ -63,7 +64,7 @@ const EXPIRY_CANDIDATE_SELECT = {
       id: true,
       category: true,
       title: true,
-      capacity: true,
+      availableCapacity: true,
       lastHostActivityAt: true,
       beds: { select: { type: true, count: true, capacityEach: true } },
       owner: { select: { firstName: true, email: true, emailStatus: true } },
@@ -80,7 +81,7 @@ type ExpiryCandidate = {
     id: string
     category: 'PRIVATE' | 'HOTEL' | 'COLLECTIVE' | 'SCOUT_BASE'
     title: string | null
-    capacity: number
+    availableCapacity: number
     lastHostActivityAt: Date
     beds: {
       type: 'PRIVATE_ROOM' | 'COUCH' | 'FLOOR_BED' | 'TENT_SPOT'
@@ -254,16 +255,25 @@ export async function runDailyJob(now = new Date()): Promise<DailyJobSummary> {
     },
   })
 
-  // (4) RE-SYNC DES CAPACITÉS dénormalisées (auto-guérison, coût nul à cette échelle).
-  // Écrit seulement en cas de dérive — un run sans dérive ne touche aucune ligne.
+  // (4) RE-SYNC DES CAPACITÉS dénormalisées (déclarée + restante — auto-guérison, coût
+  // nul à cette échelle). Écrit seulement en cas de dérive — un run sans dérive ne
+  // touche aucune ligne.
   const privateListings = await db.listing.findMany({
     where: { category: 'PRIVATE' },
-    select: { id: true, capacity: true, beds: { select: { count: true, capacityEach: true } } },
+    select: {
+      id: true,
+      capacity: true,
+      availableCapacity: true,
+      beds: { select: { count: true, capacityEach: true, takenCount: true } },
+    },
   })
   for (const listing of privateListings) {
-    const capacity = listing.beds.reduce((sum, bed) => sum + bed.count * bed.capacityEach, 0)
-    if (capacity !== listing.capacity) {
-      await db.listing.update({ where: { id: listing.id }, data: { capacity } })
+    const expected = capacitiesOf(listing.beds)
+    if (
+      expected.capacity !== listing.capacity ||
+      expected.availableCapacity !== listing.availableCapacity
+    ) {
+      await db.listing.update({ where: { id: listing.id }, data: expected })
     }
   }
 

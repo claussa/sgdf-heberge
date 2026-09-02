@@ -82,6 +82,7 @@ async function mkListing(ownerId: string, overrides: ListingOverrides = {}): Pro
       availableFrom: new Date('2026-09-20'),
       availableTo: new Date('2026-10-02'),
       capacity: 4,
+      availableCapacity: 4,
       beds: { create: [{ type: 'PRIVATE_ROOM', count: 2, capacityEach: 2 }] },
       ...overrides,
     },
@@ -247,6 +248,7 @@ beforeAll(async () => {
       availableFrom: new Date('2026-09-20'),
       availableTo: new Date('2026-10-02'),
       capacity: 50,
+      availableCapacity: 50,
       bookingUrl: 'https://hotel.example.org',
     },
     select: { id: true },
@@ -263,6 +265,7 @@ beforeAll(async () => {
       availableFrom: new Date('2026-09-20'),
       availableTo: new Date('2026-10-02'),
       capacity: 60,
+      availableCapacity: 60,
       bookingUrl: 'https://base.example.org/reservation',
     },
     select: { id: true },
@@ -279,6 +282,7 @@ beforeAll(async () => {
       availableFrom: new Date('2026-09-20'),
       availableTo: new Date('2026-10-02'),
       capacity: 40,
+      availableCapacity: 40,
     },
     select: { id: true },
   })
@@ -672,6 +676,13 @@ describe('garde-fous de création', () => {
     expect((await createReq(marie.cookie, full)).status).toBe(409)
   })
 
+  it('toutes les lignes de couchages occupées → 409, sans passer par FULL', async () => {
+    const occupe = await mkListing(noe.id) // OPEN, 2 chambres × 2
+    await t.db.listingBed.updateMany({ where: { listingId: occupe }, data: { takenCount: 2 } })
+    await t.db.listing.update({ where: { id: occupe }, data: { availableCapacity: 0 } })
+    expect((await createReq(marie.cookie, occupe)).status).toBe(409)
+  })
+
   it("logement masqué → 404 (son existence n'est pas révélée)", async () => {
     const hidden = await mkListing(noe.id, { hiddenAt: new Date() })
     expect((await createReq(marie.cookie, hidden)).status).toBe(404)
@@ -912,14 +923,19 @@ describe('job quotidien', () => {
     ).not.toBeNull()
   })
 
-  it('re-synchronise la capacité dénormalisée dérivée des couchages', async () => {
-    await t.db.listing.update({ where: { id: listing3 }, data: { capacity: 99 } })
+  it('re-synchronise les capacités dénormalisées (déclarée et restante) dérivées des couchages', async () => {
+    await t.db.listing.update({
+      where: { id: listing3 },
+      data: { capacity: 99, availableCapacity: 99 },
+    })
+    await t.db.listingBed.updateMany({ where: { listingId: listing3 }, data: { takenCount: 1 } })
     await runDailyJob()
     const listing = await t.db.listing.findUniqueOrThrow({
       where: { id: listing3 },
-      select: { capacity: true },
+      select: { capacity: true, availableCapacity: true },
     })
-    expect(listing.capacity).toBe(4) // 2 chambres × 2 personnes
+    // 2 chambres × 2 personnes, dont 1 chambre occupée
+    expect(listing).toEqual({ capacity: 4, availableCapacity: 2 })
   })
 
   it('POST /internal/jobs/daily : 401 sans secret ou mauvais secret, 200 avec le bon', async () => {

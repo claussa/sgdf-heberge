@@ -53,24 +53,27 @@ export function typesCouchagesLabel(bedTypes: readonly BedType[]): string {
   return bedTypes.map((type) => capitaliser(COUCHAGE_LABELS[type].singulier)).join(' · ')
 }
 
-/** « 2 chambres privées · 2 personnes chacune · 1er étage, ascenseur » — une ligne de la fiche. */
+/** « 2 chambres privées · 2 personnes chacune · 1er étage, ascenseur » — une ligne de la fiche, couchages RESTANTS. */
 export function ligneCouchage(bed: ListingDetail['beds'][number]): string {
   const libelle = COUCHAGE_LABELS[bed.type]
-  const chacun = bed.count > 1 ? (libelle.feminin ? ' chacune' : ' chacun') : ''
+  const restants = bed.count - bed.takenCount
+  const chacun = restants > 1 ? (libelle.feminin ? ' chacune' : ' chacun') : ''
   return [
-    `${bed.count} ${bed.count > 1 ? libelle.pluriel : libelle.singulier}`,
+    `${restants} ${restants > 1 ? libelle.pluriel : libelle.singulier}`,
     `${personnesLabel(bed.capacityEach)}${chacun}`,
     ...(bed.note ? [bed.note] : []),
   ].join(' · ')
 }
 
-/** Lignes de la fiche avec une clé unique (deux lignes identiques restent distinctes). */
+/** Lignes encore libres de la fiche, avec une clé unique (deux lignes identiques restent distinctes). */
 export function lignesCouchages(beds: ListingDetail['beds']): { cle: string; texte: string }[] {
   const vus = new Map<string, number>()
-  return beds.map((bed) => {
-    const texte = ligneCouchage(bed)
-    const n = (vus.get(texte) ?? 0) + 1
-    vus.set(texte, n)
-    return { cle: `${texte}#${n}`, texte }
-  })
+  return beds
+    .filter((bed) => bed.count > bed.takenCount)
+    .map((bed) => {
+      const texte = ligneCouchage(bed)
+      const n = (vus.get(texte) ?? 0) + 1
+      vus.set(texte, n)
+      return { cle: `${texte}#${n}`, texte }
+    })
 }

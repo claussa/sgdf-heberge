@@ -21,6 +21,7 @@ import {
   Tabs,
   Textarea,
 } from '../ui'
+import { CouchagesDispo, hasBedControls } from './hebergeur-couchages'
 import {
   expiresLabel,
   MY_LISTINGS_KEY,
@@ -132,8 +133,12 @@ export function HebergeurDemandes() {
         return
       }
     }
+    // Avec une occupation par couchage, la mise en avant englobe les réglages de ligne.
+    const parLigne = hasBedControls(listing)
     const element = document.querySelector<HTMLElement>(
-      `[data-full-chip="${suggestion.listingId}"]`,
+      parLigne
+        ? `[data-dispo-item="${suggestion.listingId}"]`
+        : `[data-full-chip="${suggestion.listingId}"]`,
     )
     if (!element) return
     if (listing.category !== 'PRIVATE') {
@@ -154,8 +159,9 @@ export function HebergeurDemandes() {
       element,
       popover: {
         title: 'Ce logement est-il complet ?',
-        description:
-          listing.category === 'PRIVATE'
+        description: parLigne
+          ? `Demande acceptée ! Marque ci-dessous les couchages désormais occupés — ou clique sur Complet si « ${listing.title} » n’a plus de place du tout. Ça n’annule rien.`
+          : listing.category === 'PRIVATE'
             ? `Demande acceptée ! Si « ${listing.title} » n’a plus de place, clique sur Complet pour le sortir des recherches — ça n’annule rien.`
             : `Demande acceptée ! ${acceptedPeople} places sur ${listing.capacity} sont prises dans « ${listing.title} ». S’il est plein, clique sur Complet pour le sortir des recherches — ça n’annule rien.`,
         side: 'top',
@@ -169,7 +175,8 @@ export function HebergeurDemandes() {
 
   if (requestsQuery.isPending || listingsQuery.isPending) return <Loading />
 
-  const capacityById = new Map(listings.map((listing) => [listing.id, listing.capacity]))
+  // Places RESTANTES : l'alerte « N pers. pour M places libres » suit l'occupation des couchages.
+  const availableById = new Map(listings.map((listing) => [listing.id, listing.availableCapacity]))
 
   const pending = displayRequests.filter((r) => r.effectiveStatus === 'PENDING')
   const accepted = displayRequests.filter((r) => r.effectiveStatus === 'ACCEPTED')
@@ -200,7 +207,7 @@ export function HebergeurDemandes() {
               <PendingCard
                 key={request.id}
                 request={request}
-                capacity={capacityById.get(request.listingId)}
+                availableCapacity={availableById.get(request.listingId)}
                 demo={request.id === TOUR_REQUEST_ID}
                 onAccepted={() =>
                   setSuggestion({
@@ -254,39 +261,44 @@ export function HebergeurDemandes() {
           <hr className="divider" />
           <FieldGroup label="Disponibilité de mes logements" className="tour-dispo">
             {listings.map((listing) => (
-              <div key={listing.id} className="dispo-row">
-                <span className="dispo-row__title">{listing.title}</span>
-                <span
-                  className={`dispo-row__fill${
-                    listing.acceptedPeople >= listing.capacity ? ' dispo-row__fill--full' : ''
-                  }`}
-                  title={`${listing.acceptedPeople} place${listing.acceptedPeople > 1 ? 's' : ''} acceptée${listing.acceptedPeople > 1 ? 's' : ''} sur ${listing.capacity}`}
-                >
-                  {listing.acceptedPeople}/{listing.capacity} places
-                </span>
-                <span className="chips">
-                  <Chip
-                    active={listing.status === 'OPEN'}
-                    disabled={setStatus.isPending}
-                    onClick={() => setStatus.mutate({ id: listing.id, status: 'OPEN' })}
+              <div key={listing.id} className="dispo-item" data-dispo-item={listing.id}>
+                <div className="dispo-row">
+                  <span className="dispo-row__title">{listing.title}</span>
+                  <span
+                    className={`dispo-row__fill${
+                      listing.acceptedPeople >= listing.capacity ? ' dispo-row__fill--full' : ''
+                    }`}
+                    title={`${listing.acceptedPeople} place${listing.acceptedPeople > 1 ? 's' : ''} acceptée${listing.acceptedPeople > 1 ? 's' : ''} sur ${listing.capacity}`}
                   >
-                    Libre
-                  </Chip>
-                  <Chip
-                    active={listing.status === 'FULL'}
-                    disabled={setStatus.isPending}
-                    data-full-chip={listing.id}
-                    onClick={() => setStatus.mutate({ id: listing.id, status: 'FULL' })}
-                  >
-                    Complet
-                  </Chip>
-                </span>
+                    {listing.acceptedPeople}/{listing.capacity} places
+                  </span>
+                  <span className="chips">
+                    <Chip
+                      active={listing.status === 'OPEN'}
+                      disabled={setStatus.isPending}
+                      onClick={() => setStatus.mutate({ id: listing.id, status: 'OPEN' })}
+                    >
+                      Libre
+                    </Chip>
+                    <Chip
+                      active={listing.status === 'FULL'}
+                      disabled={setStatus.isPending}
+                      data-full-chip={listing.id}
+                      onClick={() => setStatus.mutate({ id: listing.id, status: 'FULL' })}
+                    >
+                      Complet
+                    </Chip>
+                  </span>
+                </div>
+                <CouchagesDispo listing={listing} />
               </div>
             ))}
           </FieldGroup>
           <HelpText>
-            Passer en "complet" sort le logement des recherches sans rien annuler. Sans action
-            pendant 7 jours, la demande expire et le logement est masqué automatiquement.
+            Passer en "complet" sort le logement des recherches sans rien annuler. Avec plusieurs
+            couchages, tu peux aussi n’en marquer qu’une partie comme occupés : seules les places
+            restantes ressortent dans les recherches. Sans action pendant 7 jours, la demande expire
+            et le logement est masqué automatiquement.
           </HelpText>
         </>
       )}
@@ -327,12 +339,12 @@ function useInvalidateHebergeur() {
  */
 function PendingCard({
   request,
-  capacity,
+  availableCapacity,
   onAccepted,
   demo = false,
 }: {
   request: RequestHostView
-  capacity: number | undefined
+  availableCapacity: number | undefined
   onAccepted: () => void
   demo?: boolean
 }) {
@@ -397,9 +409,10 @@ function PendingCard({
         {needs.map((need) => (
           <Badge key={need}>Besoin : {ACCESS_CRITERIA_LABELS[need].label}</Badge>
         ))}
-        {request.overCapacity && capacity !== undefined && (
+        {request.overCapacity && availableCapacity !== undefined && (
           <Badge variant="danger">
-            {request.peopleCount} pers. pour {capacity} places
+            {request.peopleCount} pers. pour {availableCapacity} place
+            {availableCapacity > 1 ? 's' : ''} libre{availableCapacity > 1 ? 's' : ''}
           </Badge>
         )}
         <Badge>{expiresLabel(request.expiresAt)}</Badge>

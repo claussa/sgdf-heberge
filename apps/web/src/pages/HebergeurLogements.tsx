@@ -1,15 +1,23 @@
 import { formatDateRangeLong } from '@repo/event-config'
 import { useNavigate } from 'react-router'
 import { Badge, Button, Card, Chip, HelpText, Loading, PageTitle, SigneImage } from '../ui'
-import { countPersonnes, listingSigne, useListingStatus, useMyListings } from './hebergeur-lib'
+import { CouchagesDispo } from './hebergeur-couchages'
+import {
+  countPersonnes,
+  listingSigne,
+  placesLibresLabel,
+  useListingStatus,
+  useMyListings,
+} from './hebergeur-lib'
 import { useHebergeurTourProposal } from './hebergeur-tour'
 import './hebergeur.css'
 
 /**
  * /hebergeur/logements — écran A.9 « Mes logements, ». Une carte-ligne par logement
- * (vignette signe, méta, chips Libre/Complet, Modifier), bandeau « Réactiver » si le
- * logement a été masqué pour inactivité (hiddenAt). La création du premier logement
- * redirige ici : c'est là que le tour guidé est proposé (une seule fois).
+ * (vignette signe, méta, occupation par couchage, chips Libre/Complet, Modifier),
+ * bandeau « Réactiver » si le logement a été masqué pour inactivité (hiddenAt). La
+ * création du premier logement redirige ici : c'est là que le tour guidé est proposé
+ * (une seule fois).
  */
 export function HebergeurLogements() {
   const navigate = useNavigate()
@@ -37,9 +45,12 @@ export function HebergeurLogements() {
               <div className="logement-row__body">
                 <span className="logement-row__title">{listing.title}</span>
                 <span className="logement-row__meta">
-                  {listing.displayArea} · {countPersonnes(listing.capacity)} · disponible{' '}
-                  {formatDateRangeLong(listing.availableFrom, listing.availableTo)}
+                  {listing.displayArea} · {countPersonnes(listing.capacity)}
+                  {listing.availableCapacity !== listing.capacity &&
+                    ` · ${placesLibresLabel(listing.availableCapacity)}`}{' '}
+                  · disponible {formatDateRangeLong(listing.availableFrom, listing.availableTo)}
                 </span>
+                <CouchagesDispo listing={listing} />
                 {listing.hiddenAt !== null && (
                   <span className="logement-row__hidden">
                     <Badge variant="warning">Masqué — hébergeur inactif</Badge>
@@ -102,7 +113,9 @@ export function HebergeurLogements() {
         + Ajouter un logement
       </Button>
       <HelpText>
-        Tu peux avoir plusieurs logements, et passer chacun en "complet" à tout moment.
+        Tu peux avoir plusieurs logements, et passer chacun en "complet" à tout moment. Avec
+        plusieurs couchages, tu peux aussi n’en marquer qu’une partie comme occupés : seules les
+        places restantes ressortent dans les recherches.
       </HelpText>
     </div>
   )

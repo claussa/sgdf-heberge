@@ -260,22 +260,38 @@ export const UserExportSchema = z.object({
 // Logements
 // ---------------------------------------------------------------------------
 
-export const BedInputSchema = z.object({
-  type: BedTypeSchema,
-  count: z.number().int().min(INPUT_LIMITS.bedCount.min).max(INPUT_LIMITS.bedCount.max),
-  capacityEach: z
-    .number()
-    .int()
-    .min(INPUT_LIMITS.bedCapacity.min)
-    .max(INPUT_LIMITS.bedCapacity.max),
-  note: z.string().max(INPUT_LIMITS.bedNote).nullish(),
-})
+export const BedInputSchema = z
+  .object({
+    type: BedTypeSchema,
+    count: z.number().int().min(INPUT_LIMITS.bedCount.min).max(INPUT_LIMITS.bedCount.max),
+    capacityEach: z
+      .number()
+      .int()
+      .min(INPUT_LIMITS.bedCapacity.min)
+      .max(INPUT_LIMITS.bedCapacity.max),
+    /** Couchages déjà occupés sur la ligne (≤ count) — absent = tous libres */
+    takenCount: z.number().int().min(0).max(INPUT_LIMITS.bedCount.max).default(0),
+    note: z.string().max(INPUT_LIMITS.bedNote).nullish(),
+  })
+  .refine((bed) => bed.takenCount <= bed.count, {
+    error: 'Plus de couchages occupés que déclarés',
+    path: ['takenCount'],
+  })
 
 export const BedSchema = z.object({
   type: BedTypeSchema,
   count: z.number().int(),
   capacityEach: z.number().int(),
+  /** Couchages occupés (0 ≤ takenCount ≤ count) — restants = (count − takenCount) × capacityEach */
+  takenCount: z.number().int(),
   note: z.string().nullable(),
+})
+
+/** Vue propriétaire : l'id sert au réglage de l'occupation (PATCH /my/listings/{id}/beds/{bedId}) */
+export const MyBedSchema = BedSchema.extend({ id: z.string() })
+
+export const BedTakenCountUpdateSchema = z.object({
+  takenCount: z.number().int().min(0).max(INPUT_LIMITS.bedCount.max),
 })
 
 /** Adresse choisie dans l'autocomplete BAN — jamais de saisie libre (maquette) */
@@ -296,17 +312,20 @@ export const ListingCardSchema = z.object({
   id: z.string(),
   category: ListingCategorySchema,
   site: SiteSchema,
-  /** PRIVATE : dérivé (« Chez Claire · 2 places ») ; institutionnels : title en base */
+  /** PRIVATE : dérivé (« Chez Claire · 2 places », places RESTANTES) ; institutionnels : title en base */
   title: z.string(),
   displayArea: z.string(),
   distanceKm: z.number().nullable(),
+  /** Capacité déclarée : Σ couchages (count × capacityEach), occupés compris */
   capacity: z.number().int(),
+  /** Places restantes : Σ (count − takenCount) × capacityEach — institutionnels : = capacity */
+  availableCapacity: z.number().int(),
   availableFrom: z.iso.date(),
   availableTo: z.iso.date(),
   access: AccessGridSchema,
   /** Facilité de stationnement — null = non renseigné (le champ est facultatif) */
   parkingEase: ParkingEaseSchema.nullable(),
-  /** Types de couchages présents, du plus grand au plus petit (icône + ligne de types de la carte) */
+  /** Types de couchages ENCORE LIBRES, du plus grand au plus petit (icône + ligne de types de la carte) */
   bedTypes: z.array(BedTypeSchema),
   /** Institutionnels : « 45 € · code PAPE15 » */
   priceInfo: z.string().nullable(),
@@ -328,7 +347,12 @@ export type ListingDetail = z.infer<typeof ListingDetailSchema>
 
 /** Vue propriétaire (formulaire d'édition + liste « Mes logements ») */
 export const MyListingSchema = ListingDetailSchema.extend({
+  /** Interrupteur global Libre/Complet — indépendant de l'occupation par ligne */
   status: ListingStatusSchema,
+  /** Toutes les lignes déclarées (occupées comprises), avec leur id */
+  beds: z.array(MyBedSchema),
+  /** Types déclarés (vignette stable), là où la carte publique ne liste que les types libres */
+  bedTypes: z.array(BedTypeSchema),
   hiddenAt: z.iso.datetime().nullable(),
   /** Sa propre adresse, déchiffrée — uniquement pour le propriétaire */
   addressFull: z.string(),
@@ -396,7 +420,7 @@ export const ListingSearchQuerySchema = z
     site: SiteSchema,
     from: z.iso.date().optional(),
     to: z.iso.date().optional(),
-    /** Filtre `capacity >= people` — même borne que `RequestCreateSchema.peopleCount`. */
+    /** Filtre `availableCapacity >= people` (places restantes) — même borne que `RequestCreateSchema.peopleCount`. */
     people: z.coerce
       .number()
       .int()
